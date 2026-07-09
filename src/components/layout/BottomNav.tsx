@@ -14,31 +14,26 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-surface/80 backdrop-blur-xl border-t border-border pb-safe">
-      <div className="flex items-center justify-around max-w-lg mx-auto h-16">
+    <nav className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
+      <div className="glass-card rounded-full border border-white/15 shadow-[0_15px_35px_rgba(0,0,0,0.6)] px-2 py-1.5 flex items-center justify-around backdrop-blur-2xl">
         {navItems.map((item) => {
           const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all duration-200 ${
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full transition-all duration-300 ${
                 isActive
-                  ? 'text-accent-light'
-                  : 'text-text-muted hover:text-text-secondary'
+                  ? 'bg-gradient-to-r from-blue-600/40 to-cyan-500/30 border border-blue-400/40 shadow-[0_0_15px_rgba(59,130,246,0.35)] text-white scale-105'
+                  : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              <div className={`relative p-1.5 rounded-xl transition-all duration-200 ${
-                isActive ? 'bg-accent/10' : ''
-              }`}>
-                <item.icon size={22} strokeWidth={isActive ? 2.5 : 1.5} />
-                {isActive && (
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-gradient-to-r from-accent-dark to-accent-light rounded-full" />
-                )}
-              </div>
-              <span className={`text-[10px] font-medium ${isActive ? 'text-accent-light' : ''}`}>
-                {item.label}
-              </span>
+              <item.icon size={18} strokeWidth={isActive ? 2.5 : 1.8} />
+              {isActive && (
+                <span className="text-xs font-semibold tracking-wide">
+                  {item.label}
+                </span>
+              )}
             </Link>
           );
         })}

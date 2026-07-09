@@ -10,19 +10,19 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className = '', variant = 'primary', size = 'md', isLoading, fullWidth, children, disabled, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none';
+    const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-2xl transition-all duration-300 active:scale-[0.96] disabled:opacity-50 disabled:pointer-events-none tracking-wide';
     
     const variants = {
-      primary: 'bg-gradient-to-r from-accent-dark to-accent text-white shadow-lg shadow-accent/20 hover:shadow-accent/30 hover:brightness-110',
-      secondary: 'bg-surface-light border border-border text-text-primary hover:bg-surface-lighter hover:border-border-glow',
-      ghost: 'text-text-secondary hover:text-text-primary hover:bg-surface-light/50',
-      danger: 'bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20',
+      primary: 'bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 text-white shadow-[0_4px_20px_rgba(59,130,246,0.4)] hover:shadow-[0_6px_30px_rgba(59,130,246,0.6)] hover:brightness-110 border border-blue-400/30',
+      secondary: 'bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 text-white backdrop-blur-xl shadow-lg',
+      ghost: 'text-slate-300 hover:text-white hover:bg-white/[0.08]',
+      danger: 'bg-danger/15 text-red-400 border border-danger/30 hover:bg-danger/25 shadow-[0_0_15px_rgba(239,68,68,0.2)]',
     };
     
     const sizes = {
-      sm: 'text-xs px-3 py-1.5 gap-1.5',
-      md: 'text-sm px-4 py-2.5 gap-2',
-      lg: 'text-base px-6 py-3 gap-2.5',
+      sm: 'text-xs px-3.5 py-2 gap-1.5 rounded-xl',
+      md: 'text-sm px-5 py-3 gap-2',
+      lg: 'text-base px-7 py-3.5 gap-2.5 rounded-full',
     };
 
     return (

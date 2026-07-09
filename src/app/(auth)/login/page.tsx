@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import { LogIn, Mail, Lock } from 'lucide-react';
+import { Sparkles, Mail, Lock, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -32,55 +32,69 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="animate-fade-in">
-      <div className="text-center mb-8">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent-dark to-accent flex items-center justify-center mx-auto mb-4 shadow-lg shadow-accent/20">
-          <LogIn size={24} className="text-white" />
+    <div className="animate-fade-in flex flex-col justify-between min-h-[85vh]">
+      {/* Top Welcome Section */}
+      <div className="pt-6 text-center">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-6">
+          <Sparkles size={14} /> Personal Assistant AI
         </div>
-        <h1 className="text-2xl font-bold text-text-primary">Welcome Back</h1>
-        <p className="text-sm text-text-muted mt-1">Sign in to your dashboard</p>
+        <h1 className="text-3xl font-extrabold text-white tracking-tight">
+          Welcome Back
+        </h1>
+        <p className="text-sm text-slate-400 mt-2 max-w-xs mx-auto">
+          Your command center for daily tasks, finances, and sports activities
+        </p>
       </div>
 
-      <form onSubmit={handleLogin} className="glow-card p-6 space-y-4">
-        {error && (
-          <div className="p-3 rounded-xl bg-danger/10 border border-danger/20 text-sm text-danger">
-            {error}
+      {/* Ultra Glass Bottom Card (FitPulse Studio Incubator style) */}
+      <div className="mt-8">
+        <form onSubmit={handleLogin} className="glass-card rounded-[32px] p-7 border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.7)] space-y-5">
+          {error && (
+            <div className="p-3.5 rounded-2xl bg-danger/15 border border-danger/30 text-xs text-red-300 font-medium text-center">
+              {error}
+            </div>
+          )}
+          
+          <Input
+            id="email"
+            type="email"
+            label="Email Address"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            icon={<Mail size={16} />}
+            required
+          />
+          
+          <Input
+            id="password"
+            type="password"
+            label="Password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            icon={<Lock size={16} />}
+            required
+          />
+
+          <div className="pt-2">
+            <Button type="submit" fullWidth isLoading={loading} size="lg" className="rounded-full shadow-[0_0_25px_rgba(59,130,246,0.45)]">
+              <span className="flex items-center justify-center gap-2">
+                Sign In <ArrowRight size={18} />
+              </span>
+            </Button>
           </div>
-        )}
-        
-        <Input
-          id="email"
-          type="email"
-          label="Email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          icon={<Mail size={16} />}
-          required
-        />
-        
-        <Input
-          id="password"
-          type="password"
-          label="Password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          icon={<Lock size={16} />}
-          required
-        />
 
-        <Button type="submit" fullWidth isLoading={loading} size="lg">
-          Sign In
-        </Button>
-      </form>
-
-      <p className="text-center text-sm text-text-muted mt-6">
-        Don&apos;t have an account?{' '}
-        <Link href="/signup" className="text-accent-light hover:underline font-medium">
-          Sign Up
-        </Link>
-      </p>
+          <div className="pt-2 text-center">
+            <p className="text-xs text-slate-400">
+              Don&apos;t have an account?{' '}
+              <Link href="/signup" className="text-blue-400 hover:text-blue-300 font-semibold underline-offset-4 hover:underline ml-1">
+                Create Account
+              </Link>
+            </p>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
