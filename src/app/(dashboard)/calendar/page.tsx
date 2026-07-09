@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Todo, WorkActivity } from '@/lib/types/database';
 import {
@@ -11,9 +11,8 @@ import {
   Clock,
   Plus,
   Sparkles,
-  Edit3,
-  AlignLeft,
-  Calendar,
+  MapPin,
+  Users,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -22,7 +21,7 @@ import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import AddToGoogleCalendar from '@/components/ui/AddToGoogleCalendar';
 
-type ViewMode = 'week' | 'month' | 'todos';
+type ViewMode = 'daily' | 'month' | 'todos';
 
 interface CombinedItem {
   id: string;
@@ -37,7 +36,14 @@ interface CombinedItem {
   original: Todo | WorkActivity;
 }
 
-const HOURS = [
+const HOURS_24 = [
+  { label: '01.00', hour: 1 },
+  { label: '02.00', hour: 2 },
+  { label: '03.00', hour: 3 },
+  { label: '04.00', hour: 4 },
+  { label: '05.00', hour: 5 },
+  { label: '06.00', hour: 6 },
+  { label: '07.00', hour: 7 },
   { label: '08.00', hour: 8 },
   { label: '09.00', hour: 9 },
   { label: '10.00', hour: 10 },
@@ -53,16 +59,18 @@ const HOURS = [
   { label: '20.00', hour: 20 },
   { label: '21.00', hour: 21 },
   { label: '22.00', hour: 22 },
+  { label: '23.00', hour: 23 },
+  { label: '24.00', hour: 24 },
 ];
 
-export default function CalendarUnifiedPage() {
+export default function CalendarStudioPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [viewMode, setViewMode] = useState<ViewMode>('daily');
   const [items, setItems] = useState<CombinedItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Drag-and-Drop state
-  const [draggedItem, setDraggedItem] = useState<CombinedItem | null>(null);
+  // Touch Swipe navigation state for mobile Daily View
+  const touchStartX = useRef<number | null>(null);
 
   // Full Schedule Form Modal state
   const [showModal, setShowModal] = useState(false);
@@ -103,8 +111,8 @@ export default function CalendarUnifiedPage() {
           title: t.title,
           description: t.description || '',
           dateString: t.due_date || null,
-          hourStart: 9, // default 09.00
-          hourEnd: 10,
+          hourStart: 8,
+          hourEnd: 9,
           type: 'todo',
           status: t.is_completed ? 'completed' : 'planned',
           priority: t.priority || 'medium',
@@ -119,8 +127,8 @@ export default function CalendarUnifiedPage() {
         if (a.status === 'in_progress') st = 'in_progress';
         if (a.status === 'completed') st = 'completed';
 
-        let hrStart = 10;
-        let hrEnd = 11;
+        let hrStart = 9;
+        let hrEnd = 10;
         if (a.scheduled_at) {
           const dateObj = new Date(a.scheduled_at);
           if (!isNaN(dateObj.getHours())) {
@@ -156,35 +164,29 @@ export default function CalendarUnifiedPage() {
     fetchAllItems();
   }, [supabase]);
 
-  // Handle Drag and Drop onto Day / Hour Slot
-  const handleDropSlot = async (targetDateStr: string, targetHour: number) => {
-    if (!draggedItem) return;
+  // Touch Swipe Navigation for Daily View (Google Calendar UX)
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
 
-    // Optimistically update
-    setItems((prev) =>
-      prev.map((it) =>
-        it.id === draggedItem.id
-          ? { ...it, dateString: targetDateStr, hourStart: targetHour, hourEnd: targetHour + 1 }
-          : it
-      )
-    );
-
-    if (draggedItem.type === 'todo') {
-      const todoId = draggedItem.original.id;
-      await supabase
-        .from('todos')
-        .update({ due_date: targetDateStr })
-        .eq('id', todoId);
-    } else {
-      const actId = draggedItem.original.id;
-      const scheduledIso = `${targetDateStr}T${String(targetHour).padStart(2, '0')}:00:00`;
-      await supabase
-        .from('work_activities')
-        .update({ scheduled_at: scheduledIso })
-        .eq('id', actId);
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    const threshold = 55; // min pixels to trigger swipe
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        // Swiped Left -> Next Day
+        const next = new Date(currentDate);
+        next.setDate(currentDate.getDate() + 1);
+        setCurrentDate(next);
+      } else {
+        // Swiped Right -> Prev Day
+        const prev = new Date(currentDate);
+        prev.setDate(currentDate.getDate() - 1);
+        setCurrentDate(prev);
+      }
     }
-
-    setDraggedItem(null);
+    touchStartX.current = null;
   };
 
   // Status changes for Todos view
@@ -211,7 +213,7 @@ export default function CalendarUnifiedPage() {
     }
   };
 
-  // Save new schedule item (Full form with start - end | Notes)
+  // Save new schedule item
   const handleSaveSchedule = async () => {
     if (!formTitle.trim()) return;
     setSaving(true);
@@ -250,7 +252,7 @@ export default function CalendarUnifiedPage() {
   };
 
   const openNewScheduleModal = (dateStr?: string, hrStart?: number) => {
-    setFormDate(dateStr || new Date().toISOString().split('T')[0]);
+    setFormDate(dateStr || currentDate.toISOString().split('T')[0]);
     if (hrStart) {
       setFormStartTime(`${String(hrStart).padStart(2, '0')}:00`);
       setFormEndTime(`${String(hrStart + 1).padStart(2, '0')}:00`);
@@ -263,31 +265,22 @@ export default function CalendarUnifiedPage() {
     setShowModal(true);
   };
 
-  // Week starts Monday
-  const getStartOfWeekMonday = (d: Date) => {
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday start
-    return new Date(d.setDate(diff));
-  };
-
-  const startOfWeek = getStartOfWeekMonday(new Date(currentDate));
-  const weekDays = Array.from({ length: 7 }).map((_, i) => {
-    const dayDate = new Date(startOfWeek);
-    dayDate.setDate(startOfWeek.getDate() + i);
-    return dayDate;
-  });
-
   // Month calculations
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 is Sun
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const monthName = currentDate.toLocaleString('en-US', { month: 'long' });
 
+  // Date formatting for Daily header
+  const dailyDateStr = currentDate.toISOString().split('T')[0];
+  const isToday =
+    new Date().toISOString().split('T')[0] === dailyDateStr;
+
   const prevStep = () => {
-    if (viewMode === 'week') {
+    if (viewMode === 'daily') {
       const prev = new Date(currentDate);
-      prev.setDate(currentDate.getDate() - 7);
+      prev.setDate(currentDate.getDate() - 1);
       setCurrentDate(prev);
     } else {
       setCurrentDate(new Date(year, month - 1, 1));
@@ -295,9 +288,9 @@ export default function CalendarUnifiedPage() {
   };
 
   const nextStep = () => {
-    if (viewMode === 'week') {
+    if (viewMode === 'daily') {
       const next = new Date(currentDate);
-      next.setDate(currentDate.getDate() + 7);
+      next.setDate(currentDate.getDate() + 1);
       setCurrentDate(next);
     } else {
       setCurrentDate(new Date(year, month + 1, 1));
@@ -309,55 +302,57 @@ export default function CalendarUnifiedPage() {
   };
 
   return (
-    <div className="p-3 sm:p-5 space-y-4 animate-fade-in pb-28 max-w-6xl mx-auto">
-      {/* Top Header & Navigation */}
-      <div className="glass-card rounded-[28px] p-4 border border-white/15 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-between">
+    <div className="p-3 sm:p-6 space-y-4 animate-fade-in pb-36 max-w-6xl mx-auto font-sans">
+      {/* Studio Top Header Bar */}
+      <div className="glass-card rounded-[28px] p-4 border border-white/15 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3.5">
+        <div className="flex items-center justify-between w-full sm:w-auto gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-400/30 flex items-center justify-center text-blue-400">
+            <div className="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-400/30 flex items-center justify-center text-blue-400 flex-shrink-0">
               <CalendarIcon size={20} />
             </div>
             <div>
-              <h1 className="text-base sm:text-lg font-extrabold text-white tracking-tight">
-                {viewMode === 'week'
-                  ? `${weekDays[0].toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                    })} – ${weekDays[6].toLocaleDateString('en-US', {
+              <h1 className="text-base sm:text-xl font-extrabold text-white tracking-tight">
+                {viewMode === 'daily'
+                  ? currentDate.toLocaleDateString('en-US', {
+                      weekday: 'short',
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
-                    })}`
+                    })
                   : `${monthName} ${year}`}
               </h1>
-              <p className="text-[11px] text-slate-400">
-                24-Hour Format Schedule & Unified Todos
+              <p className="text-[11px] text-slate-400 font-medium">
+                {viewMode === 'daily'
+                  ? 'Daily Schedule (Swipe or tap arrows)'
+                  : 'Studio Monthly Overview'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <button
               onClick={prevStep}
               className="p-2 rounded-xl bg-white/[0.08] hover:bg-white/15 text-white transition-all"
+              aria-label="Previous"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={goToday}
-              className="px-3 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/15 text-xs font-semibold text-white transition-all"
+              className="px-2.5 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/15 text-xs font-bold text-white transition-all"
             >
               Today
             </button>
             <button
               onClick={nextStep}
               className="p-2 rounded-xl bg-white/[0.08] hover:bg-white/15 text-white transition-all"
+              aria-label="Next"
             >
               <ChevronRight size={16} />
             </button>
             <button
               onClick={() => openNewScheduleModal()}
-              className="ml-2 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-md flex items-center gap-1"
+              className="ml-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-md flex items-center gap-1"
             >
               <Plus size={14} /> Add
             </button>
@@ -365,17 +360,17 @@ export default function CalendarUnifiedPage() {
         </div>
 
         {/* View Switcher Pills */}
-        <div className="flex items-center gap-1.5 bg-slate-950/70 p-1.5 rounded-full border border-white/10 w-full sm:w-auto justify-center">
+        <div className="flex items-center gap-1 bg-slate-950/80 p-1.5 rounded-full border border-white/10 w-full sm:w-auto justify-center">
           <button
-            onClick={() => setViewMode('week')}
+            onClick={() => setViewMode('daily')}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
-              viewMode === 'week'
+              viewMode === 'daily'
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
             <Clock size={13} />
-            <span>Week Schedule</span>
+            <span>Daily Schedule</span>
           </button>
           <button
             onClick={() => setViewMode('month')}
@@ -402,136 +397,150 @@ export default function CalendarUnifiedPage() {
         </div>
       </div>
 
-      {/* 1. WEEK SCHEDULE VIEW (Monday to Sunday, 08.00 - 22.00, Drag & Drop Kanban Cards) */}
-      {viewMode === 'week' && (
-        <div className="glow-card rounded-[28px] border border-white/15 overflow-hidden bg-slate-950/80">
-          <div className="overflow-x-auto">
-            <div className="min-w-[760px]">
-              {/* Day Headers Row (Monday to Sunday) */}
-              <div className="grid grid-cols-8 border-b border-white/10 bg-white/[0.03]">
-                <div className="p-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-r border-white/10 flex items-center justify-center">
-                  Time (24h)
-                </div>
-                {weekDays.map((d) => {
-                  const dateStr = d.toISOString().split('T')[0];
-                  const isToday =
-                    new Date().toISOString().split('T')[0] === dateStr;
-                  const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-
-                  return (
-                    <div
-                      key={dateStr}
-                      className={`p-3 text-center border-r border-white/10 last:border-r-0 ${
-                        isToday ? 'bg-blue-600/15' : ''
-                      }`}
-                    >
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        {dayNames[d.getDay()]}
-                      </div>
-                      <div
-                        className={`text-sm font-extrabold mt-0.5 inline-block px-2.5 py-0.5 rounded-full ${
-                          isToday
-                            ? 'bg-blue-500 text-white shadow-[0_0_12px_rgba(59,130,246,0.6)]'
-                            : 'text-white'
-                        }`}
-                      >
-                        {d.getDate()}
-                      </div>
-                    </div>
-                  );
-                })}
+      {/* 1. DAILY SCHEDULE VIEW (Google Calendar Day View - 24 Hours - Swipe Left/Right) */}
+      {viewMode === 'daily' && (
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          className="glow-card rounded-[28px] border border-white/15 overflow-hidden bg-slate-950/90 shadow-2xl"
+        >
+          {/* Daily Banner Bar */}
+          <div className="px-5 py-3 border-b border-white/10 bg-white/[0.03] flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-extrabold ${
+                  isToday
+                    ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.6)]'
+                    : 'bg-white/10 text-slate-300'
+                }`}
+              >
+                {currentDate.getDate()}
               </div>
-
-              {/* Hour Grid Rows (08.00 | 09.00 | 10.00 ...) */}
-              <div className="divide-y divide-white/[0.06]">
-                {HOURS.map(({ label, hour }) => {
-                  return (
-                    <div key={label} className="grid grid-cols-8 min-h-[76px]">
-                      {/* Left 24-Hour Label */}
-                      <div className="p-2 text-xs font-extrabold text-slate-300 border-r border-white/10 flex items-center justify-center bg-white/[0.015]">
-                        {label}
-                      </div>
-
-                      {/* Day Cells for this Hour */}
-                      {weekDays.map((d) => {
-                        const dateStr = d.toISOString().split('T')[0];
-                        const cellItems = items.filter(
-                          (it) =>
-                            it.dateString === dateStr &&
-                            (it.hourStart === hour || (hour === 9 && !it.hourStart))
-                        );
-
-                        return (
-                          <div
-                            key={`${dateStr}-${hour}`}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={() => handleDropSlot(dateStr, hour)}
-                            onClick={() => openNewScheduleModal(dateStr, hour)}
-                            className="p-1.5 border-r border-white/[0.06] last:border-r-0 hover:bg-white/[0.05] transition-colors cursor-pointer flex flex-col justify-start gap-1.5 relative group"
-                          >
-                            {cellItems.map((it) => (
-                              <div
-                                key={it.id}
-                                draggable
-                                onDragStart={(e) => {
-                                  e.stopPropagation();
-                                  setDraggedItem(it);
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                                className={`text-[11px] font-bold p-2 rounded-xl border shadow-md transition-transform active:scale-95 cursor-grab active:cursor-grabbing flex flex-col gap-1 ${
-                                  it.status === 'completed'
-                                    ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200 line-through'
-                                    : it.type === 'activity'
-                                    ? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-200'
-                                    : 'bg-blue-600/35 border-blue-400/50 text-white'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="truncate">{it.title}</span>
-                                  <span className="text-[9px] font-mono opacity-80">
-                                    {String(it.hourStart).padStart(2, '0')}.00
-                                  </span>
-                                </div>
-                                {it.description && (
-                                  <p className="text-[9px] text-slate-300 truncate font-normal">
-                                    {it.description}
-                                  </p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
+              <div>
+                <h2 className="text-sm font-extrabold text-white tracking-tight">
+                  {currentDate.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </h2>
+                <p className="text-[11px] text-slate-400">
+                  {items.filter((it) => it.dateString === dailyDateStr).length}{' '}
+                  scheduled items • 24-hour timeline
+                </p>
               </div>
             </div>
+
+            <span className="text-[11px] font-semibold text-slate-400 hidden sm:inline-block">
+              💡 Swipe left/right on mobile to change day
+            </span>
+          </div>
+
+          {/* 24-Hour Timeline Rows */}
+          <div className="divide-y divide-white/[0.06] max-h-[700px] overflow-y-auto">
+            {HOURS_24.map(({ label, hour }) => {
+              const hourItems = items.filter(
+                (it) =>
+                  it.dateString === dailyDateStr &&
+                  (it.hourStart === hour || (hour === 9 && !it.hourStart))
+              );
+
+              return (
+                <div
+                  key={label}
+                  onClick={() => openNewScheduleModal(dailyDateStr, hour)}
+                  className="flex items-stretch min-h-[64px] hover:bg-white/[0.03] transition-colors cursor-pointer group"
+                >
+                  {/* Left 24-Hour Label */}
+                  <div className="w-16 sm:w-20 p-2.5 text-xs font-extrabold text-slate-400 border-r border-white/10 flex items-center justify-center bg-white/[0.015] flex-shrink-0 font-mono">
+                    {label}
+                  </div>
+
+                  {/* Main Hour Row Content */}
+                  <div className="flex-1 p-2 flex flex-col justify-center gap-2">
+                    {hourItems.length === 0 ? (
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-[11px] text-slate-500 font-medium px-2">
+                        <Plus size={12} /> Click to schedule at {label}
+                      </div>
+                    ) : (
+                      hourItems.map((it) => (
+                        <div
+                          key={it.id}
+                          onClick={(e) => e.stopPropagation()}
+                          className={`p-3 rounded-2xl border shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-transform active:scale-[0.99] ${
+                            it.status === 'completed'
+                              ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200 line-through'
+                              : it.type === 'activity'
+                              ? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-100'
+                              : 'bg-gradient-to-r from-blue-600/40 to-indigo-600/30 border-blue-400/50 text-white shadow-[0_4px_15px_rgba(59,130,246,0.25)]'
+                          }`}
+                        >
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono font-bold opacity-80">
+                                {String(it.hourStart).padStart(2, '0')}.00 –{' '}
+                                {String(it.hourEnd).padStart(2, '0')}.00
+                              </span>
+                              <Badge
+                                variant={
+                                  it.type === 'activity' ? 'accent' : 'warning'
+                                }
+                                size="sm"
+                              >
+                                {it.type === 'activity' ? 'Activity' : 'Task'}
+                              </Badge>
+                            </div>
+                            <h3 className="text-sm font-extrabold tracking-tight">
+                              {it.title}
+                            </h3>
+                            {it.description && (
+                              <p className="text-xs text-slate-300 line-clamp-1 font-normal">
+                                {it.description}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end sm:self-center">
+                            <AddToGoogleCalendar
+                              title={it.title}
+                              description={it.description}
+                              dateString={it.dateString}
+                            />
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* 2. MONTH GRID VIEW */}
+      {/* 2. MONTH GRID VIEW (Studio Reference UI - Square Cards, NO Oval Pills!) */}
       {viewMode === 'month' && (
-        <div className="glow-card rounded-[28px] p-3 sm:p-5 border border-white/15">
-          <div className="grid grid-cols-7 gap-1 text-center mb-2">
+        <div className="glow-card rounded-[32px] p-4 sm:p-6 border border-white/15 bg-slate-950/80 shadow-2xl">
+          {/* Day Names Header */}
+          <div className="grid grid-cols-7 gap-2 text-center mb-3">
             {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((d) => (
               <div
                 key={d}
-                className="text-[11px] font-bold text-slate-400 uppercase tracking-wider py-1"
+                className="text-xs font-extrabold text-slate-400 uppercase tracking-wider py-1.5"
               >
                 {d}
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+          {/* Month Square Cards Grid */}
+          <div className="grid grid-cols-7 gap-2 sm:gap-3">
             {Array.from({
               length: firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1,
             }).map((_, i) => (
               <div
                 key={`empty-${i}`}
-                className="min-h-[85px] rounded-2xl bg-white/[0.02] border border-white/5 opacity-30"
+                className="min-h-[95px] sm:min-h-[125px] rounded-2xl bg-white/[0.015] border border-white/5 opacity-20"
               />
             ))}
 
@@ -549,32 +558,49 @@ export default function CalendarUnifiedPage() {
                 <div
                   key={dateStr}
                   onClick={() => openNewScheduleModal(dateStr, 9)}
-                  className={`min-h-[90px] rounded-2xl p-1.5 border transition-all cursor-pointer flex flex-col justify-between ${
+                  className={`min-h-[95px] sm:min-h-[125px] rounded-2xl p-2 sm:p-3 border transition-all cursor-pointer flex flex-col justify-between ${
                     isToday
-                      ? 'bg-blue-600/15 border-blue-400/50 shadow-[0_0_15px_rgba(59,130,246,0.25)]'
-                      : 'bg-white/[0.04] border-white/10 hover:border-blue-400/30 hover:bg-white/[0.07]'
+                      ? 'bg-blue-600/20 border-blue-400/60 shadow-[0_0_25px_rgba(59,130,246,0.35)]'
+                      : 'bg-white/[0.03] border-white/10 hover:border-blue-400/40 hover:bg-white/[0.07]'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span
-                      className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        isToday ? 'bg-blue-500 text-white' : 'text-slate-300'
+                      className={`text-xs sm:text-sm font-extrabold px-2.5 py-0.5 rounded-xl ${
+                        isToday
+                          ? 'bg-blue-500 text-white shadow-md'
+                          : 'text-slate-200'
                       }`}
                     >
                       {dayNum}
                     </span>
-                    <Plus size={13} className="text-slate-500" />
+                    <Plus
+                      size={14}
+                      className="text-slate-500 hover:text-white transition-colors"
+                    />
                   </div>
 
-                  <div className="space-y-1 mt-1 overflow-hidden">
+                  {/* Clean studio badges inside the square card */}
+                  <div className="space-y-1.5 mt-2 overflow-hidden">
                     {dayItems.slice(0, 3).map((it) => (
                       <div
                         key={it.id}
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-lg truncate border bg-blue-500/20 border-blue-400/30 text-blue-200"
+                        className={`text-[10px] sm:text-xs font-bold px-2 py-1 rounded-xl truncate border flex items-center justify-between ${
+                          it.status === 'completed'
+                            ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200 line-through'
+                            : it.type === 'activity'
+                            ? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-200'
+                            : 'bg-blue-500/25 border-blue-400/40 text-blue-100'
+                        }`}
                       >
-                        {it.title}
+                        <span className="truncate">{it.title}</span>
                       </div>
                     ))}
+                    {dayItems.length > 3 && (
+                      <div className="text-[10px] font-bold text-slate-400 pl-1">
+                        +{dayItems.length - 3} more
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -583,7 +609,7 @@ export default function CalendarUnifiedPage() {
         </div>
       )}
 
-      {/* 3. TODOS VIEW (Unified Kanban / Todo List) */}
+      {/* 3. TODOS VIEW (Unified Kanban Board) */}
       {viewMode === 'todos' && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {(
@@ -611,13 +637,6 @@ export default function CalendarUnifiedPage() {
             return (
               <div
                 key={col.status}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => {
-                  if (draggedItem) {
-                    handleMoveStatus(draggedItem, col.status);
-                    setDraggedItem(null);
-                  }
-                }}
                 className="glass-card rounded-[28px] p-4 border border-white/15 min-h-[400px] flex flex-col"
               >
                 <div
@@ -635,9 +654,7 @@ export default function CalendarUnifiedPage() {
                   {colItems.map((item) => (
                     <div
                       key={item.id}
-                      draggable
-                      onDragStart={() => setDraggedItem(item)}
-                      className="glow-card rounded-2xl p-3.5 border border-white/15 bg-white/[0.05] hover:bg-white/[0.08] transition-all cursor-grab active:cursor-grabbing"
+                      className="glow-card rounded-2xl p-3.5 border border-white/15 bg-white/[0.05] hover:bg-white/[0.08] transition-all"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p
@@ -664,7 +681,9 @@ export default function CalendarUnifiedPage() {
 
                       <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/10">
                         <Badge
-                          variant={item.type === 'activity' ? 'accent' : 'warning'}
+                          variant={
+                            item.type === 'activity' ? 'accent' : 'warning'
+                          }
                           size="sm"
                         >
                           {item.type === 'activity' ? 'Activity' : 'Task'}
@@ -679,7 +698,7 @@ export default function CalendarUnifiedPage() {
                         {item.status !== 'planned' && (
                           <button
                             onClick={() => handleMoveStatus(item, 'planned')}
-                            className="px-2 py-1 rounded-lg bg-white/10 text-[10px] font-semibold text-slate-300 hover:text-white"
+                            className="px-2.5 py-1 rounded-lg bg-white/10 text-[10px] font-semibold text-slate-300 hover:text-white"
                           >
                             ← To Do
                           </button>
@@ -689,7 +708,7 @@ export default function CalendarUnifiedPage() {
                             onClick={() =>
                               handleMoveStatus(item, 'in_progress')
                             }
-                            className="px-2 py-1 rounded-lg bg-amber-500/20 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/30"
+                            className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/30"
                           >
                             ⚡ In Progress
                           </button>
@@ -697,7 +716,7 @@ export default function CalendarUnifiedPage() {
                         {item.status !== 'completed' && (
                           <button
                             onClick={() => handleMoveStatus(item, 'completed')}
-                            className="px-2 py-1 rounded-lg bg-emerald-500/20 text-[10px] font-semibold text-emerald-300 hover:bg-emerald-500/30"
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-[10px] font-semibold text-emerald-300 hover:bg-emerald-500/30"
                           >
                             ✓ Done
                           </button>
@@ -718,7 +737,7 @@ export default function CalendarUnifiedPage() {
         onClose={() => setShowModal(false)}
         title="New Schedule / Task (24-Hour Format)"
       >
-        <div className="space-y-3.5">
+        <div className="space-y-3.5 font-sans">
           {/* Type Switcher */}
           <div className="flex gap-2 p-1 rounded-2xl bg-white/[0.05] border border-white/10">
             <button
@@ -760,7 +779,6 @@ export default function CalendarUnifiedPage() {
             onChange={(e) => setFormDate(e.target.value)}
           />
 
-          {/* 24-Hour Start / End Time */}
           <div className="grid grid-cols-2 gap-3">
             <Input
               label="Start Time (24h e.g. 08:00)"
@@ -778,7 +796,7 @@ export default function CalendarUnifiedPage() {
 
           <Input
             label="Notes / Description"
-            placeholder="Add details, room location, or checklist..."
+            placeholder="Add details, room location, or notes..."
             value={formDescription}
             onChange={(e) => setFormDescription(e.target.value)}
           />
