@@ -1,0 +1,27 @@
+{
+  "name": "Personal Assistant AI",
+  "short_name": "PersonalAssist",
+  "description": "Comprehensive Personal Assistant Dashboard for tasks, finances, and sports tracking.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#040814",
+  "theme_color": "#040814",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

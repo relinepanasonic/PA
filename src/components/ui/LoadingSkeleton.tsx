@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 export function SkeletonCard() {
   return (
     <div className="glass-card p-4 space-y-3">
@@ -23,15 +25,25 @@ export function SkeletonList({ count = 5 }: { count?: number }) {
 
 export function SkeletonDashboard() {
   return (
-    <div className="space-y-6 p-4">
-      <div className="skeleton h-8 w-48" />
-      <div className="skeleton h-4 w-32" />
-      <div className="grid grid-cols-2 gap-3">
-        <div className="skeleton h-24 rounded-2xl" />
-        <div className="skeleton h-24 rounded-2xl" />
+    <div className="space-y-6 p-6 min-h-[70vh] flex flex-col items-center justify-center text-center">
+      {/* Animated Glowing 3D Sapphire Logo */}
+      <div className="relative w-24 h-24 mb-3 animate-pulse drop-shadow-[0_15px_35px_rgba(59,130,246,0.65)]">
+        <Image
+          src="/logo.png"
+          alt="Loading PersonalAssist..."
+          width={96}
+          height={96}
+          className="object-contain"
+          priority
+        />
       </div>
-      <div className="skeleton h-6 w-36 mt-4" />
-      <SkeletonList count={3} />
+      <p className="text-sm font-semibold text-blue-400 tracking-wide animate-pulse">
+        Loading Dashboard...
+      </p>
+      <div className="w-full max-w-sm space-y-4 pt-4">
+        <div className="skeleton h-24 rounded-[28px] w-full" />
+        <div className="skeleton h-20 rounded-[24px] w-full" />
+      </div>
     </div>
   );
 }

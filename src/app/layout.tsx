@@ -13,9 +13,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'PersonalAssist — Dashboard',
+  title: 'PersonalAssist — AI Dashboard',
   description: 'Your personal assistant dashboard for tasks, finances, and activities.',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/icon.png',
+    apple: '/apple-icon.png',
+    shortcut: '/logo.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -28,7 +33,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#050a18',
+  themeColor: '#040814',
   viewportFit: 'cover',
 };
 

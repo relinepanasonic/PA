@@ -1,5 +1,6 @@
 'use client';
 import { Bell, User } from 'lucide-react';
+import Image from 'next/image';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -22,20 +23,33 @@ interface HeaderProps {
 
 export default function Header({ displayName = 'User' }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-30 bg-background/60 backdrop-blur-xl border-b border-border">
+    <header className="sticky top-0 z-30 bg-background/70 backdrop-blur-2xl border-b border-white/10">
       <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
-        <div>
-          <p className="text-xs text-text-muted">{getFormattedDate()}</p>
-          <h1 className="text-lg font-bold text-text-primary">
-            {getGreeting()}, <span className="text-accent-light">{displayName.split(' ')[0]}</span>
-          </h1>
+        <div className="flex items-center gap-3">
+          {/* Sapphire 3D Logo Badge */}
+          <div className="relative w-10 h-10 rounded-2xl overflow-hidden glass-card p-0.5 border border-white/20 shadow-[0_0_20px_rgba(59,130,246,0.35)] flex items-center justify-center">
+            <Image
+              src="/logo.png"
+              alt="PersonalAssist Logo"
+              width={38}
+              height={38}
+              className="object-contain"
+              priority
+            />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-slate-400 tracking-wider uppercase">{getFormattedDate()}</p>
+            <h1 className="text-base font-extrabold text-white">
+              {getGreeting()}, <span className="text-blue-400">{displayName.split(' ')[0]}</span>
+            </h1>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="relative p-2 rounded-xl bg-surface-light/50 text-text-muted hover:text-text-primary transition-colors">
-            <Bell size={20} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-accent rounded-full" />
+          <button className="relative p-2 rounded-2xl bg-white/[0.07] border border-white/10 text-slate-300 hover:text-white transition-colors">
+            <Bell size={18} />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-400 rounded-full shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
           </button>
-          <button className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent-dark to-accent flex items-center justify-center">
+          <button className="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-400 flex items-center justify-center shadow-lg border border-white/20">
             <User size={18} className="text-white" />
           </button>
         </div>
