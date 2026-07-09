@@ -10,9 +10,10 @@ import {
   Grid,
   Clock,
   Plus,
-  Sparkles,
-  MapPin,
-  Users,
+  ListTodo,
+  Briefcase,
+  ShoppingCart,
+  User,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -22,17 +23,19 @@ import Select from '@/components/ui/Select';
 import AddToGoogleCalendar from '@/components/ui/AddToGoogleCalendar';
 
 type ViewMode = 'daily' | 'month' | 'todos';
+type TaskCategory = 'My Tasks' | 'Work' | 'Shopping List' | 'Personal';
 
 interface CombinedItem {
   id: string;
   title: string;
   description: string;
   dateString: string | null;
-  hourStart: number; // e.g. 8 for 08.00
-  hourEnd: number; // e.g. 9 for 09.00
+  hourStart: number;
+  hourEnd: number;
   type: 'todo' | 'activity';
   status: 'planned' | 'in_progress' | 'completed';
   priority: string;
+  category?: TaskCategory;
   original: Todo | WorkActivity;
 }
 
@@ -63,25 +66,35 @@ const HOURS_24 = [
   { label: '24.00', hour: 24 },
 ];
 
+const getLocalTodayString = () => {
+  const now = new Date();
+  const yr = now.getFullYear();
+  const mo = String(now.getMonth() + 1).padStart(2, '0');
+  const dy = String(now.getDate()).padStart(2, '0');
+  return `${yr}-${mo}-${dy}`;
+};
+
 export default function CalendarStudioPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
   const [items, setItems] = useState<CombinedItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Touch Swipe navigation state for mobile Daily View
+  // Touch Swipe navigation state
   const touchStartX = useRef<number | null>(null);
 
-  // Full Schedule Form Modal state
+  // Modal Form State
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [formType, setFormType] = useState<'todo' | 'activity'>('todo');
+  // Requirement #6: Activity on Left ('activity'), To Do on Right ('todo')
+  const [formType, setFormType] = useState<'activity' | 'todo'>('activity');
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formDate, setFormDate] = useState('');
   const [formStartTime, setFormStartTime] = useState('08:00');
   const [formEndTime, setFormEndTime] = useState('09:00');
   const [formPriority, setFormPriority] = useState('medium');
+  const [formCategory, setFormCategory] = useState<TaskCategory>('My Tasks');
 
   const supabase = createClient();
 
@@ -116,6 +129,7 @@ export default function CalendarStudioPage() {
           type: 'todo',
           status: t.is_completed ? 'completed' : 'planned',
           priority: t.priority || 'medium',
+          category: 'My Tasks',
           original: t,
         });
       });
@@ -164,7 +178,7 @@ export default function CalendarStudioPage() {
     fetchAllItems();
   }, [supabase]);
 
-  // Touch Swipe Navigation for Daily View (Google Calendar UX)
+  // Touch Swipe Navigation for Daily View
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -172,15 +186,13 @@ export default function CalendarStudioPage() {
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current === null) return;
     const diff = touchStartX.current - e.changedTouches[0].clientX;
-    const threshold = 55; // min pixels to trigger swipe
+    const threshold = 50;
     if (Math.abs(diff) > threshold) {
       if (diff > 0) {
-        // Swiped Left -> Next Day
         const next = new Date(currentDate);
         next.setDate(currentDate.getDate() + 1);
         setCurrentDate(next);
       } else {
-        // Swiped Right -> Prev Day
         const prev = new Date(currentDate);
         prev.setDate(currentDate.getDate() - 1);
         setCurrentDate(prev);
@@ -189,7 +201,6 @@ export default function CalendarStudioPage() {
     touchStartX.current = null;
   };
 
-  // Status changes for Todos view
   const handleMoveStatus = async (
     item: CombinedItem,
     newStatus: 'planned' | 'in_progress' | 'completed'
@@ -213,7 +224,6 @@ export default function CalendarStudioPage() {
     }
   };
 
-  // Save new schedule item
   const handleSaveSchedule = async () => {
     if (!formTitle.trim()) return;
     setSaving(true);
@@ -223,17 +233,22 @@ export default function CalendarStudioPage() {
       return;
     }
 
+    const localDateToUse = formDate || getLocalTodayString();
+
     if (formType === 'todo') {
       await supabase.from('todos').insert({
         user_id: user.id,
         title: formTitle,
-        description: formDescription,
-        due_date: formDate || new Date().toISOString().split('T')[0],
+        description:
+          formCategory !== 'My Tasks'
+            ? `[${formCategory}] ${formDescription}`
+            : formDescription,
+        due_date: localDateToUse,
         priority: formPriority,
         is_completed: false,
       });
     } else {
-      const startIso = `${formDate || new Date().toISOString().split('T')[0]}T${formStartTime}:00`;
+      const startIso = `${localDateToUse}T${formStartTime}:00`;
       await supabase.from('work_activities').insert({
         user_id: user.id,
         title: formTitle,
@@ -252,30 +267,33 @@ export default function CalendarStudioPage() {
   };
 
   const openNewScheduleModal = (dateStr?: string, hrStart?: number) => {
-    setFormDate(dateStr || currentDate.toISOString().split('T')[0]);
+    // Requirement #7: Always initialize to local Today properly
+    setFormDate(dateStr || getLocalTodayString());
     if (hrStart) {
       setFormStartTime(`${String(hrStart).padStart(2, '0')}:00`);
       setFormEndTime(`${String(hrStart + 1).padStart(2, '0')}:00`);
     } else {
-      setFormStartTime('08:00');
-      setFormEndTime('09:00');
+      const currentHr = new Date().getHours();
+      setFormStartTime(`${String(currentHr).padStart(2, '0')}:00`);
+      setFormEndTime(`${String((currentHr + 1) % 24).padStart(2, '0')}:00`);
     }
     setFormTitle('');
     setFormDescription('');
     setShowModal(true);
   };
 
-  // Month calculations
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 is Sun
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const monthName = currentDate.toLocaleString('en-US', { month: 'long' });
 
-  // Date formatting for Daily header
-  const dailyDateStr = currentDate.toISOString().split('T')[0];
-  const isToday =
-    new Date().toISOString().split('T')[0] === dailyDateStr;
+  const dailyDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(
+    currentDate.getDate()
+  ).padStart(2, '0')}`;
+  const localTodayStr = getLocalTodayString();
+  const isToday = dailyDateStr === localTodayStr;
+  const currentNowHour = new Date().getHours();
 
   const prevStep = () => {
     if (viewMode === 'daily') {
@@ -303,15 +321,16 @@ export default function CalendarStudioPage() {
 
   return (
     <div className="p-3 sm:p-6 space-y-4 animate-fade-in pb-36 max-w-6xl mx-auto font-sans">
-      {/* Studio Top Header Bar */}
-      <div className="glass-card rounded-[28px] p-4 border border-white/15 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3.5">
-        <div className="flex items-center justify-between w-full sm:w-auto gap-3">
-          <div className="flex items-center gap-2.5">
+      {/* Studio Top Header Bar (Req #3 & #5: Tidy title, symmetrical padding) */}
+      <div className="glass-card rounded-[28px] px-4 sm:px-6 py-4 border border-white/15 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3.5">
+        <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-400/30 flex items-center justify-center text-blue-400 flex-shrink-0">
               <CalendarIcon size={20} />
             </div>
-            <div>
-              <h1 className="text-base sm:text-xl font-extrabold text-white tracking-tight">
+            <div className="min-w-0">
+              {/* Requirement #3: Tidy single-line date title, deleted subtitle */}
+              <h1 className="text-base sm:text-xl font-extrabold text-white tracking-tight truncate">
                 {viewMode === 'daily'
                   ? currentDate.toLocaleDateString('en-US', {
                       weekday: 'short',
@@ -321,15 +340,10 @@ export default function CalendarStudioPage() {
                     })
                   : `${monthName} ${year}`}
               </h1>
-              <p className="text-[11px] text-slate-400 font-medium">
-                {viewMode === 'daily'
-                  ? 'Daily Schedule (Swipe or tap arrows)'
-                  : 'Studio Monthly Overview'}
-              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <button
               onClick={prevStep}
               className="p-2 rounded-xl bg-white/[0.08] hover:bg-white/15 text-white transition-all"
@@ -339,7 +353,7 @@ export default function CalendarStudioPage() {
             </button>
             <button
               onClick={goToday}
-              className="px-2.5 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/15 text-xs font-bold text-white transition-all"
+              className="px-3 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/15 text-xs font-extrabold text-white transition-all"
             >
               Today
             </button>
@@ -350,9 +364,10 @@ export default function CalendarStudioPage() {
             >
               <ChevronRight size={16} />
             </button>
+            {/* Requirement #5: Clean margin symmetrical with left side */}
             <button
               onClick={() => openNewScheduleModal()}
-              className="ml-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-md flex items-center gap-1"
+              className="ml-1 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-extrabold text-white shadow-md flex items-center gap-1"
             >
               <Plus size={14} /> Add
             </button>
@@ -397,47 +412,15 @@ export default function CalendarStudioPage() {
         </div>
       </div>
 
-      {/* 1. DAILY SCHEDULE VIEW (Google Calendar Day View - 24 Hours - Swipe Left/Right) */}
+      {/* 1. DAILY SCHEDULE VIEW (Req #2: Start Today + Glowing NOW Indicator) */}
       {viewMode === 'daily' && (
         <div
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           className="glow-card rounded-[28px] border border-white/15 overflow-hidden bg-slate-950/90 shadow-2xl"
         >
-          {/* Daily Banner Bar */}
-          <div className="px-5 py-3 border-b border-white/10 bg-white/[0.03] flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-extrabold ${
-                  isToday
-                    ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.6)]'
-                    : 'bg-white/10 text-slate-300'
-                }`}
-              >
-                {currentDate.getDate()}
-              </div>
-              <div>
-                <h2 className="text-sm font-extrabold text-white tracking-tight">
-                  {currentDate.toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </h2>
-                <p className="text-[11px] text-slate-400">
-                  {items.filter((it) => it.dateString === dailyDateStr).length}{' '}
-                  scheduled items • 24-hour timeline
-                </p>
-              </div>
-            </div>
-
-            <span className="text-[11px] font-semibold text-slate-400 hidden sm:inline-block">
-              💡 Swipe left/right on mobile to change day
-            </span>
-          </div>
-
           {/* 24-Hour Timeline Rows */}
-          <div className="divide-y divide-white/[0.06] max-h-[700px] overflow-y-auto">
+          <div className="divide-y divide-white/[0.06] max-h-[720px] overflow-y-auto">
             {HOURS_24.map(({ label, hour }) => {
               const hourItems = items.filter(
                 (it) =>
@@ -445,15 +428,27 @@ export default function CalendarStudioPage() {
                   (it.hourStart === hour || (hour === 9 && !it.hourStart))
               );
 
+              // Requirement #2: Glowing current hour indicator when Today
+              const isNowHour = isToday && hour === currentNowHour;
+
               return (
                 <div
                   key={label}
                   onClick={() => openNewScheduleModal(dailyDateStr, hour)}
-                  className="flex items-stretch min-h-[64px] hover:bg-white/[0.03] transition-colors cursor-pointer group"
+                  className={`flex items-stretch min-h-[66px] transition-all cursor-pointer group ${
+                    isNowHour
+                      ? 'bg-blue-600/15 border-l-4 border-l-blue-400 shadow-[inset_0_0_25px_rgba(59,130,246,0.2)]'
+                      : 'hover:bg-white/[0.03]'
+                  }`}
                 >
-                  {/* Left 24-Hour Label */}
-                  <div className="w-16 sm:w-20 p-2.5 text-xs font-extrabold text-slate-400 border-r border-white/10 flex items-center justify-center bg-white/[0.015] flex-shrink-0 font-mono">
-                    {label}
+                  {/* Left 24-Hour Label + NOW badge */}
+                  <div className="w-20 sm:w-24 p-2.5 text-xs font-extrabold text-slate-300 border-r border-white/10 flex flex-col items-center justify-center bg-white/[0.015] flex-shrink-0 font-mono">
+                    <span>{label}</span>
+                    {isNowHour && (
+                      <span className="text-[10px] font-extrabold text-blue-400 animate-pulse mt-0.5">
+                        ● NOW
+                      </span>
+                    )}
                   </div>
 
                   {/* Main Hour Row Content */}
@@ -472,12 +467,12 @@ export default function CalendarStudioPage() {
                               ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200 line-through'
                               : it.type === 'activity'
                               ? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-100'
-                              : 'bg-gradient-to-r from-blue-600/40 to-indigo-600/30 border-blue-400/50 text-white shadow-[0_4px_15px_rgba(59,130,246,0.25)]'
+                              : 'bg-gradient-to-r from-blue-600/45 to-indigo-600/35 border-blue-400/50 text-white shadow-[0_4px_15px_rgba(59,130,246,0.25)]'
                           }`}
                         >
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-mono font-bold opacity-80">
+                              <span className="text-xs font-mono font-bold opacity-90">
                                 {String(it.hourStart).padStart(2, '0')}.00 –{' '}
                                 {String(it.hourEnd).padStart(2, '0')}.00
                               </span>
@@ -518,9 +513,9 @@ export default function CalendarStudioPage() {
         </div>
       )}
 
-      {/* 2. MONTH GRID VIEW (Studio Reference UI - Square Cards, NO Oval Pills!) */}
+      {/* 2. MONTHLY CALENDAR GRID (Req #4: Readable studio square cells where titles are crystal clear!) */}
       {viewMode === 'month' && (
-        <div className="glow-card rounded-[32px] p-4 sm:p-6 border border-white/15 bg-slate-950/80 shadow-2xl">
+        <div className="glow-card rounded-[32px] p-4 sm:p-6 border border-white/15 bg-slate-950/90 shadow-2xl">
           {/* Day Names Header */}
           <div className="grid grid-cols-7 gap-2 text-center mb-3">
             {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((d) => (
@@ -540,7 +535,7 @@ export default function CalendarStudioPage() {
             }).map((_, i) => (
               <div
                 key={`empty-${i}`}
-                className="min-h-[95px] sm:min-h-[125px] rounded-2xl bg-white/[0.015] border border-white/5 opacity-20"
+                className="min-h-[105px] sm:min-h-[135px] rounded-2xl bg-white/[0.015] border border-white/5 opacity-20"
               />
             ))}
 
@@ -550,24 +545,23 @@ export default function CalendarStudioPage() {
                 2,
                 '0'
               )}-${String(dayNum).padStart(2, '0')}`;
-              const isToday =
-                new Date().toISOString().split('T')[0] === dateStr;
+              const isTodayCell = dateStr === localTodayStr;
               const dayItems = items.filter((it) => it.dateString === dateStr);
 
               return (
                 <div
                   key={dateStr}
                   onClick={() => openNewScheduleModal(dateStr, 9)}
-                  className={`min-h-[95px] sm:min-h-[125px] rounded-2xl p-2 sm:p-3 border transition-all cursor-pointer flex flex-col justify-between ${
-                    isToday
-                      ? 'bg-blue-600/20 border-blue-400/60 shadow-[0_0_25px_rgba(59,130,246,0.35)]'
-                      : 'bg-white/[0.03] border-white/10 hover:border-blue-400/40 hover:bg-white/[0.07]'
+                  className={`min-h-[105px] sm:min-h-[135px] rounded-2xl p-2 sm:p-3 border transition-all cursor-pointer flex flex-col justify-between ${
+                    isTodayCell
+                      ? 'bg-blue-600/25 border-blue-400/70 shadow-[0_0_25px_rgba(59,130,246,0.35)]'
+                      : 'bg-white/[0.035] border-white/10 hover:border-blue-400/40 hover:bg-white/[0.08]'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span
                       className={`text-xs sm:text-sm font-extrabold px-2.5 py-0.5 rounded-xl ${
-                        isToday
+                        isTodayCell
                           ? 'bg-blue-500 text-white shadow-md'
                           : 'text-slate-200'
                       }`}
@@ -580,17 +574,17 @@ export default function CalendarStudioPage() {
                     />
                   </div>
 
-                  {/* Clean studio badges inside the square card */}
+                  {/* Requirement #4: Highly readable studio badges so you can read your activities clearly */}
                   <div className="space-y-1.5 mt-2 overflow-hidden">
                     {dayItems.slice(0, 3).map((it) => (
                       <div
                         key={it.id}
-                        className={`text-[10px] sm:text-xs font-bold px-2 py-1 rounded-xl truncate border flex items-center justify-between ${
+                        className={`text-[11px] sm:text-xs font-bold px-2 py-1 rounded-lg truncate border flex items-center justify-between ${
                           it.status === 'completed'
                             ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200 line-through'
                             : it.type === 'activity'
-                            ? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-200'
-                            : 'bg-blue-500/25 border-blue-400/40 text-blue-100'
+                            ? 'bg-cyan-500/25 border-cyan-400/50 text-cyan-100'
+                            : 'bg-blue-600/35 border-blue-400/50 text-blue-100'
                         }`}
                       >
                         <span className="truncate">{it.title}</span>
@@ -609,7 +603,7 @@ export default function CalendarStudioPage() {
         </div>
       )}
 
-      {/* 3. TODOS VIEW (Unified Kanban Board) */}
+      {/* 3. TODOS VIEW (Kanban Board) */}
       {viewMode === 'todos' && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {(
@@ -731,49 +725,90 @@ export default function CalendarStudioPage() {
         </div>
       )}
 
-      {/* COMPREHENSIVE SCHEDULE FORM MODAL (Start - End | Notes | 24-hour format) */}
+      {/* COMPREHENSIVE SCHEDULE & TO DO FORM MODAL */}
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title="New Schedule / Task (24-Hour Format)"
+        title={
+          formType === 'activity'
+            ? 'New Activity Session (24h)'
+            : 'New Task (Google Tasks Style)'
+        }
       >
         <div className="space-y-3.5 font-sans">
-          {/* Type Switcher */}
+          {/* Requirement #6: Activity Session on LEFT, To Do on RIGHT */}
           <div className="flex gap-2 p-1 rounded-2xl bg-white/[0.05] border border-white/10">
             <button
               type="button"
-              onClick={() => setFormType('todo')}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                formType === 'todo'
-                  ? 'bg-blue-600 text-white shadow'
-                  : 'text-slate-400'
-              }`}
-            >
-              Task / Todo
-            </button>
-            <button
-              type="button"
               onClick={() => setFormType('activity')}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all ${
                 formType === 'activity'
-                  ? 'bg-cyan-600 text-white shadow'
-                  : 'text-slate-400'
+                  ? 'bg-cyan-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               Activity Session
             </button>
+            <button
+              type="button"
+              onClick={() => setFormType('todo')}
+              className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                formType === 'todo'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Task / To Do
+            </button>
           </div>
 
+          {/* Requirement #8: When To Do is selected, show Google Tasks category pill selector */}
+          {formType === 'todo' && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300">
+                List Category (Google Tasks)
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {(
+                  [
+                    'My Tasks',
+                    'Work',
+                    'Shopping List',
+                    'Personal',
+                  ] as TaskCategory[]
+                ).map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setFormCategory(cat)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                      formCategory === cat
+                        ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_15px_rgba(59,130,246,0.4)]'
+                        : 'bg-white/[0.04] border-white/10 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Input
-            label="Title / Activity Name"
-            placeholder="What are you scheduling?"
+            label={formType === 'activity' ? 'Activity Name' : 'Task Title'}
+            placeholder={
+              formType === 'activity'
+                ? 'What activity session?'
+                : 'Add a task...'
+            }
             value={formTitle}
             onChange={(e) => setFormTitle(e.target.value)}
             autoFocus
           />
 
+          {/* Requirement #7: Label changed to simply 'Date', initializes to local today */}
           <Input
-            label="Date (YYYY-MM-DD)"
+            label="Date"
             type="date"
             value={formDate}
             onChange={(e) => setFormDate(e.target.value)}
@@ -781,13 +816,13 @@ export default function CalendarStudioPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <Input
-              label="Start Time (24h e.g. 08:00)"
+              label="Start Time (24h)"
               type="time"
               value={formStartTime}
               onChange={(e) => setFormStartTime(e.target.value)}
             />
             <Input
-              label="End Time (24h e.g. 09:00)"
+              label="End Time (24h)"
               type="time"
               value={formEndTime}
               onChange={(e) => setFormEndTime(e.target.value)}
@@ -795,8 +830,12 @@ export default function CalendarStudioPage() {
           </div>
 
           <Input
-            label="Notes / Description"
-            placeholder="Add details, room location, or notes..."
+            label="Details / Notes"
+            placeholder={
+              formType === 'activity'
+                ? 'Add session details, location...'
+                : 'Add details...'
+            }
             value={formDescription}
             onChange={(e) => setFormDescription(e.target.value)}
           />
@@ -812,7 +851,7 @@ export default function CalendarStudioPage() {
             onChange={(e) => setFormPriority(e.target.value)}
           />
 
-          <div className="flex gap-3 pt-3">
+          <div className="flex gap-3 pt-4">
             <Button
               variant="secondary"
               fullWidth
@@ -826,7 +865,7 @@ export default function CalendarStudioPage() {
               onClick={handleSaveSchedule}
               disabled={!formTitle.trim()}
             >
-              Save Schedule
+              {formType === 'activity' ? 'Save Activity' : 'Save Task'}
             </Button>
           </div>
         </div>
