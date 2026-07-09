@@ -10,10 +10,10 @@ import {
   Grid,
   Clock,
   Plus,
-  ListTodo,
-  Briefcase,
-  ShoppingCart,
-  User,
+  CheckCircle2,
+  Circle,
+  X,
+  PlusCircle,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -21,9 +21,16 @@ import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import AddToGoogleCalendar from '@/components/ui/AddToGoogleCalendar';
+import InstallPWA from '@/components/pwa/InstallPWA';
 
 type ViewMode = 'daily' | 'month' | 'todos';
 type TaskCategory = 'My Tasks' | 'Work' | 'Shopping List' | 'Personal';
+
+interface SubtaskItem {
+  id: string;
+  title: string;
+  completed: boolean;
+}
 
 interface CombinedItem {
   id: string;
@@ -36,6 +43,7 @@ interface CombinedItem {
   status: 'planned' | 'in_progress' | 'completed';
   priority: string;
   category?: TaskCategory;
+  subtasks: SubtaskItem[];
   original: Todo | WorkActivity;
 }
 
@@ -86,7 +94,6 @@ export default function CalendarStudioPage() {
   // Modal Form State
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
-  // Requirement #6: Activity on Left ('activity'), To Do on Right ('todo')
   const [formType, setFormType] = useState<'activity' | 'todo'>('activity');
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
@@ -95,6 +102,10 @@ export default function CalendarStudioPage() {
   const [formEndTime, setFormEndTime] = useState('09:00');
   const [formPriority, setFormPriority] = useState('medium');
   const [formCategory, setFormCategory] = useState<TaskCategory>('My Tasks');
+
+  // Subtasks in New Task Modal (Req #5: Google Tasks style subtasks)
+  const [formSubtasks, setFormSubtasks] = useState<string[]>([]);
+  const [newSubtaskInput, setNewSubtaskInput] = useState('');
 
   const supabase = createClient();
 
@@ -119,10 +130,24 @@ export default function CalendarStudioPage() {
 
     if (todos) {
       todos.forEach((t) => {
+        // Parse subtasks stored in description if formatted as JSON or lines
+        let parsedSubtasks: SubtaskItem[] = [];
+        let cleanDesc = t.description || '';
+
+        try {
+          if (cleanDesc.includes('___SUBTASKS___')) {
+            const parts = cleanDesc.split('___SUBTASKS___');
+            cleanDesc = parts[0].trim();
+            parsedSubtasks = JSON.parse(parts[1]);
+          }
+        } catch {
+          // ignore parsing fallback
+        }
+
         combined.push({
           id: `todo-${t.id}`,
           title: t.title,
-          description: t.description || '',
+          description: cleanDesc,
           dateString: t.due_date || null,
           hourStart: 8,
           hourEnd: 9,
@@ -130,6 +155,7 @@ export default function CalendarStudioPage() {
           status: t.is_completed ? 'completed' : 'planned',
           priority: t.priority || 'medium',
           category: 'My Tasks',
+          subtasks: parsedSubtasks,
           original: t,
         });
       });
@@ -165,6 +191,7 @@ export default function CalendarStudioPage() {
           type: 'activity',
           status: st,
           priority: 'high',
+          subtasks: [],
           original: a,
         });
       });
@@ -224,6 +251,29 @@ export default function CalendarStudioPage() {
     }
   };
 
+  // Toggle Subtask Checkbox (Req #5)
+  const handleToggleSubtask = async (item: CombinedItem, subtaskId: string) => {
+    const updatedSubtasks = item.subtasks.map((st) =>
+      st.id === subtaskId ? { ...st, completed: !st.completed } : st
+    );
+
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === item.id ? { ...i, subtasks: updatedSubtasks } : i
+      )
+    );
+
+    if (item.type === 'todo') {
+      const serializedDesc = `${item.description}___SUBTASKS___${JSON.stringify(
+        updatedSubtasks
+      )}`;
+      await supabase
+        .from('todos')
+        .update({ description: serializedDesc })
+        .eq('id', item.original.id);
+    }
+  };
+
   const handleSaveSchedule = async () => {
     if (!formTitle.trim()) return;
     setSaving(true);
@@ -236,13 +286,25 @@ export default function CalendarStudioPage() {
     const localDateToUse = formDate || getLocalTodayString();
 
     if (formType === 'todo') {
+      const subtaskObjects = formSubtasks.map((st, i) => ({
+        id: `st-${Date.now()}-${i}`,
+        title: st,
+        completed: false,
+      }));
+
+      const finalDesc =
+        subtaskObjects.length > 0
+          ? `${
+              formCategory !== 'My Tasks' ? `[${formCategory}] ` : ''
+            }${formDescription}___SUBTASKS___${JSON.stringify(subtaskObjects)}`
+          : formCategory !== 'My Tasks'
+          ? `[${formCategory}] ${formDescription}`
+          : formDescription;
+
       await supabase.from('todos').insert({
         user_id: user.id,
         title: formTitle,
-        description:
-          formCategory !== 'My Tasks'
-            ? `[${formCategory}] ${formDescription}`
-            : formDescription,
+        description: finalDesc,
         due_date: localDateToUse,
         priority: formPriority,
         is_completed: false,
@@ -261,13 +323,13 @@ export default function CalendarStudioPage() {
 
     setFormTitle('');
     setFormDescription('');
+    setFormSubtasks([]);
     setSaving(false);
     setShowModal(false);
     fetchAllItems();
   };
 
   const openNewScheduleModal = (dateStr?: string, hrStart?: number) => {
-    // Requirement #7: Always initialize to local Today properly
     setFormDate(dateStr || getLocalTodayString());
     if (hrStart) {
       setFormStartTime(`${String(hrStart).padStart(2, '0')}:00`);
@@ -279,12 +341,20 @@ export default function CalendarStudioPage() {
     }
     setFormTitle('');
     setFormDescription('');
+    setFormSubtasks([]);
+    setNewSubtaskInput('');
     setShowModal(true);
+  };
+
+  const addSubtaskItem = () => {
+    if (!newSubtaskInput.trim()) return;
+    setFormSubtasks((prev) => [...prev, newSubtaskInput.trim()]);
+    setNewSubtaskInput('');
   };
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 is Sun
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const monthName = currentDate.toLocaleString('en-US', { month: 'long' });
 
@@ -321,20 +391,20 @@ export default function CalendarStudioPage() {
 
   return (
     <div className="p-3 sm:p-6 space-y-4 animate-fade-in pb-36 max-w-6xl mx-auto font-sans">
-      {/* Studio Top Header Bar (Req #3 & #5: Tidy title, symmetrical padding) */}
-      <div className="glass-card rounded-[28px] px-4 sm:px-6 py-4 border border-white/15 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3.5">
-        <div className="flex items-center justify-between w-full sm:w-auto gap-4">
-          <div className="flex items-center gap-3 min-w-0">
+      {/* STUDIO 2-TIER CLEAN HEADER BAR (Req #2: 100% Readable Date Title, Zero Truncation!) */}
+      <div className="glass-card rounded-[28px] p-4 sm:p-6 border border-white/15 shadow-xl space-y-3.5">
+        {/* Tier 1: Full Clear Date Title + Install PWA Button */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-400/30 flex items-center justify-center text-blue-400 flex-shrink-0">
               <CalendarIcon size={20} />
             </div>
-            <div className="min-w-0">
-              {/* Requirement #3: Tidy single-line date title, deleted subtitle */}
-              <h1 className="text-base sm:text-xl font-extrabold text-white tracking-tight truncate">
+            <div>
+              <h1 className="text-base sm:text-2xl font-extrabold text-white tracking-tight">
                 {viewMode === 'daily'
                   ? currentDate.toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
+                      weekday: 'long',
+                      month: 'long',
                       day: 'numeric',
                       year: 'numeric',
                     })
@@ -342,8 +412,12 @@ export default function CalendarStudioPage() {
               </h1>
             </div>
           </div>
+          <InstallPWA />
+        </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+        {/* Tier 2: Navigation Arrows + Today + Add + View Pills */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-white/10">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={prevStep}
               className="p-2 rounded-xl bg-white/[0.08] hover:bg-white/15 text-white transition-all"
@@ -353,7 +427,7 @@ export default function CalendarStudioPage() {
             </button>
             <button
               onClick={goToday}
-              className="px-3 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/15 text-xs font-extrabold text-white transition-all"
+              className="px-3.5 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/15 text-xs font-extrabold text-white transition-all"
             >
               Today
             </button>
@@ -364,62 +438,60 @@ export default function CalendarStudioPage() {
             >
               <ChevronRight size={16} />
             </button>
-            {/* Requirement #5: Clean margin symmetrical with left side */}
             <button
               onClick={() => openNewScheduleModal()}
-              className="ml-1 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-extrabold text-white shadow-md flex items-center gap-1"
+              className="ml-1 px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-extrabold text-white shadow-md flex items-center gap-1"
             >
               <Plus size={14} /> Add
             </button>
           </div>
-        </div>
 
-        {/* View Switcher Pills */}
-        <div className="flex items-center gap-1 bg-slate-950/80 p-1.5 rounded-full border border-white/10 w-full sm:w-auto justify-center">
-          <button
-            onClick={() => setViewMode('daily')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
-              viewMode === 'daily'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Clock size={13} />
-            <span>Daily Schedule</span>
-          </button>
-          <button
-            onClick={() => setViewMode('month')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
-              viewMode === 'month'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Grid size={13} />
-            <span>Month Grid</span>
-          </button>
-          <button
-            onClick={() => setViewMode('todos')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
-              viewMode === 'todos'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <CheckSquare size={13} />
-            <span>Todos</span>
-          </button>
+          {/* View Switcher Pills */}
+          <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-full border border-white/10">
+            <button
+              onClick={() => setViewMode('daily')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                viewMode === 'daily'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Clock size={13} />
+              <span>Daily</span>
+            </button>
+            <button
+              onClick={() => setViewMode('month')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                viewMode === 'month'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Grid size={13} />
+              <span>Month</span>
+            </button>
+            <button
+              onClick={() => setViewMode('todos')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                viewMode === 'todos'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <CheckSquare size={13} />
+              <span>Todos</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* 1. DAILY SCHEDULE VIEW (Req #2: Start Today + Glowing NOW Indicator) */}
+      {/* 1. DAILY SCHEDULE VIEW */}
       {viewMode === 'daily' && (
         <div
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           className="glow-card rounded-[28px] border border-white/15 overflow-hidden bg-slate-950/90 shadow-2xl"
         >
-          {/* 24-Hour Timeline Rows */}
           <div className="divide-y divide-white/[0.06] max-h-[720px] overflow-y-auto">
             {HOURS_24.map(({ label, hour }) => {
               const hourItems = items.filter(
@@ -428,7 +500,6 @@ export default function CalendarStudioPage() {
                   (it.hourStart === hour || (hour === 9 && !it.hourStart))
               );
 
-              // Requirement #2: Glowing current hour indicator when Today
               const isNowHour = isToday && hour === currentNowHour;
 
               return (
@@ -441,7 +512,6 @@ export default function CalendarStudioPage() {
                       : 'hover:bg-white/[0.03]'
                   }`}
                 >
-                  {/* Left 24-Hour Label + NOW badge */}
                   <div className="w-20 sm:w-24 p-2.5 text-xs font-extrabold text-slate-300 border-r border-white/10 flex flex-col items-center justify-center bg-white/[0.015] flex-shrink-0 font-mono">
                     <span>{label}</span>
                     {isNowHour && (
@@ -451,7 +521,6 @@ export default function CalendarStudioPage() {
                     )}
                   </div>
 
-                  {/* Main Hour Row Content */}
                   <div className="flex-1 p-2 flex flex-col justify-center gap-2">
                     {hourItems.length === 0 ? (
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-[11px] text-slate-500 font-medium px-2">
@@ -488,20 +557,13 @@ export default function CalendarStudioPage() {
                             <h3 className="text-sm font-extrabold tracking-tight">
                               {it.title}
                             </h3>
-                            {it.description && (
-                              <p className="text-xs text-slate-300 line-clamp-1 font-normal">
-                                {it.description}
-                              </p>
-                            )}
                           </div>
 
-                          <div className="flex items-center gap-2 self-end sm:self-center">
-                            <AddToGoogleCalendar
-                              title={it.title}
-                              description={it.description}
-                              dateString={it.dateString}
-                            />
-                          </div>
+                          <AddToGoogleCalendar
+                            title={it.title}
+                            description={it.description}
+                            dateString={it.dateString}
+                          />
                         </div>
                       ))
                     )}
@@ -513,10 +575,9 @@ export default function CalendarStudioPage() {
         </div>
       )}
 
-      {/* 2. MONTHLY CALENDAR GRID (Req #4: Readable studio square cells where titles are crystal clear!) */}
+      {/* 2. MONTHLY CALENDAR GRID (Req #3: Studio Architectural RECTANGLES, NOT Ovals!) */}
       {viewMode === 'month' && (
         <div className="glow-card rounded-[32px] p-4 sm:p-6 border border-white/15 bg-slate-950/90 shadow-2xl">
-          {/* Day Names Header */}
           <div className="grid grid-cols-7 gap-2 text-center mb-3">
             {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((d) => (
               <div
@@ -528,14 +589,13 @@ export default function CalendarStudioPage() {
             ))}
           </div>
 
-          {/* Month Square Cards Grid */}
           <div className="grid grid-cols-7 gap-2 sm:gap-3">
             {Array.from({
               length: firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1,
             }).map((_, i) => (
               <div
                 key={`empty-${i}`}
-                className="min-h-[105px] sm:min-h-[135px] rounded-2xl bg-white/[0.015] border border-white/5 opacity-20"
+                className="min-h-[90px] sm:min-h-[125px] rounded-lg bg-white/[0.015] border border-white/5 opacity-20"
               />
             ))}
 
@@ -552,7 +612,7 @@ export default function CalendarStudioPage() {
                 <div
                   key={dateStr}
                   onClick={() => openNewScheduleModal(dateStr, 9)}
-                  className={`min-h-[105px] sm:min-h-[135px] rounded-2xl p-2 sm:p-3 border transition-all cursor-pointer flex flex-col justify-between ${
+                  className={`min-h-[90px] sm:min-h-[125px] rounded-lg p-2 sm:p-3 border transition-all cursor-pointer flex flex-col justify-between ${
                     isTodayCell
                       ? 'bg-blue-600/25 border-blue-400/70 shadow-[0_0_25px_rgba(59,130,246,0.35)]'
                       : 'bg-white/[0.035] border-white/10 hover:border-blue-400/40 hover:bg-white/[0.08]'
@@ -560,7 +620,7 @@ export default function CalendarStudioPage() {
                 >
                   <div className="flex items-center justify-between">
                     <span
-                      className={`text-xs sm:text-sm font-extrabold px-2.5 py-0.5 rounded-xl ${
+                      className={`text-xs sm:text-sm font-extrabold px-2.5 py-0.5 rounded-md ${
                         isTodayCell
                           ? 'bg-blue-500 text-white shadow-md'
                           : 'text-slate-200'
@@ -574,12 +634,12 @@ export default function CalendarStudioPage() {
                     />
                   </div>
 
-                  {/* Requirement #4: Highly readable studio badges so you can read your activities clearly */}
+                  {/* Rectangular event badges spanning crisp width */}
                   <div className="space-y-1.5 mt-2 overflow-hidden">
                     {dayItems.slice(0, 3).map((it) => (
                       <div
                         key={it.id}
-                        className={`text-[11px] sm:text-xs font-bold px-2 py-1 rounded-lg truncate border flex items-center justify-between ${
+                        className={`text-[11px] sm:text-xs font-bold px-2 py-1 rounded-md truncate border block ${
                           it.status === 'completed'
                             ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200 line-through'
                             : it.type === 'activity'
@@ -603,7 +663,7 @@ export default function CalendarStudioPage() {
         </div>
       )}
 
-      {/* 3. TODOS VIEW (Kanban Board) */}
+      {/* 3. TODOS VIEW (Kanban Board with Google Tasks Subtasks Checklists!) */}
       {viewMode === 'todos' && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {(
@@ -644,11 +704,11 @@ export default function CalendarStudioPage() {
                   </span>
                 </div>
 
-                <div className="space-y-2.5 flex-1">
+                <div className="space-y-3 flex-1">
                   {colItems.map((item) => (
                     <div
                       key={item.id}
-                      className="glow-card rounded-2xl p-3.5 border border-white/15 bg-white/[0.05] hover:bg-white/[0.08] transition-all"
+                      className="glow-card rounded-2xl p-4 border border-white/15 bg-white/[0.05] hover:bg-white/[0.08] transition-all space-y-2.5"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p
@@ -667,13 +727,41 @@ export default function CalendarStudioPage() {
                         />
                       </div>
 
-                      {item.description && (
-                        <p className="text-xs text-slate-300 mt-1 line-clamp-2">
-                          {item.description}
-                        </p>
+                      {/* Requirement #5: Interactive Subtasks Checklist (Google Tasks UI) */}
+                      {item.subtasks && item.subtasks.length > 0 && (
+                        <div className="space-y-1.5 pt-2 border-t border-white/10">
+                          {item.subtasks.map((st) => (
+                            <div
+                              key={st.id}
+                              onClick={() => handleToggleSubtask(item, st.id)}
+                              className="flex items-center gap-2 cursor-pointer group/sub"
+                            >
+                              {st.completed ? (
+                                <CheckCircle2
+                                  size={15}
+                                  className="text-emerald-400 flex-shrink-0"
+                                />
+                              ) : (
+                                <Circle
+                                  size={15}
+                                  className="text-slate-400 group-hover/sub:text-blue-400 flex-shrink-0"
+                                />
+                              )}
+                              <span
+                                className={`text-xs ${
+                                  st.completed
+                                    ? 'line-through text-slate-500'
+                                    : 'text-slate-200'
+                                }`}
+                              >
+                                {st.title}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       )}
 
-                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/10">
+                      <div className="flex items-center justify-between pt-2 border-t border-white/10">
                         <Badge
                           variant={
                             item.type === 'activity' ? 'accent' : 'warning'
@@ -683,12 +771,12 @@ export default function CalendarStudioPage() {
                           {item.type === 'activity' ? 'Activity' : 'Task'}
                         </Badge>
                         <span className="text-[10px] text-slate-400 font-mono">
-                          {item.dateString || 'No Date'} •{' '}
-                          {String(item.hourStart).padStart(2, '0')}.00 (24h)
+                          {item.dateString || 'No Date'}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5 mt-2.5">
+                      {/* Requirement #4: Instant 1-tap Status Move Buttons for phone & desktop */}
+                      <div className="flex items-center gap-1.5 pt-1">
                         {item.status !== 'planned' && (
                           <button
                             onClick={() => handleMoveStatus(item, 'planned')}
@@ -725,18 +813,17 @@ export default function CalendarStudioPage() {
         </div>
       )}
 
-      {/* COMPREHENSIVE SCHEDULE & TO DO FORM MODAL */}
+      {/* COMPREHENSIVE SCHEDULE & TO DO FORM MODAL WITH SUBTASKS */}
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         title={
           formType === 'activity'
             ? 'New Activity Session (24h)'
-            : 'New Task (Google Tasks Style)'
+            : 'New Task & Subtasks (Google Tasks Style)'
         }
       >
         <div className="space-y-3.5 font-sans">
-          {/* Requirement #6: Activity Session on LEFT, To Do on RIGHT */}
           <div className="flex gap-2 p-1 rounded-2xl bg-white/[0.05] border border-white/10">
             <button
               type="button"
@@ -762,7 +849,6 @@ export default function CalendarStudioPage() {
             </button>
           </div>
 
-          {/* Requirement #8: When To Do is selected, show Google Tasks category pill selector */}
           {formType === 'todo' && (
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-300">
@@ -806,7 +892,6 @@ export default function CalendarStudioPage() {
             autoFocus
           />
 
-          {/* Requirement #7: Label changed to simply 'Date', initializes to local today */}
           <Input
             label="Date"
             type="date"
@@ -814,41 +899,68 @@ export default function CalendarStudioPage() {
             onChange={(e) => setFormDate(e.target.value)}
           />
 
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Start Time (24h)"
-              type="time"
-              value={formStartTime}
-              onChange={(e) => setFormStartTime(e.target.value)}
-            />
-            <Input
-              label="End Time (24h)"
-              type="time"
-              value={formEndTime}
-              onChange={(e) => setFormEndTime(e.target.value)}
-            />
-          </div>
+          {/* Requirement #5: Google Tasks Subtasks Checklist Builder */}
+          {formType === 'todo' && (
+            <div className="space-y-2 pt-1">
+              <label className="text-xs font-bold text-slate-300">
+                Subtasks Checklist (Google Tasks)
+              </label>
+
+              {formSubtasks.length > 0 && (
+                <div className="space-y-1.5 p-3 rounded-2xl bg-white/[0.03] border border-white/10">
+                  {formSubtasks.map((st, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between text-xs text-slate-200"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Circle size={13} className="text-slate-400" />
+                        <span>{st}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormSubtasks((prev) =>
+                            prev.filter((_, idx) => idx !== i)
+                          )
+                        }
+                        className="text-slate-500 hover:text-red-400"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Add a subtask (e.g. Buy flip flops)..."
+                  value={newSubtaskInput}
+                  onChange={(e) => setNewSubtaskInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addSubtaskItem();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={addSubtaskItem}
+                  className="px-3.5 py-2.5 rounded-2xl bg-blue-600/30 border border-blue-400/40 text-blue-200 hover:bg-blue-600/50 text-xs font-bold transition-all flex items-center gap-1 flex-shrink-0"
+                >
+                  <PlusCircle size={15} /> Add
+                </button>
+              </div>
+            </div>
+          )}
 
           <Input
             label="Details / Notes"
-            placeholder={
-              formType === 'activity'
-                ? 'Add session details, location...'
-                : 'Add details...'
-            }
+            placeholder="Add details..."
             value={formDescription}
             onChange={(e) => setFormDescription(e.target.value)}
-          />
-
-          <Select
-            label="Priority"
-            options={[
-              { label: 'Low', value: 'low' },
-              { label: 'Medium', value: 'medium' },
-              { label: 'High', value: 'high' },
-            ]}
-            value={formPriority}
-            onChange={(e) => setFormPriority(e.target.value)}
           />
 
           <div className="flex gap-3 pt-4">
