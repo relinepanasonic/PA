@@ -316,12 +316,12 @@ export default function TodosPage() {
             value={formPriority}
             onChange={(e) => setFormPriority(e.target.value as TodoPriority)}
           />
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-4 pb-2 border-t border-white/10 mt-4">
             <Button variant="secondary" fullWidth onClick={() => setShowModal(false)}>
               Cancel
             </Button>
             <Button fullWidth isLoading={saving} onClick={handleSave} disabled={!formTitle.trim()}>
-              {editingTodo ? 'Update' : 'Create'}
+              {editingTodo ? 'Update Task' : 'Save Task'}
             </Button>
           </div>
         </div>

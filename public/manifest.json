@@ -1,0 +1,24 @@
+{
+  "name": "Personal Assistant AI",
+  "short_name": "PersonalAssist",
+  "description": "AI Personal Assistant Dashboard for tasks, finances, and activities.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#040814",
+  "theme_color": "#040814",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
