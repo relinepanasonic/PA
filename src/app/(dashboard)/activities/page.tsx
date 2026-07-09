@@ -11,6 +11,7 @@ import Badge from '@/components/ui/Badge';
 import Pagination from '@/components/ui/Pagination';
 import EmptyState from '@/components/ui/EmptyState';
 import { SkeletonList } from '@/components/ui/LoadingSkeleton';
+import AddToGoogleCalendar from '@/components/ui/AddToGoogleCalendar';
 
 const PAGE_SIZE = 15;
 
@@ -287,12 +288,19 @@ export default function ActivitiesPage() {
                     </p>
                   )}
                 </div>
-                <button
-                  onClick={() => deleteWork(w.id)}
-                  className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors flex-shrink-0"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <AddToGoogleCalendar
+                    title={w.title}
+                    description={w.description || ''}
+                    dateString={w.scheduled_at || w.deadline}
+                  />
+                  <button
+                    onClick={() => deleteWork(w.id)}
+                    className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             ))
           )}

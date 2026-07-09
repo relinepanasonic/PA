@@ -10,6 +10,7 @@ import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import Pagination from '@/components/ui/Pagination';
 import EmptyState from '@/components/ui/EmptyState';
+import AddToGoogleCalendar from '@/components/ui/AddToGoogleCalendar';
 import { SkeletonList } from '@/components/ui/LoadingSkeleton';
 
 const PAGE_SIZE = 20;
@@ -257,13 +258,20 @@ export default function TodosPage() {
                 </div>
               </div>
 
-              {/* Delete */}
-              <button
-                onClick={() => deleteTodo(todo.id)}
-                className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors flex-shrink-0"
-              >
-                <Trash2 size={14} />
-              </button>
+              {/* Actions */}
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <AddToGoogleCalendar
+                  title={todo.title}
+                  description={todo.description || ''}
+                  dateString={todo.due_date}
+                />
+                <button
+                  onClick={() => deleteTodo(todo.id)}
+                  className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           ))}
         </div>
