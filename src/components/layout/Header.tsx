@@ -1,5 +1,5 @@
 'use client';
-import { Bell, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import Image from 'next/image';
 
 function getGreeting(): string {
@@ -45,10 +45,6 @@ export default function Header({ displayName = 'User' }: HeaderProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="relative p-2 rounded-2xl bg-white/[0.07] border border-white/10 text-slate-300 hover:text-white transition-colors">
-            <Bell size={18} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-400 rounded-full shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
-          </button>
           <button className="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-400 flex items-center justify-center shadow-lg border border-white/20">
             <User size={18} className="text-white" />
           </button>
