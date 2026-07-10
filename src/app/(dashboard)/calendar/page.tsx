@@ -635,7 +635,7 @@ export default function CalendarPage() {
                         : 'bg-sky-500/25 border-l-sky-400 border-sky-400/30 text-sky-100 backdrop-blur-md hover:bg-sky-500/35'
                       }`}
                     >
-                      {/* Top Header: Title + Notes + GCal + Delete */}
+                      {/* Top Header: Title + Notes + Delete */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           {it.type === 'activity' && <GripVertical size={14} className="text-teal-300/70 flex-shrink-0" />}
@@ -650,47 +650,49 @@ export default function CalendarPage() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <AddToGoogleCalendar title={it.title} description={it.description} dateString={it.dateString} />
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDelete(it); }}
-                            className="p-1.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/40 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(it); }}
+                          className="p-1.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/40 transition-colors flex-shrink-0"
+                          title="Delete"
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
 
-                      {/* Status action bar — only for Todo/Task items */}
-                      {it.type === 'todo' && (
-                        <div className="flex items-center gap-1.5 pt-1">
-                          {it.status !== 'planned' && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'planned'); }}
-                              className="px-2 py-0.5 rounded bg-black/30 text-[10px] font-bold hover:bg-black/50 transition-all"
-                            >
-                              ← To Do
-                            </button>
-                          )}
-                          {it.status !== 'in_progress' && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'in_progress'); }}
-                              className="px-2 py-0.5 rounded bg-amber-500/30 text-amber-200 text-[10px] font-bold hover:bg-amber-500/40 transition-all"
-                            >
-                              ⚡ Progress
-                            </button>
-                          )}
-                          {it.status !== 'completed' && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'completed'); }}
-                              className="px-2 py-0.5 rounded bg-emerald-500/30 text-emerald-200 text-[10px] font-bold hover:bg-emerald-500/40 transition-all"
-                            >
-                              ✓ Done
-                            </button>
-                          )}
+                      {/* Bottom Footer: Status actions (for Todos) + GCal button on Bottom Right */}
+                      <div className="flex items-center justify-between gap-2 pt-2 mt-auto">
+                        {it.type === 'todo' ? (
+                          <div className="flex items-center gap-1.5">
+                            {it.status !== 'planned' && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'planned'); }}
+                                className="px-2 py-0.5 rounded bg-black/30 text-[10px] font-bold hover:bg-black/50 transition-all"
+                              >
+                                ← To Do
+                              </button>
+                            )}
+                            {it.status !== 'in_progress' && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'in_progress'); }}
+                                className="px-2 py-0.5 rounded bg-amber-500/30 text-amber-200 text-[10px] font-bold hover:bg-amber-500/40 transition-all"
+                              >
+                                ⚡ Progress
+                              </button>
+                            )}
+                            {it.status !== 'completed' && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'completed'); }}
+                                className="px-2 py-0.5 rounded bg-emerald-500/30 text-emerald-200 text-[10px] font-bold hover:bg-emerald-500/40 transition-all"
+                              >
+                                ✓ Done
+                              </button>
+                            )}
+                          </div>
+                        ) : <div />}
+                        <div className="ml-auto flex-shrink-0">
+                          <AddToGoogleCalendar title={it.title} description={it.description} dateString={it.dateString} />
                         </div>
-                      )}
+                      </div>
                     </div>
                   );
                 })}
