@@ -294,13 +294,18 @@ export default function CalendarPage() {
       });
       if (error) console.error('Todo insert error:', error);
     } else {
-      // FIX: store as local time ISO string (no Z suffix) so it round-trips correctly
+      // Store as local ISO string without Z so it round-trips correctly
       const startIso = `${dateToUse}T${formStartTime}:00`;
       const { error } = await supabase.from('work_activities').insert({
-        user_id: user.id, title: formTitle, description: formDescription,
-        activity_type: 'livestream', status: 'not_started', scheduled_at: startIso,
+        user_id: user.id,
+        title: formTitle,
+        description: formDescription,
+        activity_type: 'livestream',
+        status: 'planned',          // FIX: 'not_started' is invalid; valid = planned|in_progress|completed|cancelled
+        scheduled_at: startIso,
+        metadata: {},               // FIX: metadata is required (non-nullable Record<string,unknown>)
       });
-      if (error) console.error('Activity insert error:', error);
+      if (error) console.error('Activity insert error:', error.message, error.details);
     }
 
     setFormTitle(''); setFormDescription(''); setFormSubtasks([]);
@@ -450,11 +455,13 @@ export default function CalendarPage() {
                           onDragStart={(e) => { e.stopPropagation(); handleDailyDragStart(e, it.id); }}
                           onDragEnd={() => { setDragItemId(null); setDragOverHour(null); }}
                           onClick={(e) => e.stopPropagation()}
-                          className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 transition-all ${
+                          className={`p-2.5 rounded-xl border-l-4 border border-white/10 flex items-center justify-between gap-2 transition-all ${
                             dragItemId === it.id ? 'opacity-40 scale-[0.97]'
-                            : it.status === 'completed' ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200'
-                            : it.type === 'activity' ? 'bg-cyan-500/20 border-cyan-400/40 text-cyan-100 cursor-grab active:cursor-grabbing'
-                            : 'bg-blue-600/35 border-blue-400/45 text-white'
+                            : it.status === 'completed'
+                              ? 'bg-emerald-500/15 border-l-emerald-400 text-emerald-200'
+                            : it.type === 'activity'
+                              ? 'bg-teal-500/20 border-l-teal-400 text-teal-50 cursor-grab active:cursor-grabbing'
+                            : 'bg-violet-600/25 border-l-violet-400 text-violet-50'
                           }`}
                         >
                           <div className="flex items-center gap-2 min-w-0">
@@ -523,12 +530,12 @@ export default function CalendarPage() {
                     {dayItems.slice(0, 2).map((it) => (
                       <div
                         key={it.id}
-                        className={`text-[10px] font-semibold px-1 py-0.5 rounded truncate leading-tight ${
+                        className={`text-[10px] font-semibold px-1.5 py-0.5 rounded truncate leading-tight ${
                           it.status === 'completed'
                             ? 'bg-emerald-500/25 text-emerald-200'
                             : it.type === 'activity'
-                            ? 'bg-cyan-500/30 text-cyan-100'
-                            : 'bg-blue-500/35 text-blue-100'
+                            ? 'bg-teal-500/35 text-teal-100'
+                            : 'bg-violet-500/35 text-violet-100'
                         }`}
                       >
                         {it.title}
@@ -666,21 +673,57 @@ export default function CalendarPage() {
             autoFocus
           />
 
-          {/* Due Date (todo) / Date (activity) */}
-          <Input
-            label={formType === 'todo' ? 'Due Date' : 'Date'}
-            type="date"
-            value={formDate}
-            onChange={(e) => setFormDate(e.target.value)}
-          />
-
-          {/* Start & End Time — both types */}
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Start Time" type="time" value={formStartTime}
-              onChange={(e) => setFormStartTime(e.target.value)} />
-            <Input label="End Time" type="time" value={formEndTime}
-              onChange={(e) => setFormEndTime(e.target.value)} />
-          </div>
+          {/* Date fields — different layout per type */}
+          {formType === 'activity' ? (
+            <>
+              {/* Activity: Date + Start & End in 24h */}
+              <Input
+                label="Date"
+                type="date"
+                value={formDate}
+                onChange={(e) => setFormDate(e.target.value)}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="w-full">
+                  <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Start Time (24h)</label>
+                  <input
+                    type="time"
+                    value={formStartTime}
+                    onChange={(e) => setFormStartTime(e.target.value)}
+                    className="w-full bg-white/[0.06] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  />
+                </div>
+                <div className="w-full">
+                  <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">End Time (24h)</label>
+                  <input
+                    type="time"
+                    value={formEndTime}
+                    onChange={(e) => setFormEndTime(e.target.value)}
+                    className="w-full bg-white/[0.06] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Todo: Due Date + single optional time */}
+              <Input
+                label="Due Date"
+                type="date"
+                value={formDate}
+                onChange={(e) => setFormDate(e.target.value)}
+              />
+              <div className="w-full">
+                <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Due Time (24h, optional)</label>
+                <input
+                  type="time"
+                  value={formStartTime}
+                  onChange={(e) => setFormStartTime(e.target.value)}
+                  className="w-full bg-white/[0.06] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                />
+              </div>
+            </>
+          )}
 
           {/* Subtasks (To Do only) */}
           {formType === 'todo' && (
