@@ -43,6 +43,7 @@ const DEFAULT_EXPENSE_CATEGORIES = [
   { name: 'Makan', icon: '🍽️', color: '#f97316', type: 'expense' as const, tag: 'personal' as const },
   { name: 'Transport', icon: '🚗', color: '#3b82f6', type: 'expense' as const, tag: 'personal' as const },
   { name: 'Pribadi', icon: '👤', color: '#8b5cf6', type: 'expense' as const, tag: 'personal' as const },
+  { name: 'Work', icon: '💼', color: '#0ea5e9', type: 'expense' as const, tag: 'professional' as const },
   { name: 'Entertainment', icon: '🎬', color: '#ec4899', type: 'expense' as const, tag: 'personal' as const },
   { name: 'Gadget', icon: '📱', color: '#06b6d4', type: 'expense' as const, tag: 'personal' as const },
   { name: 'Other', icon: '📦', color: '#64748b', type: 'expense' as const, tag: 'personal' as const },
@@ -565,7 +566,10 @@ export default function FinancePage() {
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() => setFormCategoryId(c.id)}
+                    onClick={() => {
+                      setFormCategoryId(c.id);
+                      if (c.tag) setFormTag(c.tag);
+                    }}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
                       formCategoryId === c.id
                         ? 'bg-orange-500/30 text-orange-300 border-orange-400 shadow scale-105'
