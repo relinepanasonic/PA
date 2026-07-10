@@ -45,6 +45,8 @@ interface CombinedItem {
   status: 'planned' | 'in_progress' | 'completed';
   priority: string;
   subtasks: SubtaskItem[];
+  isAllDay?: boolean;
+  repeat?: string;
   original: Todo | WorkActivity;
 }
 
@@ -71,6 +73,33 @@ const localHourFromISO = (iso: string): number => {
 // Parse date from ISO datetime in LOCAL time
 const localDateFromISO = (iso: string): string => iso.split('T')[0];
 
+const matchesDate = (it: CombinedItem, targetDs: string) => {
+  if (!it.dateString) return false;
+  if (it.dateString === targetDs) return true;
+  const repeat = it.repeat || 'none';
+  if (repeat === 'none') return false;
+  const itemDate = new Date(it.dateString);
+  const targetDate = new Date(targetDs);
+  if (targetDate < itemDate) return false; // recurring events start on or after origin date
+  if (repeat === 'daily') return true;
+  if (repeat === 'weekly') return itemDate.getDay() === targetDate.getDay();
+  if (repeat === 'monthly') return itemDate.getDate() === targetDate.getDate();
+  if (repeat === 'yearly') return itemDate.getDate() === targetDate.getDate() && itemDate.getMonth() === targetDate.getMonth();
+  return false;
+};
+
+const computeOverlappingColumns = (dayItems: CombinedItem[]) => {
+  const sorted = [...dayItems].sort((a, b) => a.hourStart - b.hourStart);
+  return sorted.map((it, idx, arr) => {
+    const overlapping = arr.filter(
+      (other) => Math.max(it.hourStart, other.hourStart) < Math.min(it.hourEnd, other.hourEnd)
+    );
+    const colIdx = overlapping.findIndex((o) => o.id === it.id);
+    const totalCols = Math.max(1, overlapping.length);
+    return { it, colIdx: Math.max(0, colIdx), totalCols };
+  });
+};
+
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
@@ -83,7 +112,11 @@ export default function CalendarPage() {
   const [dragItemId, setDragItemId] = useState<string | null>(null);
   const [dragOverHour, setDragOverHour] = useState<number | null>(null);
 
-  // Modal
+  // Scroll ref for Daily view auto-scroll to 08.00
+  const dailyScrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Modal & editing state
+  const [editingItem, setEditingItem] = useState<CombinedItem | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formType, setFormType] = useState<'activity' | 'todo'>('activity');
@@ -94,6 +127,8 @@ export default function CalendarPage() {
   const [formEndTime, setFormEndTime] = useState('09:00');
   const [formPriority, setFormPriority] = useState('medium');
   const [formCategory, setFormCategory] = useState<TaskCategory>('My Tasks');
+  const [formRepeat, setFormRepeat] = useState<'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'>('none');
+  const [formAllDay, setFormAllDay] = useState(false);
   const [formSubtasks, setFormSubtasks] = useState<string[]>([]);
   const [newSubtaskInput, setNewSubtaskInput] = useState('');
 
@@ -174,6 +209,8 @@ export default function CalendarPage() {
         status: st,
         priority: 'high',
         subtasks: [],
+        isAllDay: meta?.all_day || false,
+        repeat: meta?.repeat || 'none',
         original: a,
       });
     });
@@ -182,6 +219,12 @@ export default function CalendarPage() {
   };
 
   useEffect(() => { fetchAll(); }, []);
+
+  useEffect(() => {
+    if (viewMode === 'daily' && dailyScrollRef.current) {
+      dailyScrollRef.current.scrollTop = 8 * 64; // Auto-scroll to 08.00
+    }
+  }, [viewMode, currentDate]);
 
   // ── Swipe navigation ─────────────────────────────────────────────────────
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -290,7 +333,40 @@ export default function CalendarPage() {
 
     const dateToUse = formDate || todayStr();
 
-    if (formType === 'todo') {
+    if (editingItem) {
+      const orig = editingItem.original as any;
+      if (formType === 'todo') {
+        await supabase.from('todos').update({
+          title: formTitle,
+          description: formDescription,
+          due_date: dateToUse,
+          priority: formPriority,
+        }).eq('id', orig.id);
+      } else {
+        const startHr = formAllDay ? 0 : (parseInt(formStartTime.split(':')[0], 10) || 9);
+        let endHr = formAllDay ? 24 : (parseInt(formEndTime.split(':')[0], 10) || (startHr + 1));
+        if (endHr <= startHr) endHr = startHr + 1;
+
+        const startIso = `${dateToUse}T${formAllDay ? '00:00' : formStartTime}:00`;
+        const endIso = `${dateToUse}T${formAllDay ? '23:59' : formEndTime}:00`;
+
+        await supabase.from('work_activities').update({
+          title: formTitle,
+          description: formDescription,
+          scheduled_at: startIso,
+          deadline: endIso,
+          metadata: {
+            ...orig.metadata,
+            start_time: formStartTime,
+            end_time: formEndTime,
+            hour_start: startHr,
+            hour_end: endHr,
+            all_day: formAllDay,
+            repeat: formRepeat,
+          },
+        }).eq('id', orig.id);
+      }
+    } else if (formType === 'todo') {
       const subtaskObjs = formSubtasks.map((st, i) => ({
         id: `st-${Date.now()}-${i}`, title: st, completed: false,
       }));
@@ -306,12 +382,12 @@ export default function CalendarPage() {
       });
       if (error) console.error('Todo insert error:', error);
     } else {
-      const startHr = parseInt(formStartTime.split(':')[0], 10) || 9;
-      let endHr = parseInt(formEndTime.split(':')[0], 10) || (startHr + 1);
+      const startHr = formAllDay ? 0 : (parseInt(formStartTime.split(':')[0], 10) || 9);
+      let endHr = formAllDay ? 24 : (parseInt(formEndTime.split(':')[0], 10) || (startHr + 1));
       if (endHr <= startHr) endHr = startHr + 1;
 
-      const startIso = `${dateToUse}T${formStartTime}:00`;
-      const endIso = `${dateToUse}T${formEndTime}:00`;
+      const startIso = `${dateToUse}T${formAllDay ? '00:00' : formStartTime}:00`;
+      const endIso = `${dateToUse}T${formAllDay ? '23:59' : formEndTime}:00`;
 
       const { error } = await supabase.from('work_activities').insert({
         user_id: user.id,
@@ -326,23 +402,42 @@ export default function CalendarPage() {
           end_time: formEndTime,
           hour_start: startHr,
           hour_end: endHr,
+          all_day: formAllDay,
+          repeat: formRepeat,
         },
       });
       if (error) console.error('Activity insert error:', error.message, error.details);
     }
 
+    setEditingItem(null);
     setFormTitle(''); setFormDescription(''); setFormSubtasks([]);
     setSaving(false); setShowModal(false);
     await fetchAll();
   };
 
   const openModal = (dateStr?: string, hr?: number) => {
+    setEditingItem(null);
     setFormDate(dateStr || todayStr());
     const h = hr ?? new Date().getHours();
     setFormStartTime(`${String(h).padStart(2, '0')}:00`);
     setFormEndTime(`${String(Math.min(h + 1, 23)).padStart(2, '0')}:00`);
     setFormTitle(''); setFormDescription('');
+    setFormRepeat('none'); setFormAllDay(false);
     setFormSubtasks([]); setNewSubtaskInput('');
+    setShowModal(true);
+  };
+
+  const openEditModal = (item: CombinedItem) => {
+    setEditingItem(item);
+    setFormType(item.type);
+    setFormTitle(item.title);
+    setFormDescription(item.description || '');
+    setFormDate(item.dateString || todayStr());
+    setFormStartTime(`${String(item.hourStart).padStart(2, '0')}:00`);
+    setFormEndTime(`${String(item.hourEnd).padStart(2, '0')}:00`);
+    const meta = (item.original as any).metadata || {};
+    setFormRepeat(meta.repeat || 'none');
+    setFormAllDay(meta.all_day || false);
     setShowModal(true);
   };
 
@@ -429,57 +524,87 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* ── DAILY SCHEDULE VIEW (with drag-drop between hour rows) ─────────── */}
-      {viewMode === 'daily' && (
-        <div
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          className="glow-card rounded-[28px] border border-white/15 overflow-hidden bg-slate-950/90 shadow-2xl"
-        >
-          <div className="relative divide-y divide-white/[0.06] max-h-[72vh] overflow-y-auto">
-            {/* Background 24-Hour Slots Grid */}
-            {HOURS.map(({ label, hour }) => {
-              const isNow = isToday && hour === nowHour;
-              const isDragTarget = dragOverHour === hour && dragItemId !== null;
+      {/* ── DAILY SCHEDULE VIEW ─────────────────────────────────────────────── */}
+      {viewMode === 'daily' && (() => {
+        const matchingItems = items.filter((it) => matchesDate(it, dailyDs));
+        const allDayItems = matchingItems.filter((it) => it.isAllDay);
+        const timedItems = matchingItems.filter((it) => !it.isAllDay);
+        const layoutColumns = computeOverlappingColumns(timedItems);
 
-              return (
-                <div
-                  key={hour}
-                  onDragOver={(e) => handleHourDragOver(e, hour)}
-                  onDragLeave={() => setDragOverHour(null)}
-                  onDrop={(e) => handleHourDrop(e, hour, dailyDs)}
-                  onClick={() => openModal(dailyDs, hour)}
-                  className={`flex items-stretch h-16 cursor-pointer group transition-all ${
-                    isDragTarget ? 'bg-blue-500/25 border-l-4 border-l-blue-300'
-                    : isNow ? 'bg-blue-600/15 border-l-4 border-l-blue-400'
-                    : 'hover:bg-white/[0.025]'
-                  }`}
-                >
-                  {/* Time label */}
-                  <div className="w-[68px] h-full flex flex-col items-center justify-center border-r border-white/10 bg-white/[0.01] flex-shrink-0">
-                    <span className="text-xs font-extrabold text-slate-400 font-mono">{label}</span>
-                    {isNow && <span className="text-[9px] text-blue-400 animate-pulse font-bold">NOW</span>}
-                    {isDragTarget && <span className="text-[9px] text-blue-300 font-bold">DROP</span>}
-                  </div>
-
-                  {/* Clickable slot prompt */}
-                  <div className="flex-1 px-3 flex items-center">
-                    <p className="opacity-0 group-hover:opacity-100 text-[11px] text-slate-500 transition-opacity flex items-center gap-1">
-                      <Plus size={12} /> Add at {label}
-                    </p>
-                  </div>
+        return (
+          <div
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            className="glow-card rounded-[28px] border border-white/15 overflow-hidden bg-slate-950/90 shadow-2xl flex flex-col"
+          >
+            {/* All-Day Activity Banner (Google Calendar Style) */}
+            {allDayItems.length > 0 && (
+              <div className="p-3 bg-slate-900/90 border-b border-white/10 flex items-center gap-3">
+                <span className="text-xs font-extrabold text-slate-400 uppercase w-[60px] flex-shrink-0 text-center font-mono">
+                  All Day
+                </span>
+                <div className="flex-1 flex flex-wrap gap-2">
+                  {allDayItems.map((it) => (
+                    <div
+                      key={it.id}
+                      onClick={() => openEditModal(it)}
+                      className="px-3 py-1.5 rounded-xl bg-teal-500/25 border border-teal-400/40 text-teal-100 text-xs font-extrabold cursor-pointer flex items-center gap-2 hover:bg-teal-500/40 transition-all shadow-sm"
+                    >
+                      <span>{it.title}</span>
+                      <AddToGoogleCalendar title={it.title} description={it.description} dateString={it.dateString} />
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
+              </div>
+            )}
 
-            {/* Absolute Spanning Unified Cards Overlay (1 Kesatuan Kotak) */}
-            <div className="absolute top-0 left-[68px] right-0 bottom-0 pointer-events-none">
-              {items
-                .filter((it) => it.dateString === dailyDs)
-                .map((it) => {
+            {/* 24-Hour Timeline Grid (Auto-scrolled to 08:00 on top) */}
+            <div ref={dailyScrollRef} className="relative divide-y divide-white/[0.06] max-h-[72vh] overflow-y-auto">
+              {/* Background 24-Hour Slots Grid */}
+              {HOURS.map(({ label, hour }) => {
+                const isNow = isToday && hour === nowHour;
+                const isDragTarget = dragOverHour === hour && dragItemId !== null;
+
+                return (
+                  <div
+                    key={hour}
+                    onDragOver={(e) => handleHourDragOver(e, hour)}
+                    onDragLeave={() => setDragOverHour(null)}
+                    onDrop={(e) => handleHourDrop(e, hour, dailyDs)}
+                    onClick={() => openModal(dailyDs, hour)}
+                    className={`flex items-stretch h-16 cursor-pointer group transition-all ${
+                      isDragTarget ? 'bg-blue-500/25 border-l-4 border-l-blue-300'
+                      : isNow ? 'bg-blue-600/15 border-l-4 border-l-blue-400'
+                      : 'hover:bg-white/[0.025]'
+                    }`}
+                  >
+                    {/* Time label */}
+                    <div className="w-[68px] h-full flex flex-col items-center justify-center border-r border-white/10 bg-white/[0.01] flex-shrink-0">
+                      <span className="text-xs font-extrabold text-slate-400 font-mono">{label}</span>
+                      {isNow && <span className="text-[9px] text-blue-400 animate-pulse font-bold">NOW</span>}
+                      {isDragTarget && <span className="text-[9px] text-blue-300 font-bold">DROP</span>}
+                    </div>
+
+                    {/* Clickable slot prompt */}
+                    <div className="flex-1 px-3 flex items-center">
+                      <p className="opacity-0 group-hover:opacity-100 text-[11px] text-slate-500 transition-opacity flex items-center gap-1">
+                        <Plus size={12} /> Add at {label}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Absolute Spanning & Side-by-Side Unified Cards Overlay */}
+              <div className="absolute top-0 left-[68px] right-0 bottom-0 pointer-events-none">
+                {layoutColumns.map(({ it, colIdx, totalCols }) => {
                   const durationHours = Math.max(1, it.hourEnd - it.hourStart);
                   const topPx = it.hourStart * 64 + 3;
                   const heightPx = durationHours * 64 - 6;
+
+                  // Side by side calculation for overlapping events
+                  const widthPercent = 100 / totalCols;
+                  const leftPercent = colIdx * widthPercent;
 
                   return (
                     <div
@@ -487,49 +612,54 @@ export default function CalendarPage() {
                       draggable={it.type === 'activity'}
                       onDragStart={(e) => { e.stopPropagation(); handleDailyDragStart(e, it.id); }}
                       onDragEnd={() => { setDragItemId(null); setDragOverHour(null); }}
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ top: `${topPx}px`, height: `${heightPx}px` }}
-                      className={`absolute left-2 right-3 p-3 rounded-2xl border-l-4 border shadow-xl pointer-events-auto flex flex-col justify-between overflow-hidden transition-all ${
+                      onClick={(e) => { e.stopPropagation(); openEditModal(it); }}
+                      style={{
+                        top: `${topPx}px`,
+                        height: `${heightPx}px`,
+                        left: `calc(${leftPercent}% + 6px)`,
+                        width: `calc(${widthPercent}% - 12px)`,
+                      }}
+                      className={`absolute p-3 rounded-2xl border-l-4 border shadow-xl pointer-events-auto flex flex-col justify-between overflow-hidden transition-all cursor-pointer ${
                         dragItemId === it.id ? 'opacity-40 scale-[0.98]'
                         : it.status === 'completed'
                           ? 'bg-emerald-500/20 border-l-emerald-400 border-emerald-400/30 text-emerald-100'
                         : it.type === 'activity'
-                          ? 'bg-teal-600/35 border-l-teal-400 border-teal-400/30 text-teal-50 backdrop-blur-md cursor-grab active:cursor-grabbing'
-                        : 'bg-violet-600/35 border-l-violet-400 border-violet-400/30 text-violet-50 backdrop-blur-md'
+                          ? 'bg-teal-600/35 border-l-teal-400 border-teal-400/30 text-teal-50 backdrop-blur-md hover:bg-teal-600/45'
+                        : 'bg-sky-500/25 border-l-sky-400 border-sky-400/30 text-sky-100 backdrop-blur-md hover:bg-sky-500/35'
                       }`}
                     >
-                      {/* Top Header: Title + Time range + Delete */}
-                      <div className="flex items-center justify-between gap-2">
+                      {/* Top Header: Title + Notes + GCal + Delete */}
+                      <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           {it.type === 'activity' && <GripVertical size={14} className="text-teal-300/70 flex-shrink-0" />}
-                          <p className={`text-sm font-extrabold truncate ${it.status === 'completed' ? 'line-through opacity-70' : ''}`}>
-                            {it.title}
-                          </p>
-                          <span className="text-[11px] px-2 py-0.5 rounded-md bg-black/40 font-mono font-bold flex-shrink-0">
-                            {String(it.hourStart).padStart(2, '0')}.00–{String(it.hourEnd).padStart(2, '0')}.00
-                          </span>
+                          <div className="min-w-0">
+                            <p className={`text-sm font-extrabold truncate ${it.status === 'completed' ? 'line-through opacity-70' : ''}`}>
+                              {it.title}
+                            </p>
+                            {it.description && (
+                              <p className="text-[11px] opacity-80 line-clamp-1 mt-0.5">
+                                {it.description}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <button
-                          onClick={() => handleDelete(it)}
-                          className="p-1.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/40 flex-shrink-0 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <AddToGoogleCalendar title={it.title} description={it.description} dateString={it.dateString} />
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDelete(it); }}
+                            className="p-1.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/40 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </div>
-
-                      {/* Description if duration > 1 hour */}
-                      {durationHours > 1 && it.description && (
-                        <p className="text-xs opacity-80 line-clamp-2 my-1 px-1">
-                          {it.description}
-                        </p>
-                      )}
 
                       {/* Status action bar */}
                       <div className="flex items-center gap-1.5 pt-1">
                         {it.status !== 'planned' && (
                           <button
-                            onClick={() => handleMoveStatus(it, 'planned')}
+                            onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'planned'); }}
                             className="px-2 py-0.5 rounded bg-black/30 text-[10px] font-bold hover:bg-black/50 transition-all"
                           >
                             ← To Do
@@ -537,7 +667,7 @@ export default function CalendarPage() {
                         )}
                         {it.status !== 'in_progress' && (
                           <button
-                            onClick={() => handleMoveStatus(it, 'in_progress')}
+                            onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'in_progress'); }}
                             className="px-2 py-0.5 rounded bg-amber-500/30 text-amber-200 text-[10px] font-bold hover:bg-amber-500/40 transition-all"
                           >
                             ⚡ Progress
@@ -545,7 +675,7 @@ export default function CalendarPage() {
                         )}
                         {it.status !== 'completed' && (
                           <button
-                            onClick={() => handleMoveStatus(it, 'completed')}
+                            onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'completed'); }}
                             className="px-2 py-0.5 rounded bg-emerald-500/30 text-emerald-200 text-[10px] font-bold hover:bg-emerald-500/40 transition-all"
                           >
                             ✓ Done
@@ -555,10 +685,11 @@ export default function CalendarPage() {
                     </div>
                   );
                 })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── MONTH GRID VIEW (Compact Google Calendar style — readable on mobile) */}
       {viewMode === 'month' && (
@@ -604,12 +735,13 @@ export default function CalendarPage() {
                     {dayItems.slice(0, 2).map((it) => (
                       <div
                         key={it.id}
-                        className={`text-[10px] font-semibold px-1.5 py-0.5 rounded truncate leading-tight ${
+                        onClick={(e) => { e.stopPropagation(); openEditModal(it); }}
+                        className={`text-[10px] font-semibold px-1.5 py-0.5 rounded truncate leading-tight cursor-pointer ${
                           it.status === 'completed'
                             ? 'bg-emerald-500/25 text-emerald-200'
                             : it.type === 'activity'
                             ? 'bg-teal-500/35 text-teal-100'
-                            : 'bg-violet-500/35 text-violet-100'
+                            : 'bg-sky-500/35 text-sky-100'
                         }`}
                       >
                         {it.title}
@@ -656,7 +788,8 @@ export default function CalendarPage() {
                       draggable
                       onDragStart={(e) => handleKanbanDragStart(e, item.id)}
                       onDragEnd={() => setDragItemId(null)}
-                      className={`glow-card rounded-xl p-3.5 border border-white/15 bg-white/[0.05] hover:bg-white/[0.08] transition-all space-y-2 cursor-grab active:cursor-grabbing ${
+                      onClick={() => openEditModal(item)}
+                      className={`glow-card rounded-xl p-3.5 border border-white/15 bg-white/[0.05] hover:bg-white/[0.08] transition-all space-y-2 cursor-pointer ${
                         dragItemId === item.id ? 'opacity-50 scale-[0.97]' : ''
                       }`}
                     >
@@ -750,44 +883,76 @@ export default function CalendarPage() {
           {/* Date fields — different layout per type */}
           {formType === 'activity' ? (
             <>
-              {/* Activity: Date + Start & End */}
+              {/* Activity: Date + All Day Toggle + Start/End + Repeat */}
               <Input
                 label="Date"
                 type="date"
                 value={formDate}
                 onChange={(e) => setFormDate(e.target.value)}
               />
-              <div className="grid grid-cols-2 gap-3">
-                <div className="w-full">
-                  <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Start Time</label>
-                  <select
-                    value={formStartTime}
-                    onChange={(e) => setFormStartTime(e.target.value)}
-                    className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono font-bold"
-                  >
-                    {Array.from({ length: 48 }, (_, i) => {
-                      const h = Math.floor(i / 2);
-                      const m = i % 2 === 0 ? '00' : '30';
-                      const t = `${String(h).padStart(2, '0')}:${m}`;
-                      return <option key={`start-${t}`} value={t} className="bg-slate-900 text-white">{t}</option>;
-                    })}
-                  </select>
+
+              <div className="flex items-center gap-2 px-1">
+                <input
+                  type="checkbox"
+                  id="allDayCheck"
+                  checked={formAllDay}
+                  onChange={(e) => setFormAllDay(e.target.checked)}
+                  className="w-4 h-4 rounded border-white/20 bg-slate-900 text-teal-500 focus:ring-teal-400"
+                />
+                <label htmlFor="allDayCheck" className="text-xs font-bold text-slate-200 cursor-pointer">
+                  All Day activity
+                </label>
+              </div>
+
+              {!formAllDay && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="w-full">
+                    <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Start Time</label>
+                    <select
+                      value={formStartTime}
+                      onChange={(e) => setFormStartTime(e.target.value)}
+                      className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono font-bold"
+                    >
+                      {Array.from({ length: 48 }, (_, i) => {
+                        const h = Math.floor(i / 2);
+                        const m = i % 2 === 0 ? '00' : '30';
+                        const t = `${String(h).padStart(2, '0')}:${m}`;
+                        return <option key={`start-${t}`} value={t} className="bg-slate-900 text-white">{t}</option>;
+                      })}
+                    </select>
+                  </div>
+                  <div className="w-full">
+                    <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">End Time</label>
+                    <select
+                      value={formEndTime}
+                      onChange={(e) => setFormEndTime(e.target.value)}
+                      className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono font-bold"
+                    >
+                      {Array.from({ length: 48 }, (_, i) => {
+                        const h = Math.floor(i / 2);
+                        const m = i % 2 === 0 ? '00' : '30';
+                        const t = `${String(h).padStart(2, '0')}:${m}`;
+                        return <option key={`end-${t}`} value={t} className="bg-slate-900 text-white">{t}</option>;
+                      })}
+                    </select>
+                  </div>
                 </div>
-                <div className="w-full">
-                  <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">End Time</label>
-                  <select
-                    value={formEndTime}
-                    onChange={(e) => setFormEndTime(e.target.value)}
-                    className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono font-bold"
-                  >
-                    {Array.from({ length: 48 }, (_, i) => {
-                      const h = Math.floor(i / 2);
-                      const m = i % 2 === 0 ? '00' : '30';
-                      const t = `${String(h).padStart(2, '0')}:${m}`;
-                      return <option key={`end-${t}`} value={t} className="bg-slate-900 text-white">{t}</option>;
-                    })}
-                  </select>
-                </div>
+              )}
+
+              {/* Repeat options */}
+              <div className="w-full">
+                <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Repeat</label>
+                <select
+                  value={formRepeat}
+                  onChange={(e) => setFormRepeat(e.target.value as any)}
+                  className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-teal-400/60 transition-all font-bold"
+                >
+                  <option value="none" className="bg-slate-900">Do not repeat</option>
+                  <option value="daily" className="bg-slate-900">Daily</option>
+                  <option value="weekly" className="bg-slate-900">Weekly</option>
+                  <option value="monthly" className="bg-slate-900">Monthly</option>
+                  <option value="yearly" className="bg-slate-900">Yearly</option>
+                </select>
               </div>
             </>
           ) : (
