@@ -1,8 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Todo, WorkActivity } from '@/lib/types/database';
-import { AlertTriangle, TrendingUp, TrendingDown, Calendar, CheckCircle2, Clock, ChevronRight, Sparkles, Activity } from 'lucide-react';
+import { AlertTriangle, TrendingUp, TrendingDown, Calendar, CheckCircle2, Clock, ChevronRight, Sparkles, Activity, Volume2, VolumeX, Newspaper, BarChart3 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { SkeletonDashboard } from '@/components/ui/LoadingSkeleton';
 import Link from 'next/link';
@@ -12,6 +12,21 @@ interface FinanceSummary {
   total_expenses: number;
   professional_income: number;
   personal_expenses: number;
+}
+
+interface StockData {
+  ticker: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  currency: string;
+}
+
+interface NewsItem {
+  title: string;
+  url: string;
+  source: string;
 }
 
 import Modal from '@/components/ui/Modal';
@@ -27,6 +42,16 @@ export default function DashboardPage() {
     personal_expenses: 0,
   });
   const [loading, setLoading] = useState(true);
+
+  // Stocks & News state
+  const [stocks, setStocks] = useState<StockData[]>([]);
+  const [stocksLoading, setStocksLoading] = useState(true);
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+
+  // Voice Brief state
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
 
   // Edit Modal State
   const [editingActivity, setEditingActivity] = useState<WorkActivity | null>(null);
@@ -107,8 +132,88 @@ export default function DashboardPage() {
       setLoading(false);
   };
 
+  const fetchStocks = async () => {
+    setStocksLoading(true);
+    try {
+      const res = await fetch('/api/stocks');
+      if (res.ok) {
+        const data = await res.json();
+        setStocks(data.stocks || []);
+      }
+    } catch (err) {
+      console.error('Stocks fetch error:', err);
+    }
+    setStocksLoading(false);
+  };
+
+  const fetchNews = async () => {
+    setNewsLoading(true);
+    try {
+      const res = await fetch('/api/news');
+      if (res.ok) {
+        const data = await res.json();
+        setNews(data.news || []);
+      }
+    } catch (err) {
+      console.error('News fetch error:', err);
+    }
+    setNewsLoading(false);
+  };
+
+  const handlePlayBrief = () => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    const synth = window.speechSynthesis;
+    synthRef.current = synth;
+
+    // If already speaking, stop it
+    if (isSpeaking) {
+      synth.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    // Build the script
+    let script = 'Selamat pagi, Jax. Berikut adalah ringkasan hari ini. ';
+
+    // Stock prices
+    if (stocks.length > 0) {
+      script += 'Harga saham terkini. ';
+      for (const s of stocks) {
+        const direction = s.changePercent >= 0 ? 'naik' : 'turun';
+        const absPercent = Math.abs(s.changePercent).toFixed(2);
+        script += `${s.ticker.replace('.JK', '')} di harga ${Math.round(s.price)} rupiah, ${direction} ${absPercent} persen. `;
+      }
+    }
+
+    // News headlines
+    if (news.length > 0) {
+      script += 'Berita utama hari ini. ';
+      for (let i = 0; i < news.length; i++) {
+        script += `${i + 1}. ${news[i].title}. `;
+      }
+    }
+
+    const utterance = new SpeechSynthesisUtterance(script);
+    utterance.lang = 'id-ID';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    setIsSpeaking(true);
+    synth.speak(utterance);
+  };
+
   useEffect(() => {
     fetchDashboard();
+    fetchStocks();
+    fetchNews();
+
+    return () => {
+      // Cleanup: stop speech on unmount
+      if (synthRef.current) synthRef.current.cancel();
+    };
   }, []);
 
   const openEditActivity = (act: WorkActivity) => {
@@ -182,7 +287,7 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 space-y-6 animate-fade-in pb-24">
-      {/* Top Welcome Hero Glass Pill */}
+      {/* Top Welcome Hero Glass Pill with Voice Brief */}
       <div className="glass-card rounded-[28px] p-5 border border-white/15 bg-gradient-to-br from-blue-900/30 via-slate-900/40 to-cyan-900/20 shadow-xl flex items-center justify-between">
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-[10px] font-bold uppercase tracking-wider mb-1.5">
@@ -190,10 +295,102 @@ export default function DashboardPage() {
           </div>
           <h1 className="text-lg font-bold text-white">Your Daily Brief</h1>
         </div>
-        <div className="w-11 h-11 rounded-2xl bg-blue-500/10 border border-blue-400/20 flex items-center justify-center text-blue-400">
-          <Activity size={22} />
-        </div>
+        <button
+          onClick={handlePlayBrief}
+          className={`w-11 h-11 rounded-2xl border flex items-center justify-center transition-all active:scale-95 ${
+            isSpeaking
+              ? 'bg-red-500/20 border-red-400/40 text-red-400 animate-pulse'
+              : 'bg-blue-500/10 border-blue-400/20 text-blue-400 hover:bg-blue-500/20'
+          }`}
+          title={isSpeaking ? 'Stop Brief' : 'Play Morning Brief'}
+        >
+          {isSpeaking ? <VolumeX size={20} /> : <Volume2 size={20} />}
+        </button>
       </div>
+
+      {/* ── IDX STOCK TRACKER ──────────────────────────────────────────────── */}
+      <section>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center gap-2">
+            <BarChart3 size={16} className="text-cyan-400" />
+            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">IDX Watchlist</h2>
+          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-400 font-medium">Live</span>
+        </div>
+        {stocksLoading ? (
+          <div className="grid grid-cols-2 gap-3">
+            {[0, 1].map(i => (
+              <div key={i} className="glow-card rounded-2xl p-4 border border-white/10 animate-pulse">
+                <div className="h-3 bg-white/10 rounded w-16 mb-3" />
+                <div className="h-5 bg-white/10 rounded w-24 mb-2" />
+                <div className="h-3 bg-white/10 rounded w-14" />
+              </div>
+            ))}
+          </div>
+        ) : stocks.length === 0 ? (
+          <div className="glow-card rounded-2xl p-5 text-center border border-white/10">
+            <p className="text-xs text-slate-400">Unable to load stock data. Try refreshing.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {stocks.map((s) => {
+              const isUp = s.changePercent >= 0;
+              return (
+                <div key={s.ticker} className="glow-card rounded-2xl p-4 border border-white/10 bg-gradient-to-br from-slate-900/50 to-slate-800/30">
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">{s.ticker.replace('.JK', '')}</p>
+                  <p className="text-xl font-extrabold text-white font-mono tracking-tight">
+                    {new Intl.NumberFormat('id-ID').format(Math.round(s.price))}
+                  </p>
+                  <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                    isUp
+                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                      : 'bg-red-500/15 text-red-400 border border-red-500/30'
+                  }`}>
+                    {isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                    {isUp ? '+' : ''}{s.changePercent.toFixed(2)}%
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* ── HOT NEWS HEADLINES ─────────────────────────────────────────────── */}
+      <section>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center gap-2">
+            <Newspaper size={16} className="text-amber-400" />
+            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Hot News</h2>
+          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-400 font-medium">Indonesia</span>
+        </div>
+        {newsLoading ? (
+          <div className="glow-card rounded-2xl p-4 border border-white/10 animate-pulse space-y-3">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="h-3.5 bg-white/10 rounded w-full" style={{ width: `${85 - i * 10}%` }} />
+            ))}
+          </div>
+        ) : news.length === 0 ? (
+          <div className="glow-card rounded-2xl p-5 text-center border border-white/10">
+            <p className="text-xs text-slate-400">No news available right now.</p>
+          </div>
+        ) : (
+          <div className="glow-card rounded-2xl p-4 border border-white/10 space-y-2.5">
+            {news.map((item, idx) => (
+              <div key={idx} className="flex items-start gap-2.5">
+                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/15 border border-amber-400/30 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  {idx + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-white leading-snug">{item.title}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">{item.source}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Finance Bento Cards */}
       <section>
