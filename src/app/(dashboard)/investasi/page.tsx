@@ -1,21 +1,28 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { TrendingUp, TrendingDown, Plus, Trash2, LineChart, RefreshCw, DollarSign, PieChart, ExternalLink, Newspaper, ArrowUpRight, ArrowDownRight, Sparkles, AlertCircle } from 'lucide-react';
+import {
+  TrendingUp,
+  TrendingDown,
+  Plus,
+  Trash2,
+  LineChart,
+  RefreshCw,
+  ExternalLink,
+  Newspaper,
+  Sparkles,
+  AlertCircle,
+  ChevronRight,
+  BarChart2,
+  Layers,
+  Wallet,
+  Activity,
+} from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Modal from '@/components/ui/Modal';
-import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
 import { PortfolioStock } from '@/lib/types/database';
-
-interface StockLiveQuote {
-  ticker: string;
-  name: string;
-  price: number;
-  change: number;
-  changePercent: number;
-  currency: string;
-}
+import { LQ45StockItem } from '@/app/api/stocks/lq45/route';
 
 interface HistoryPoint {
   date: string;
@@ -29,23 +36,62 @@ interface BusinessNews {
   source: string;
 }
 
-const POPULAR_LQ45 = ['BBCA', 'BBRI', 'BMRI', 'TLKM', 'ASII', 'ELTY', 'ICBP', 'BBNI'];
+// Helper SVG Mini Sparkline inside cards
+function MiniSparkline({ data, isUp }: { data: number[]; isUp: boolean }) {
+  if (!data || data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const width = 120;
+  const height = 36;
+
+  const points = data
+    .map((val, i) => {
+      const x = (i / (data.length - 1)) * width;
+      const y = height - ((val - min) / range) * (height - 8) - 4;
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  const strokeColor = isUp ? '#34d399' : '#f87171';
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <polyline
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+    </svg>
+  );
+}
 
 export default function InvestasiPage() {
   const [portfolio, setPortfolio] = useState<PortfolioStock[]>([]);
-  const [liveQuotes, setLiveQuotes] = useState<Record<string, StockLiveQuote>>({});
-  const [loading, setLoading] = useState(true);
+  const [lq45Stocks, setLq45Stocks] = useState<LQ45StockItem[]>([]);
+  const [ihsgData, setIhsgData] = useState<{
+    ticker: string;
+    name: string;
+    price: number;
+    change: number;
+    changePercent: number;
+  } | null>(null);
 
-  // Selected Stock for Chart
-  const [selectedTicker, setSelectedTicker] = useState<string>('BBCA.JK');
-  const [historyPoints, setHistoryPoints] = useState<HistoryPoint[]>([]);
-  const [chartLoading, setChartLoading] = useState(true);
+  // Sector filter for horizontal LQ45 carousel
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
-  // Business News
-  const [news, setNews] = useState<BusinessNews[]>([]);
-  const [newsLoading, setNewsLoading] = useState(true);
+  // IHSG 30-day Chart
+  const [ihsgHistory, setIhsgHistory] = useState<HistoryPoint[]>([]);
+  const [ihsgChartLoading, setIhsgChartLoading] = useState(true);
 
-  // Modal Add Stock
+  // Selected Stock Detail Modal (Technical & Fundamental)
+  const [selectedStockDetail, setSelectedStockDetail] = useState<LQ45StockItem | null>(null);
+  const [stockHistory, setStockHistory] = useState<HistoryPoint[]>([]);
+  const [stockHistoryLoading, setStockHistoryLoading] = useState(false);
+
+  // Add Portfolio Form inside Detail Modal or standalone Add Modal
   const [showAddModal, setShowAddModal] = useState(false);
   const [formTicker, setFormTicker] = useState('');
   const [formBuyPrice, setFormBuyPrice] = useState('');
@@ -53,58 +99,72 @@ export default function InvestasiPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Fetch Portfolio & Live Prices
-  const fetchPortfolioData = useCallback(async () => {
+  // Business News
+  const [news, setNews] = useState<BusinessNews[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+
+  // Loading state
+  const [loading, setLoading] = useState(true);
+
+  // Load Portfolio & LQ45 Snapshot
+  const fetchPageData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/investasi/portfolio');
-      if (res.ok) {
-        const data = await res.json();
-        const items: PortfolioStock[] = data.portfolio || [];
-        setPortfolio(items);
+      const [portRes, lqRes] = await Promise.all([
+        fetch('/api/investasi/portfolio'),
+        fetch('/api/stocks/lq45'),
+      ]);
 
-        // Fetch live quotes for all unique portfolio tickers + selectedTicker
-        const tickersSet = new Set<string>(items.map((item) => item.ticker));
-        tickersSet.add(selectedTicker);
-        tickersSet.add('BBCA.JK');
-        tickersSet.add('ELTY.JK');
+      if (portRes.ok) {
+        const pData = await portRes.json();
+        setPortfolio(pData.portfolio || []);
+      }
 
-        // Fetch /api/stocks for live quotes
-        const stocksRes = await fetch('/api/stocks');
-        if (stocksRes.ok) {
-          const stocksData = await stocksRes.json();
-          const quotesMap: Record<string, StockLiveQuote> = {};
-          (stocksData.stocks || []).forEach((q: StockLiveQuote) => {
-            quotesMap[q.ticker.toUpperCase()] = q;
-          });
-          setLiveQuotes(quotesMap);
-        }
+      if (lqRes.ok) {
+        const lqData = await lqRes.json();
+        setLq45Stocks(lqData.stocks || []);
+        setIhsgData(lqData.ihsg || null);
       }
     } catch (err) {
-      console.error('Failed to load portfolio:', err);
+      console.error('Failed fetching investasi data:', err);
     } finally {
       setLoading(false);
     }
-  }, [selectedTicker]);
+  }, []);
 
-  // Fetch 30-day chart history
-  const fetchChartHistory = useCallback(async (ticker: string) => {
-    setChartLoading(true);
-    let targetTicker = ticker.toUpperCase();
-    if (!targetTicker.endsWith('.JK')) targetTicker = `${targetTicker}.JK`;
-
+  // Fetch IHSG 30-day History
+  const fetchIhsgHistory = useCallback(async () => {
+    setIhsgChartLoading(true);
     try {
-      const res = await fetch(`/api/stocks/history?ticker=${encodeURIComponent(targetTicker)}`);
+      const res = await fetch('/api/stocks/history?ticker=%5EJKSE');
       if (res.ok) {
         const data = await res.json();
-        setHistoryPoints(data.history || []);
+        setIhsgHistory(data.history || []);
       }
     } catch (err) {
-      console.error('Failed to load chart history:', err);
+      console.error('Error fetching IHSG history:', err);
     } finally {
-      setChartLoading(false);
+      setIhsgChartLoading(false);
     }
   }, []);
+
+  // Fetch stock detail 30-day chart when clicked
+  const handleOpenStockDetail = async (stock: LQ45StockItem) => {
+    setSelectedStockDetail(stock);
+    setFormTicker(stock.ticker);
+    setStockHistoryLoading(true);
+    try {
+      const res = await fetch(`/api/stocks/history?ticker=${encodeURIComponent(stock.ticker)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setStockHistory(data.history || []);
+      }
+    } catch (err) {
+      console.error('Error fetching stock history:', err);
+    } finally {
+      setStockHistoryLoading(false);
+    }
+  };
 
   // Fetch Business News
   const fetchBusinessNews = useCallback(async () => {
@@ -116,21 +176,19 @@ export default function InvestasiPage() {
         setNews(data.news || []);
       }
     } catch (err) {
-      console.error('Failed to load business news:', err);
+      console.error('Failed loading business news:', err);
     } finally {
       setNewsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchPortfolioData();
+    fetchPageData();
+    fetchIhsgHistory();
     fetchBusinessNews();
-  }, [fetchPortfolioData, fetchBusinessNews]);
+  }, [fetchPageData, fetchIhsgHistory, fetchBusinessNews]);
 
-  useEffect(() => {
-    fetchChartHistory(selectedTicker);
-  }, [selectedTicker, fetchChartHistory]);
-
+  // Handle Add Stock submission
   const handleAddStock = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -154,10 +212,11 @@ export default function InvestasiPage() {
 
       if (res.ok) {
         setShowAddModal(false);
+        setSelectedStockDetail(null);
         setFormTicker('');
         setFormBuyPrice('');
         setFormLots('1');
-        await fetchPortfolioData();
+        await fetchPageData();
       } else {
         const err = await res.json();
         setErrorMsg(err.error || 'Gagal menambahkan saham');
@@ -174,21 +233,26 @@ export default function InvestasiPage() {
     try {
       const res = await fetch(`/api/investasi/portfolio?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
-        await fetchPortfolioData();
+        await fetchPageData();
       }
     } catch (err) {
-      console.error('Failed to delete stock:', err);
+      console.error('Failed deleting stock:', err);
     }
   };
 
-  // Calculate Overall Portfolio KPIs
-  // 1 Lot = 100 shares
+  // Build live quote map for portfolio lookup
+  const liveQuoteMap: Record<string, LQ45StockItem> = {};
+  lq45Stocks.forEach((item) => {
+    liveQuoteMap[item.ticker.toUpperCase()] = item;
+  });
+
+  // Calculate Overall Portfolio Value & PnL (1 Lot = 100 shares)
   let totalInvestedModal = 0;
   let totalCurrentValue = 0;
 
   portfolio.forEach((item) => {
-    const quote = liveQuotes[item.ticker];
-    const currentPrice = quote?.price || item.buy_price;
+    const quote = liveQuoteMap[item.ticker];
+    const currentPrice = quote ? quote.price : item.buy_price;
     const totalShares = item.lots * 100;
 
     totalInvestedModal += item.buy_price * totalShares;
@@ -198,361 +262,369 @@ export default function InvestasiPage() {
   const totalPnL = totalCurrentValue - totalInvestedModal;
   const totalPnLPercent = totalInvestedModal > 0 ? (totalPnL / totalInvestedModal) * 100 : 0;
 
-  // Chart statistics
-  const prices = historyPoints.map((p) => p.price);
-  const chartHigh = prices.length > 0 ? Math.max(...prices) : 0;
-  const chartLow = prices.length > 0 ? Math.min(...prices) : 0;
+  // Filtered LQ45 cards
+  const categories = ['All', 'Bank', 'Mining', 'Telco', 'Consumer', 'Property'];
+  const filteredLq45 =
+    selectedCategory === 'All'
+      ? lq45Stocks
+      : lq45Stocks.filter((s) => s.category === selectedCategory);
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* Page Title & Add Button */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-white tracking-tight">Investasi & IDX Tracker</h1>
-            <Badge variant="accent">Real-Time</Badge>
-          </div>
-          <p className="text-xs text-slate-400 mt-0.5">Pantau portofolio saham Bursa Efek Indonesia (1 Lot = 100 Lembar)</p>
-        </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold text-xs shadow-lg shadow-blue-500/25 transition-all active:scale-95"
-        >
-          <Plus size={16} />
-          <span>Tambah Saham</span>
-        </button>
-      </div>
+    <div className="space-y-7 pb-10 animate-fade-in">
+      {/* ── SECTION 1: MY BALANCE HEADER (Hero Neon Wallet Concept) ───────────── */}
+      <div className="glow-card rounded-[32px] p-6 border border-white/15 bg-gradient-to-br from-slate-900/90 via-[#0b1729] to-blue-950/80 shadow-2xl relative overflow-hidden">
+        <div className="absolute -top-12 -right-12 w-48 h-48 bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* KPI Cards Header */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {/* Total Value */}
-        <div className="glass-card p-4 rounded-3xl border border-white/10 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Total Nilai Portofolio</span>
-            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400">
-              <PieChart size={18} />
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-400/30">
+                <Wallet size={18} />
+              </div>
+              <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                My Balance · Portofolio Saham
+              </span>
             </div>
+            <button
+              onClick={() => {
+                fetchPageData();
+                fetchIhsgHistory();
+              }}
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 transition-colors"
+              title="Refresh Data"
+            >
+              <RefreshCw size={15} />
+            </button>
           </div>
-          <p className="text-2xl font-black text-white mt-2">
-            Rp {Math.round(totalCurrentValue).toLocaleString('id-ID')}
-          </p>
-          <p className="text-[11px] text-slate-400 mt-1">
-            Modal: Rp {Math.round(totalInvestedModal).toLocaleString('id-ID')}
-          </p>
-        </div>
 
-        {/* Total Unrealized PnL */}
-        <div className="glass-card p-4 rounded-3xl border border-white/10 relative overflow-hidden group">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Total Keuntungan / Kerugian</span>
+          <div className="flex flex-wrap items-baseline justify-between gap-4 mt-1">
+            <div>
+              <p className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                Rp {Math.round(totalCurrentValue).toLocaleString('id-ID')}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                Modal Terinvestasi: Rp {Math.round(totalInvestedModal).toLocaleString('id-ID')} ({portfolio.length} Emiten)
+              </p>
+            </div>
+
+            {/* Small Sleek Pill Badge for Total Profit/Loss */}
             <div
-              className={`p-2 rounded-xl ${
-                totalPnL >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+              className={`flex items-center gap-2 px-4 py-2 rounded-2xl border backdrop-blur-md shadow-lg ${
+                totalPnL >= 0
+                  ? 'bg-emerald-500/15 border-emerald-400/30 text-emerald-400'
+                  : 'bg-red-500/15 border-red-400/30 text-red-400'
               }`}
             >
               {totalPnL >= 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
+              <div>
+                <p className="text-xs font-black">
+                  {totalPnL >= 0 ? '+' : ''}Rp {Math.round(totalPnL).toLocaleString('id-ID')}
+                </p>
+                <p className="text-[10px] opacity-85">
+                  ({totalPnL >= 0 ? '+' : ''}
+                  {totalPnLPercent.toFixed(2)}% Total Return)
+                </p>
+              </div>
             </div>
           </div>
-          <div className="flex items-baseline gap-2 mt-2">
-            <p
-              className={`text-2xl font-black ${
-                totalPnL >= 0 ? 'text-emerald-400' : 'text-red-400'
-              }`}
-            >
-              {totalPnL >= 0 ? '+' : ''}Rp {Math.round(totalPnL).toLocaleString('id-ID')}
-            </p>
-          </div>
-          <div className="mt-1 flex items-center gap-1.5">
-            <Badge variant={totalPnL >= 0 ? 'success' : 'danger'}>
-              {totalPnL >= 0 ? '+' : ''}
-              {totalPnLPercent.toFixed(2)}%
-            </Badge>
-            <span className="text-[10px] text-slate-500">Unrealized PnL</span>
-          </div>
-        </div>
-
-        {/* Portfolio Assets Overview */}
-        <div className="glass-card p-4 rounded-3xl border border-white/10 relative overflow-hidden group">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Total Kepemilikan</span>
-            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400">
-              <LineChart size={18} />
-            </div>
-          </div>
-          <p className="text-2xl font-black text-white mt-2">{portfolio.length} Emiten</p>
-          <p className="text-[11px] text-slate-400 mt-1">
-            Total {portfolio.reduce((acc, item) => acc + Number(item.lots), 0).toLocaleString('id-ID')} Lot ({portfolio.reduce((acc, item) => acc + Number(item.lots) * 100, 0).toLocaleString('id-ID')} lembar)
-          </p>
         </div>
       </div>
 
-      {/* 30-Day Historical Chart Section (LQ45 focus) */}
-      <div className="glass-card p-5 rounded-3xl border border-white/10 space-y-4">
+      {/* ── SECTION 2: CHART IHSG (^JKSE) ──────────────────────────────────── */}
+      <section className="glass-card rounded-3xl p-5 border border-white/10 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <LineChart size={18} className="text-blue-400" />
-                Grafik Tren 30 Hari ({selectedTicker.replace('.JK', '')})
+              <span className="p-1.5 rounded-lg bg-cyan-500/15 text-cyan-400">
+                <Activity size={16} />
+              </span>
+              <h2 className="text-base font-extrabold text-white">
+                Indeks Harga Saham Gabungan (IHSG — ^JKSE)
               </h2>
             </div>
-            <p className="text-xs text-slate-400">Riwayat pergerakan harga harian saham dari Yahoo Finance</p>
+            <p className="text-xs text-slate-400 mt-0.5">Sentimen Pasar Modal Indonesia 30 Hari Terakhir</p>
           </div>
 
-          {/* Quick Chip Select LQ45 */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            {POPULAR_LQ45.map((t) => {
-              const fullTicker = `${t}.JK`;
-              const isSelected = selectedTicker === fullTicker;
-              return (
-                <button
-                  key={t}
-                  onClick={() => setSelectedTicker(fullTicker)}
-                  className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all ${
-                    isSelected
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
-                      : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
-                  }`}
-                >
-                  {t}
-                </button>
-              );
-            })}
-          </div>
+          {ihsgData && (
+            <div className="flex items-center gap-3">
+              <span className="text-xl font-black text-white font-mono">
+                {ihsgData.price.toLocaleString('id-ID', { minimumFractionDigits: 2 })}
+              </span>
+              <div
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold ${
+                  ihsgData.changePercent >= 0
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-red-500/15 text-red-400 border border-red-500/30'
+                }`}
+              >
+                {ihsgData.changePercent >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                {ihsgData.changePercent >= 0 ? '+' : ''}
+                {ihsgData.changePercent.toFixed(2)}%
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Chart Stats */}
-        <div className="flex flex-wrap items-center gap-4 text-xs">
-          <div className="bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
-            <span className="text-slate-400 mr-1.5">Harga Terkini:</span>
-            <span className="font-bold text-white">
-              Rp {(liveQuotes[selectedTicker]?.price || historyPoints[historyPoints.length - 1]?.price || 0).toLocaleString('id-ID')}
-            </span>
-          </div>
-          <div className="bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
-            <span className="text-slate-400 mr-1.5">Tertinggi 30H:</span>
-            <span className="font-bold text-emerald-400">Rp {chartHigh.toLocaleString('id-ID')}</span>
-          </div>
-          <div className="bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
-            <span className="text-slate-400 mr-1.5">Terendah 30H:</span>
-            <span className="font-bold text-red-400">Rp {chartLow.toLocaleString('id-ID')}</span>
-          </div>
-        </div>
-
-        {/* Sparkline Recharts */}
-        <div className="h-56 w-full pt-2">
-          {chartLoading ? (
+        {/* Recharts AreaChart IHSG */}
+        <div className="h-44 w-full pt-1">
+          {ihsgChartLoading ? (
             <div className="h-full flex items-center justify-center text-slate-400 text-xs gap-2">
               <RefreshCw className="animate-spin" size={16} />
-              <span>Memuat data historis 30 hari...</span>
+              <span>Memuat grafik IHSG...</span>
             </div>
-          ) : historyPoints.length > 0 ? (
+          ) : ihsgHistory.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={historyPoints} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <AreaChart data={ihsgHistory} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
+                  <linearGradient id="colorIhsg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <XAxis
-                  dataKey="date"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: '#94a3b8', fontSize: 11 }}
-                />
+                <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
                 <YAxis
                   domain={['auto', 'auto']}
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: '#94a3b8', fontSize: 11 }}
-                  tickFormatter={(val) => `Rp ${val.toLocaleString('id-ID')}`}
+                  tick={{ fill: '#94a3b8', fontSize: 10 }}
+                  tickFormatter={(v) => v.toLocaleString('id-ID')}
                 />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: '#0a1628',
                     border: '1px solid rgba(255,255,255,0.15)',
-                    borderRadius: '1rem',
+                    borderRadius: '0.75rem',
                     color: '#fff',
                     fontSize: '12px',
                   }}
-                  formatter={(value: any) => [`Rp ${Number(value).toLocaleString('id-ID')}`, 'Harga']}
+                  formatter={(val: any) => [Number(val).toLocaleString('id-ID'), 'Level IHSG']}
                 />
                 <Area
                   type="monotone"
                   dataKey="price"
-                  stroke="#3b82f6"
+                  stroke="#06b6d4"
                   strokeWidth={2.5}
                   fillOpacity={1}
-                  fill="url(#colorPrice)"
+                  fill="url(#colorIhsg)"
                 />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
             <div className="h-full flex items-center justify-center text-slate-400 text-xs">
-              Tidak ada data riwayat untuk saham ini
+              Grafik IHSG saat ini sedang disinkronkan
             </div>
           )}
         </div>
-      </div>
+      </section>
 
-      {/* Portfolio Table Section */}
-      <div className="glass-card p-5 rounded-3xl border border-white/10 space-y-4">
+      {/* ── SECTION 3: MINI CARDS OF LQ45 (Horizontal Swipe with Filter) ──────── */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+          <div>
+            <h2 className="text-base font-extrabold text-white flex items-center gap-2">
+              <Layers size={18} className="text-blue-400" />
+              Saham Unggulan LQ45 (Swipe Horizontal)
+            </h2>
+            <p className="text-xs text-slate-400">Klik kartu saham untuk melihat detail teknikal & fundamental</p>
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                  selectedCategory === cat
+                    ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/25 scale-105'
+                    : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Horizontal Swipe Carousel */}
+        <div className="flex overflow-x-auto gap-3.5 pb-2 pt-1 scroll-smooth no-scrollbar">
+          {filteredLq45.map((s) => {
+            const isUp = s.changePercent >= 0;
+            return (
+              <div
+                key={s.ticker}
+                onClick={() => handleOpenStockDetail(s)}
+                className="min-w-[210px] w-[210px] flex-shrink-0 glow-card rounded-3xl p-4 border border-white/10 bg-gradient-to-br from-slate-900/80 to-slate-800/40 hover:border-blue-400/40 cursor-pointer transition-all hover:-translate-y-1 group"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-extrabold text-white text-sm tracking-tight">
+                      {s.ticker.replace('.JK', '')}
+                    </span>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-semibold">
+                      {s.category}
+                    </span>
+                  </div>
+                  <ChevronRight size={14} className="text-slate-500 group-hover:text-blue-400 transition-colors" />
+                </div>
+
+                <div className="flex items-baseline justify-between mb-3">
+                  <span className="text-lg font-black text-white font-mono">
+                    Rp {s.price.toLocaleString('id-ID')}
+                  </span>
+                  <span
+                    className={`text-xs font-bold flex items-center ${
+                      isUp ? 'text-emerald-400' : 'text-red-400'
+                    }`}
+                  >
+                    {isUp ? '+' : ''}
+                    {s.changePercent.toFixed(2)}%
+                  </span>
+                </div>
+
+                {/* Mini Sparkline SVG right inside card */}
+                <div className="flex justify-center pt-1 border-t border-white/5">
+                  <MiniSparkline data={s.miniChart} isUp={isUp} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── SECTION 4: MY PORTFOLIO ("Coins Price List" style) ────────────────── */}
+      <section className="glass-card rounded-3xl p-5 border border-white/10 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-white">Daftar Saham Portofolio</h2>
-            <p className="text-xs text-slate-400">Perhitungan keuntungan/kerugian real-time (1 Lot = 100 lembar)</p>
+            <h2 className="text-base font-extrabold text-white flex items-center gap-2">
+              <BarChart2 size={18} className="text-cyan-400" />
+              Daftar Portofolio Saya
+            </h2>
+            <p className="text-xs text-slate-400">1 Lot = 100 lembar saham · Perhitungan laba/rugi real-time</p>
           </div>
           <button
-            onClick={() => fetchPortfolioData()}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors"
-            title="Refresh harga saham"
+            onClick={() => {
+              setFormTicker('');
+              setShowAddModal(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold text-xs shadow-md shadow-blue-500/25 transition-all"
           >
-            <RefreshCw size={16} />
+            <Plus size={14} />
+            <span>Tambah Saham</span>
           </button>
         </div>
 
         {loading ? (
-          <div className="py-12 flex items-center justify-center text-slate-400 text-xs gap-2">
+          <div className="py-10 flex items-center justify-center text-slate-400 text-xs gap-2">
             <RefreshCw className="animate-spin" size={16} />
-            <span>Memuat portofolio saham...</span>
+            <span>Memuat data portofolio...</span>
           </div>
         ) : portfolio.length === 0 ? (
-          <div className="py-12 text-center text-slate-400 text-xs border border-dashed border-white/10 rounded-2xl">
-            Belum ada saham di portofolio kamu. Klik tombol &quot;Tambah Saham&quot; di atas untuk mulai memantau.
+          <div className="py-10 text-center text-slate-400 text-xs border border-dashed border-white/10 rounded-2xl">
+            Belum ada saham di portofolio kamu. Klik tombol &quot;Tambah Saham&quot; atau pilih kartu saham LQ45 di atas.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/10 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="py-3 px-3">Emiten</th>
-                  <th className="py-3 px-3">Harga Beli</th>
-                  <th className="py-3 px-3">Harga Terkini</th>
-                  <th className="py-3 px-3">Total Lot</th>
-                  <th className="py-3 px-3">Total Nilai</th>
-                  <th className="py-3 px-3">Unrealized PnL</th>
-                  <th className="py-3 px-3 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5 text-xs">
-                {portfolio.map((item) => {
-                  const quote = liveQuotes[item.ticker];
-                  const currentPrice = quote?.price || item.buy_price;
-                  const totalShares = item.lots * 100;
-                  const totalInvested = item.buy_price * totalShares;
-                  const totalVal = currentPrice * totalShares;
-                  const pnl = totalVal - totalInvested;
-                  const pnlPercent = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0;
+          <div className="space-y-2.5">
+            {portfolio.map((item) => {
+              const quote = liveQuoteMap[item.ticker];
+              const currentPrice = quote ? quote.price : item.buy_price;
+              const totalShares = item.lots * 100;
+              const totalInvested = item.buy_price * totalShares;
+              const totalVal = currentPrice * totalShares;
+              const pnl = totalVal - totalInvested;
+              const pnlPercent = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0;
+              const isProfit = pnl >= 0;
 
-                  return (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-white/[0.03] transition-colors cursor-pointer"
-                      onClick={() => setSelectedTicker(item.ticker)}
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => quote && handleOpenStockDetail(quote)}
+                  className="p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 flex flex-wrap items-center justify-between gap-3 transition-all cursor-pointer group"
+                >
+                  {/* Left: Icon Ticker + Emiten Info */}
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-blue-500/15 border border-blue-400/30 flex items-center justify-center font-black text-blue-400 text-xs tracking-tight flex-shrink-0">
+                      {item.ticker.replace('.JK', '')}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-white text-sm">
+                          {item.ticker.replace('.JK', '')}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-mono">.JK</span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Avg: Rp {item.buy_price.toLocaleString('id-ID')} · {item.lots} Lot ({totalShares.toLocaleString('id-ID')} lbr)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Middle: Total Value */}
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-white">
+                      Rp {Math.round(totalVal).toLocaleString('id-ID')}
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      Terkini: Rp {currentPrice.toLocaleString('id-ID')}
+                    </p>
+                  </div>
+
+                  {/* Right: Real-time PnL & Delete */}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`px-3 py-1.5 rounded-xl border text-right ${
+                        isProfit
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                          : 'bg-red-500/10 border-red-500/30 text-red-400'
+                      }`}
                     >
-                      <td className="py-3 px-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-white text-sm">
-                            {item.ticker.replace('.JK', '')}
-                          </span>
-                          <span className="text-[10px] text-blue-400 font-mono">.JK</span>
-                        </div>
-                        <span className="text-[11px] text-slate-400 block truncate max-w-[140px]">
-                          {quote?.name || item.ticker}
-                        </span>
-                      </td>
+                      <p className="text-xs font-black">
+                        {isProfit ? '+' : ''}Rp {Math.round(pnl).toLocaleString('id-ID')}
+                      </p>
+                      <p className="text-[10px] font-semibold opacity-90">
+                        {isProfit ? '+' : ''}
+                        {pnlPercent.toFixed(2)}%
+                      </p>
+                    </div>
 
-                      <td className="py-3 px-3 font-medium text-slate-300">
-                        Rp {item.buy_price.toLocaleString('id-ID')}
-                      </td>
-
-                      <td className="py-3 px-3">
-                        <div className="font-semibold text-white">
-                          Rp {currentPrice.toLocaleString('id-ID')}
-                        </div>
-                        {quote && (
-                          <div
-                            className={`text-[10px] font-medium flex items-center gap-0.5 ${
-                              quote.change >= 0 ? 'text-emerald-400' : 'text-red-400'
-                            }`}
-                          >
-                            {quote.change >= 0 ? '+' : ''}
-                            {quote.changePercent.toFixed(2)}%
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="py-3 px-3 font-medium text-slate-300">
-                        {item.lots} Lot
-                        <span className="block text-[10px] text-slate-500">
-                          ({totalShares.toLocaleString('id-ID')} lbr)
-                        </span>
-                      </td>
-
-                      <td className="py-3 px-3 font-bold text-white">
-                        Rp {Math.round(totalVal).toLocaleString('id-ID')}
-                      </td>
-
-                      <td className="py-3 px-3">
-                        <div
-                          className={`font-bold flex items-center gap-1 ${
-                            pnl >= 0 ? 'text-emerald-400' : 'text-red-400'
-                          }`}
-                        >
-                          {pnl >= 0 ? '+' : ''}Rp {Math.round(pnl).toLocaleString('id-ID')}
-                        </div>
-                        <div
-                          className={`text-[11px] font-medium ${
-                            pnl >= 0 ? 'text-emerald-400/80' : 'text-red-400/80'
-                          }`}
-                        >
-                          ({pnl >= 0 ? '+' : ''}
-                          {pnlPercent.toFixed(2)}%)
-                        </div>
-                      </td>
-
-                      <td className="py-3 px-3 text-right" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => handleDeleteStock(item.id)}
-                          className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
-                          title="Hapus saham dari portofolio"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteStock(item.id);
+                      }}
+                      className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 opacity-60 hover:opacity-100 transition-all"
+                      title="Hapus saham dari portofolio"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Economy & Business Hot News Section */}
-      <div className="glass-card p-5 rounded-3xl border border-white/10 space-y-4">
+      {/* ── SECTION 5: NEWS SECTION (Ekonomi & Bisnis) ────────────────────────── */}
+      <section className="glass-card rounded-3xl p-5 border border-white/10 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Newspaper size={18} className="text-blue-400" />
-              Berita Terhangat Ekonomi & Bisnis
+            <h2 className="text-base font-extrabold text-white flex items-center gap-2">
+              <Newspaper size={18} className="text-amber-400" />
+              Berita Ekonomi & Bisnis Terkini
             </h2>
-            <p className="text-xs text-slate-400">Rangkuman berita terkini seputar pasar modal dan ekonomi Indonesia</p>
+            <p className="text-xs text-slate-400">Rangkuman peristiwa pasar keuangan dan bursa nasional</p>
           </div>
-          <button
-            onClick={() => fetchBusinessNews()}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors"
-          >
-            <RefreshCw size={16} />
-          </button>
+          <span className="text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-slate-400 font-medium">
+            Live Feed
+          </span>
         </div>
 
         {newsLoading ? (
           <div className="py-8 flex items-center justify-center text-slate-400 text-xs gap-2">
             <RefreshCw className="animate-spin" size={16} />
-            <span>Memuat berita ekonomi terkini...</span>
+            <span>Memuat berita ekonomi...</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -562,14 +634,14 @@ export default function InvestasiPage() {
                 href={n.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 transition-all group flex flex-col justify-between"
+                className="p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 transition-all group flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">
+                    <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">
                       {n.source}
                     </span>
-                    <ExternalLink size={13} className="text-slate-500 group-hover:text-blue-400 transition-colors" />
+                    <ExternalLink size={13} className="text-slate-500 group-hover:text-amber-400 transition-colors" />
                   </div>
                   <h3 className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors leading-relaxed line-clamp-2">
                     {n.title}
@@ -579,9 +651,175 @@ export default function InvestasiPage() {
             ))}
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Add Stock Modal */}
+      {/* ── POPUP MODAL: STOCK DETAIL TECHNICAL & FUNDAMENTAL ────────────────── */}
+      <Modal
+        isOpen={!!selectedStockDetail}
+        onClose={() => setSelectedStockDetail(null)}
+        title={
+          selectedStockDetail
+            ? `${selectedStockDetail.name} (${selectedStockDetail.ticker.replace('.JK', '')})`
+            : 'Detail Saham'
+        }
+      >
+        {selectedStockDetail && (
+          <div className="space-y-5">
+            {/* Price Header inside Modal */}
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/10">
+              <div>
+                <p className="text-2xl font-black text-white font-mono">
+                  Rp {selectedStockDetail.price.toLocaleString('id-ID')}
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">{selectedStockDetail.fundamental.description}</p>
+              </div>
+              <div
+                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1 ${
+                  selectedStockDetail.changePercent >= 0
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-red-500/15 text-red-400 border border-red-500/30'
+                }`}
+              >
+                {selectedStockDetail.changePercent >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                {selectedStockDetail.changePercent >= 0 ? '+' : ''}
+                {selectedStockDetail.changePercent.toFixed(2)}%
+              </div>
+            </div>
+
+            {/* 30-Day Technical Chart */}
+            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2">
+              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                Grafik Pergerakan Harga 30 Hari Terakhir
+              </h4>
+              <div className="h-44 w-full">
+                {stockHistoryLoading ? (
+                  <div className="h-full flex items-center justify-center text-slate-400 text-xs gap-2">
+                    <RefreshCw className="animate-spin" size={16} />
+                    <span>Memuat riwayat saham...</span>
+                  </div>
+                ) : stockHistory.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={stockHistory}>
+                      <defs>
+                        <linearGradient id="colorStockDetail" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                      <YAxis
+                        domain={['auto', 'auto']}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: '#94a3b8', fontSize: 10 }}
+                        tickFormatter={(v) => `Rp ${v.toLocaleString('id-ID')}`}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#0a1628',
+                          border: '1px solid rgba(255,255,255,0.15)',
+                          borderRadius: '0.75rem',
+                          color: '#fff',
+                          fontSize: '12px',
+                        }}
+                        formatter={(val: any) => [`Rp ${Number(val).toLocaleString('id-ID')}`, 'Harga']}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="price"
+                        stroke="#3b82f6"
+                        strokeWidth={2.5}
+                        fillOpacity={1}
+                        fill="url(#colorStockDetail)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-slate-400 text-xs">
+                    Data grafik teknikal siap ditampilkan
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Fundamental & Technical Snapshot Grid */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                Snapshot Fundamental & Valuasi
+              </h4>
+              <div className="grid grid-cols-3 gap-2.5 text-xs">
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <span className="text-[10px] text-slate-400 block">PER (P/E Ratio)</span>
+                  <span className="font-bold text-white text-sm">{selectedStockDetail.fundamental.per}x</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <span className="text-[10px] text-slate-400 block">PBV Ratio</span>
+                  <span className="font-bold text-white text-sm">{selectedStockDetail.fundamental.pbv}x</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <span className="text-[10px] text-slate-400 block">ROE (Return on Equity)</span>
+                  <span className="font-bold text-emerald-400 text-sm">{selectedStockDetail.fundamental.roe}%</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <span className="text-[10px] text-slate-400 block">EPS (Laba/Saham)</span>
+                  <span className="font-bold text-white text-sm">Rp {selectedStockDetail.fundamental.eps}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <span className="text-[10px] text-slate-400 block">Dividen Yield</span>
+                  <span className="font-bold text-cyan-400 text-sm">{selectedStockDetail.fundamental.divYield}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <span className="text-[10px] text-slate-400 block">Rekomendasi Analis</span>
+                  <Badge variant="accent">{selectedStockDetail.fundamental.sentiment}</Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Add to Portfolio Section */}
+            <div className="pt-2 border-t border-white/10">
+              <h4 className="text-xs font-bold text-white mb-2.5">Tambah Saham Ini ke Portofolio Kamu</h4>
+              <form onSubmit={handleAddStock} className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-1">Harga Beli Rata-Rata (Rp)</label>
+                  <input
+                    type="number"
+                    placeholder="Contoh: 10150"
+                    value={formBuyPrice}
+                    onChange={(e) => setFormBuyPrice(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-blue-500"
+                    required
+                    min="1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-1">Jumlah Lot (1 Lot = 100 lbr)</label>
+                  <input
+                    type="number"
+                    placeholder="1"
+                    value={formLots}
+                    onChange={(e) => setFormLots(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-blue-500"
+                    required
+                    min="0.01"
+                    step="any"
+                  />
+                </div>
+                <div className="col-span-2 pt-1">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold text-xs shadow-lg shadow-blue-500/25 transition-all"
+                  >
+                    {submitting ? 'Menyimpan...' : `+ Simpan ${selectedStockDetail.ticker.replace('.JK', '')} ke Portofolio`}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ── STANDALONE ADD STOCK MODAL ────────────────────────────────────────── */}
       <Modal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
@@ -599,19 +837,14 @@ export default function InvestasiPage() {
             <label className="block text-xs font-semibold text-slate-300 mb-1">
               Kode Emiten / Ticker (Akhiran .JK otomatis ditambahkan)
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Contoh: BBCA atau BBRI"
-                value={formTicker}
-                onChange={(e) => setFormTicker(e.target.value.toUpperCase())}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 uppercase font-mono"
-                required
-              />
-              <span className="absolute right-3.5 top-2.5 text-xs text-blue-400 font-mono font-bold">
-                {formTicker ? (formTicker.endsWith('.JK') ? '' : '.JK') : ''}
-              </span>
-            </div>
+            <input
+              type="text"
+              placeholder="Contoh: BBCA atau BBRI"
+              value={formTicker}
+              onChange={(e) => setFormTicker(e.target.value.toUpperCase())}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 uppercase font-mono"
+              required
+            />
           </div>
 
           <div>
@@ -643,14 +876,6 @@ export default function InvestasiPage() {
               min="0.01"
               step="any"
             />
-            {formBuyPrice && formLots && (
-              <p className="text-[11px] text-slate-400 mt-1">
-                Total Modal Terinvestasi:{' '}
-                <span className="font-bold text-white">
-                  Rp {(parseFloat(formBuyPrice) * parseFloat(formLots) * 100).toLocaleString('id-ID')}
-                </span>
-              </p>
-            )}
           </div>
 
           <div className="flex justify-end gap-3 pt-2">

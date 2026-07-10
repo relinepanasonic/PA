@@ -65,7 +65,7 @@ function fetchHistoricalChart(ticker: string): Promise<HistoryPoint[]> {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   let ticker = (searchParams.get('ticker') || 'BBCA.JK').toUpperCase().trim();
-  if (!ticker.endsWith('.JK')) {
+  if (!ticker.startsWith('^') && !ticker.endsWith('.JK')) {
     ticker = `${ticker}.JK`;
   }
 
