@@ -709,12 +709,13 @@ export default function FinancePage() {
             </div>
           </div>
 
-          {/* Quick Expense Category Pills */}
-          {formType === 'expense' && (
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Quick Category</label>
-              <div className="flex gap-1.5 flex-wrap">
-                {filteredCategories.map((c) => (
+          {/* Unified Category Grid */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Category</label>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {filteredCategories.map((c) => {
+                const isSelected = formCategoryId === c.id;
+                return (
                   <button
                     key={c.id}
                     type="button"
@@ -722,30 +723,19 @@ export default function FinancePage() {
                       setFormCategoryId(c.id);
                       if (c.tag) setFormTag(c.tag);
                     }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
-                      formCategoryId === c.id
-                        ? 'bg-orange-500/30 text-orange-300 border-orange-400 shadow scale-105'
-                        : 'bg-slate-900 text-slate-300 border-white/10 hover:border-white/30'
+                    className={`p-2.5 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all border ${
+                      isSelected
+                        ? 'bg-blue-600/30 border-blue-400 text-white shadow-lg scale-[1.03]'
+                        : 'bg-white/[0.03] border-white/10 text-slate-300 hover:bg-white/[0.07] hover:border-white/20'
                     }`}
                   >
-                    <span>{c.icon || '🏷️'}</span>
-                    <span>{c.name}</span>
+                    <span className="text-xl">{c.icon || '🏷️'}</span>
+                    <span className="text-xs font-bold truncate w-full text-center">{c.name}</span>
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          )}
-
-          <Select
-            id="tx-category"
-            label="Category"
-            options={[
-              { value: '', label: 'Select category...' },
-              ...filteredCategories.map(c => ({ value: c.id, label: `${c.icon ? c.icon + ' ' : ''}${c.name}` })),
-            ]}
-            value={formCategoryId}
-            onChange={(e) => setFormCategoryId(e.target.value)}
-          />
+          </div>
 
           <Input
             id="tx-desc"
