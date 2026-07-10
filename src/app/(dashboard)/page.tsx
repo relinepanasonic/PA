@@ -227,7 +227,7 @@ export default function DashboardPage() {
     const utterance = new SpeechSynthesisUtterance(script);
     utterance.lang = 'id-ID';
 
-    // Score and select the most natural, deep Indonesian male voice available (e.g., Natural / Neural / Ardi / Andika)
+    // Score and select a soft, natural Indonesian female voice (e.g., Natural / Neural / Gadis / Siti / Google Bahasa Indonesia)
     const voices = synth.getVoices();
     let bestVoice: SpeechSynthesisVoice | null = null;
     let bestScore = -1000;
@@ -239,8 +239,10 @@ export default function DashboardPage() {
 
       if (lang.includes('id')) score += 50;
       if (name.includes('natural') || name.includes('online') || name.includes('neural')) score += 35;
-      if (/male|man|pria|ardi|andika|budi|dika/i.test(name)) score += 45;
-      if (/female|woman|wanita|gadis|siti|rani/i.test(name)) score -= 50;
+      // Prioritize Female / Gadis / Siti / Rani / Google Bahasa Indonesia
+      if (/female|woman|wanita|gadis|siti|rani/i.test(name)) score += 45;
+      // Penalize Male voices
+      if (/male|man|pria|ardi|andika|budi|dika/i.test(name)) score -= 50;
 
       if (score > bestScore && score > 0) {
         bestScore = score;
@@ -252,9 +254,9 @@ export default function DashboardPage() {
       utterance.voice = bestVoice;
     }
 
-    // Deep man baritone tuning: slightly lower pitch + calm executive cadence
-    utterance.pitch = 0.85;
-    utterance.rate = 0.93;
+    // Soft, warm, calm female tone (0.96 pitch ensures smooth softness without sharp/high-pitched tones)
+    utterance.pitch = 0.96;
+    utterance.rate = 0.94;
 
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
