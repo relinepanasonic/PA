@@ -141,8 +141,8 @@ export default function CalendarPage() {
       if (a.status === 'in_progress') st = 'in_progress';
       if (a.status === 'completed') st = 'completed';
 
-      // FIX: parse hour from local ISO string, NOT new Date() which converts UTC
       let hrStart = 9;
+      let hrEnd = 10;
       let ds: string | null = null;
       if (a.scheduled_at) {
         hrStart = localHourFromISO(a.scheduled_at);
@@ -151,13 +151,25 @@ export default function CalendarPage() {
         ds = localDateFromISO(a.deadline);
       }
 
+      const meta = a.metadata as Record<string, any> | null;
+      if (meta && typeof meta.hour_end === 'number') {
+        hrEnd = meta.hour_end;
+      } else if (a.deadline && a.scheduled_at) {
+        const deadlineHr = localHourFromISO(a.deadline);
+        if (deadlineHr > hrStart) hrEnd = deadlineHr;
+        else hrEnd = hrStart + 1;
+      } else {
+        hrEnd = hrStart + 1;
+      }
+      if (hrEnd <= hrStart) hrEnd = hrStart + 1;
+
       combined.push({
         id: `act-${a.id}`,
         title: a.title,
         description: a.description || '',
         dateString: ds,
         hourStart: hrStart,
-        hourEnd: Math.min(hrStart + 1, 23),
+        hourEnd: hrEnd,
         type: 'activity',
         status: st,
         priority: 'high',
@@ -294,16 +306,27 @@ export default function CalendarPage() {
       });
       if (error) console.error('Todo insert error:', error);
     } else {
-      // Store as local ISO string without Z so it round-trips correctly
+      const startHr = parseInt(formStartTime.split(':')[0], 10) || 9;
+      let endHr = parseInt(formEndTime.split(':')[0], 10) || (startHr + 1);
+      if (endHr <= startHr) endHr = startHr + 1;
+
       const startIso = `${dateToUse}T${formStartTime}:00`;
+      const endIso = `${dateToUse}T${formEndTime}:00`;
+
       const { error } = await supabase.from('work_activities').insert({
         user_id: user.id,
         title: formTitle,
         description: formDescription,
         activity_type: 'livestream',
-        status: 'planned',          // FIX: 'not_started' is invalid; valid = planned|in_progress|completed|cancelled
+        status: 'planned',
         scheduled_at: startIso,
-        metadata: {},               // FIX: metadata is required (non-nullable Record<string,unknown>)
+        deadline: endIso,
+        metadata: {
+          start_time: formStartTime,
+          end_time: formEndTime,
+          hour_start: startHr,
+          hour_end: endHr,
+        },
       });
       if (error) console.error('Activity insert error:', error.message, error.details);
     }
@@ -416,7 +439,7 @@ export default function CalendarPage() {
           <div className="divide-y divide-white/[0.06] max-h-[72vh] overflow-y-auto">
             {HOURS.map(({ label, hour }) => {
               const hourItems = items.filter(
-                (it) => it.dateString === dailyDs && it.hourStart === hour
+                (it) => it.dateString === dailyDs && hour >= it.hourStart && hour < it.hourEnd
               );
               const isNow = isToday && hour === nowHour;
               const isDragTarget = dragOverHour === hour && dragItemId !== null;
@@ -448,35 +471,62 @@ export default function CalendarPage() {
                         <Plus size={11} /> Add at {label}
                       </p>
                     ) : (
-                      hourItems.map((it) => (
-                        <div
-                          key={it.id}
-                          draggable={it.type === 'activity'}
-                          onDragStart={(e) => { e.stopPropagation(); handleDailyDragStart(e, it.id); }}
-                          onDragEnd={() => { setDragItemId(null); setDragOverHour(null); }}
-                          onClick={(e) => e.stopPropagation()}
-                          className={`p-2.5 rounded-xl border-l-4 border border-white/10 flex items-center justify-between gap-2 transition-all ${
-                            dragItemId === it.id ? 'opacity-40 scale-[0.97]'
-                            : it.status === 'completed'
-                              ? 'bg-emerald-500/15 border-l-emerald-400 text-emerald-200'
-                            : it.type === 'activity'
-                              ? 'bg-teal-500/20 border-l-teal-400 text-teal-50 cursor-grab active:cursor-grabbing'
-                            : 'bg-violet-600/25 border-l-violet-400 text-violet-50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            {it.type === 'activity' && <GripVertical size={13} className="text-cyan-400/60 flex-shrink-0" />}
-                            <div className="min-w-0">
-                              <p className={`text-xs font-extrabold truncate ${it.status === 'completed' ? 'line-through' : ''}`}>{it.title}</p>
-                              <p className="text-[10px] opacity-60 font-mono">{String(it.hourStart).padStart(2,'0')}.00–{String(it.hourEnd).padStart(2,'0')}.00</p>
+                      hourItems.map((it) => {
+                        const isContinuation = hour > it.hourStart;
+                        if (isContinuation) {
+                          return (
+                            <div
+                              key={`${it.id}-cont-${hour}`}
+                              onClick={(e) => { e.stopPropagation(); openModal(dailyDs, it.hourStart); }}
+                              className="p-2.5 rounded-xl border-l-4 border border-teal-500/30 bg-teal-500/10 flex items-center justify-between gap-2 text-teal-100/90"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse flex-shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold truncate">↳ Blocked: {it.title}</p>
+                                  <p className="text-[10px] opacity-75 font-mono">({String(it.hourStart).padStart(2,'0')}.00–{String(it.hourEnd).padStart(2,'0')}.00)</p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDelete(it); }}
+                                className="p-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/25 flex-shrink-0"
+                              >
+                                <Trash2 size={12} />
+                              </button>
                             </div>
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={it.id}
+                            draggable={it.type === 'activity'}
+                            onDragStart={(e) => { e.stopPropagation(); handleDailyDragStart(e, it.id); }}
+                            onDragEnd={() => { setDragItemId(null); setDragOverHour(null); }}
+                            onClick={(e) => e.stopPropagation()}
+                            className={`p-2.5 rounded-xl border-l-4 border border-white/10 flex items-center justify-between gap-2 transition-all ${
+                              dragItemId === it.id ? 'opacity-40 scale-[0.97]'
+                              : it.status === 'completed'
+                                ? 'bg-emerald-500/15 border-l-emerald-400 text-emerald-200'
+                              : it.type === 'activity'
+                                ? 'bg-teal-500/20 border-l-teal-400 text-teal-50 cursor-grab active:cursor-grabbing'
+                              : 'bg-violet-600/25 border-l-violet-400 text-violet-50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              {it.type === 'activity' && <GripVertical size={13} className="text-cyan-400/60 flex-shrink-0" />}
+                              <div className="min-w-0">
+                                <p className={`text-xs font-extrabold truncate ${it.status === 'completed' ? 'line-through' : ''}`}>{it.title}</p>
+                                <p className="text-[10px] opacity-60 font-mono">{String(it.hourStart).padStart(2,'0')}.00–{String(it.hourEnd).padStart(2,'0')}.00</p>
+                              </div>
+                            </div>
+                            <button onClick={() => handleDelete(it)}
+                              className="p-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/25 flex-shrink-0">
+                              <Trash2 size={12} />
+                            </button>
                           </div>
-                          <button onClick={() => handleDelete(it)}
-                            className="p-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/25 flex-shrink-0">
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -686,21 +736,33 @@ export default function CalendarPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="w-full">
                   <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Start Time (24h)</label>
-                  <input
-                    type="time"
+                  <select
                     value={formStartTime}
                     onChange={(e) => setFormStartTime(e.target.value)}
-                    className="w-full bg-white/[0.06] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  />
+                    className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono font-bold"
+                  >
+                    {Array.from({ length: 48 }, (_, i) => {
+                      const h = Math.floor(i / 2);
+                      const m = i % 2 === 0 ? '00' : '30';
+                      const t = `${String(h).padStart(2, '0')}:${m}`;
+                      return <option key={`start-${t}`} value={t} className="bg-slate-900 text-white">{t}</option>;
+                    })}
+                  </select>
                 </div>
                 <div className="w-full">
                   <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">End Time (24h)</label>
-                  <input
-                    type="time"
+                  <select
                     value={formEndTime}
                     onChange={(e) => setFormEndTime(e.target.value)}
-                    className="w-full bg-white/[0.06] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  />
+                    className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono font-bold"
+                  >
+                    {Array.from({ length: 48 }, (_, i) => {
+                      const h = Math.floor(i / 2);
+                      const m = i % 2 === 0 ? '00' : '30';
+                      const t = `${String(h).padStart(2, '0')}:${m}`;
+                      return <option key={`end-${t}`} value={t} className="bg-slate-900 text-white">{t}</option>;
+                    })}
+                  </select>
                 </div>
               </div>
             </>
@@ -715,12 +777,18 @@ export default function CalendarPage() {
               />
               <div className="w-full">
                 <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Due Time (24h, optional)</label>
-                <input
-                  type="time"
+                <select
                   value={formStartTime}
                   onChange={(e) => setFormStartTime(e.target.value)}
-                  className="w-full bg-white/[0.06] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                />
+                  className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/20 transition-all font-mono font-bold"
+                >
+                  {Array.from({ length: 48 }, (_, i) => {
+                    const h = Math.floor(i / 2);
+                    const m = i % 2 === 0 ? '00' : '30';
+                    const t = `${String(h).padStart(2, '0')}:${m}`;
+                    return <option key={`due-${t}`} value={t} className="bg-slate-900 text-white">{t}</option>;
+                  })}
+                </select>
               </div>
             </>
           )}
