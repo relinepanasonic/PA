@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { FinanceTransaction, FinanceCategory, FinanceType, FinanceTag } from '@/lib/types/database';
-import { Plus, Wallet, TrendingUp, TrendingDown, DollarSign, Tag, Trash2, Edit3, Calendar, Camera, UploadCloud, CheckCircle2, FileSpreadsheet, Sparkles, Building2 } from 'lucide-react';
+import { Plus, Wallet, TrendingUp, TrendingDown, DollarSign, Tag, Trash2, Edit3, Calendar, Camera, UploadCloud, CheckCircle2, FileSpreadsheet, Sparkles, Building2, Settings } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -21,7 +21,7 @@ interface BankAccount {
   color: string;
 }
 
-const BANK_ACCOUNTS: BankAccount[] = [
+const DEFAULT_BANK_ACCOUNTS: BankAccount[] = [
   { id: 'all', label: 'All Accounts', icon: '🏦', color: 'bg-slate-800 text-slate-200 border-white/20' },
   { id: 'BCA Utama', label: 'BCA Utama', icon: '💳', color: 'bg-blue-500/20 text-blue-300 border-blue-400/40' },
   { id: 'Mandiri Bisnis', label: 'Mandiri Bisnis', icon: '🏛️', color: 'bg-amber-500/20 text-amber-300 border-amber-400/40' },
@@ -32,7 +32,7 @@ const BANK_ACCOUNTS: BankAccount[] = [
 
 const parseAccountFromDesc = (desc: string) => {
   if (!desc) return { account: 'BCA Utama', cleanDesc: '' };
-  const match = desc.match(/^\[(BCA Utama|Mandiri Bisnis|Jenius Digital|Kartu Kredit|Dompet Cash)\]\s*(.*)$/);
+  const match = desc.match(/^\[([^\]]+)\]\s*(.*)$/);
   if (match) {
     return { account: match[1], cleanDesc: match[2] };
   }
@@ -143,6 +143,12 @@ export default function FinancePage() {
   const [editingTx, setEditingTx] = useState<FinanceTransaction | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Dynamic Bank Accounts state
+  const [accounts, setAccounts] = useState<BankAccount[]>(DEFAULT_BANK_ACCOUNTS);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [newAccountName, setNewAccountName] = useState('');
+  const [newAccountIcon, setNewAccountIcon] = useState('💳');
+
   // E-Statement & Receipt AI Simulation state
   const [showStatementModal, setShowStatementModal] = useState(false);
   const [statementAccount, setStatementAccount] = useState('BCA Utama');
@@ -247,7 +253,48 @@ export default function FinancePage() {
   }, [typeFilter, tagFilter, page]);
 
   useEffect(() => { fetchCategories(); fetchSummary(); }, [fetchCategories, fetchSummary]);
-  useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
+  useEffect(() => {
+    fetchTransactions();
+    const stored = localStorage.getItem('pa_custom_bank_accounts');
+    if (stored) {
+      try {
+        setAccounts(JSON.parse(stored));
+      } catch (e) {
+        console.error('Failed to parse accounts:', e);
+      }
+    }
+  }, [fetchTransactions]);
+
+  const handleAddAccount = () => {
+    if (!newAccountName.trim()) return;
+    const colors = [
+      'bg-blue-500/20 text-blue-300 border-blue-400/40',
+      'bg-amber-500/20 text-amber-300 border-amber-400/40',
+      'bg-cyan-500/20 text-cyan-300 border-cyan-400/40',
+      'bg-purple-500/20 text-purple-300 border-purple-400/40',
+      'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
+      'bg-rose-500/20 text-rose-300 border-rose-400/40',
+    ];
+    const randColor = colors[Math.floor(Math.random() * colors.length)];
+    const newAcc: BankAccount = {
+      id: newAccountName.trim(),
+      label: newAccountName.trim(),
+      icon: newAccountIcon || '💳',
+      color: randColor,
+    };
+    const updated = [...accounts, newAcc];
+    setAccounts(updated);
+    localStorage.setItem('pa_custom_bank_accounts', JSON.stringify(updated));
+    setNewAccountName('');
+  };
+
+  const handleDeleteAccount = (id: string) => {
+    if (id === 'all') return;
+    const updated = accounts.filter(a => a.id !== id);
+    setAccounts(updated);
+    localStorage.setItem('pa_custom_bank_accounts', JSON.stringify(updated));
+    if (accountFilter === id) setAccountFilter('all');
+  };
 
   const openCreate = () => {
     setEditingTx(null);
@@ -398,7 +445,7 @@ export default function FinancePage() {
             <Wallet size={18} />
           </div>
           <div>
-            <h1 className="text-lg font-extrabold text-white tracking-tight">Finance & Ledger</h1>
+            <h1 className="text-lg font-extrabold text-white tracking-tight">Finance</h1>
             <p className="text-[11px] text-slate-400 font-medium">Multi-account cashflow tracking</p>
           </div>
         </div>
@@ -456,9 +503,18 @@ export default function FinancePage() {
 
       {/* Account / Wallet Selector Pills */}
       <div className="space-y-1.5">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">Accounts & Wallets</p>
+        <div className="flex items-center justify-between px-1">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Accounts & Wallets</p>
+          <button
+            onClick={() => setShowAccountModal(true)}
+            className="flex items-center gap-1 text-[11px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            <Settings size={12} />
+            <span>Manage Accounts</span>
+          </button>
+        </div>
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar">
-          {BANK_ACCOUNTS.map((acc) => (
+          {accounts.map((acc) => (
             <button
               key={acc.id}
               onClick={() => { setAccountFilter(acc.id); setPage(0); }}
@@ -475,38 +531,32 @@ export default function FinancePage() {
         </div>
       </div>
 
-      {/* Compact Filters Bar */}
-      <div className="flex items-center justify-between gap-2 p-1.5 rounded-2xl bg-white/[0.03] border border-white/10">
-        <div className="flex items-center gap-1">
-          {(['all', 'income', 'expense'] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => { setTypeFilter(f); setPage(0); }}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                typeFilter === f
-                  ? 'bg-white/15 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {f === 'all' ? 'All' : f === 'income' ? 'Income' : 'Expense'}
-            </button>
-          ))}
+      {/* Clean Dropdown Filters Bar (No overflow on mobile) */}
+      <div className="grid grid-cols-2 gap-2 p-2 rounded-2xl bg-white/[0.03] border border-white/10">
+        <div>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Type</label>
+          <select
+            value={typeFilter}
+            onChange={(e) => { setTypeFilter(e.target.value as any); setPage(0); }}
+            className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
+          >
+            <option value="all">All Types</option>
+            <option value="income">Income Only (+)</option>
+            <option value="expense">Expenses Only (-)</option>
+          </select>
         </div>
 
-        <div className="flex items-center gap-1">
-          {(['all', 'professional', 'personal'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => { setTagFilter(t); setPage(0); }}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
-                tagFilter === t
-                  ? 'bg-blue-500/20 text-blue-300 border border-blue-400/40'
-                  : 'text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              {t === 'all' ? 'All Tags' : t === 'professional' ? 'Pro' : 'Personal'}
-            </button>
-          ))}
+        <div>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tag</label>
+          <select
+            value={tagFilter}
+            onChange={(e) => { setTagFilter(e.target.value as any); setPage(0); }}
+            className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
+          >
+            <option value="all">All Tags</option>
+            <option value="personal">Personal</option>
+            <option value="professional">Professional</option>
+          </select>
         </div>
       </div>
 
@@ -632,7 +682,7 @@ export default function FinancePage() {
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Account / Wallet</label>
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              {BANK_ACCOUNTS.filter(a => a.id !== 'all').map((acc) => (
+              {accounts.filter(a => a.id !== 'all').map((acc) => (
                 <button
                   key={acc.id}
                   type="button"
@@ -793,7 +843,7 @@ export default function FinancePage() {
           <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10">
             <p className="text-xs font-semibold text-slate-300">Select Target Account</p>
             <div className="flex gap-1.5 overflow-x-auto pt-2 pb-1 no-scrollbar">
-              {BANK_ACCOUNTS.filter(a => a.id !== 'all').map((acc) => (
+              {accounts.filter(a => a.id !== 'all').map((acc) => (
                 <button
                   key={`st-${acc.id}`}
                   type="button"
@@ -839,6 +889,63 @@ export default function FinancePage() {
               onClick={handleImportStatement}
             >
               Import 4 Transactions to {statementAccount}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── MANAGE ACCOUNTS / WALLETS MODAL ────────────────────────────────────── */}
+      <Modal
+        isOpen={showAccountModal}
+        onClose={() => setShowAccountModal(false)}
+        title="Manage Bank Accounts & Wallets"
+      >
+        <div className="space-y-4">
+          <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+            <p className="text-xs font-bold text-white uppercase tracking-wider">Add New Account</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Icon (💳, 🏦...)"
+                value={newAccountIcon}
+                onChange={(e) => setNewAccountIcon(e.target.value)}
+                className="w-16 px-2.5 py-2 rounded-xl bg-slate-900 border border-white/15 text-center text-sm font-bold text-white focus:outline-none focus:border-blue-400"
+              />
+              <input
+                type="text"
+                placeholder="Account Name (e.g. Bank Jago)"
+                value={newAccountName}
+                onChange={(e) => setNewAccountName(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs font-semibold text-white focus:outline-none focus:border-blue-400"
+              />
+              <Button size="sm" onClick={handleAddAccount} disabled={!newAccountName.trim()}>
+                Add
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Existing Accounts</p>
+            {accounts.filter(a => a.id !== 'all').map((acc) => (
+              <div key={acc.id} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 font-bold text-white">
+                  <span>{acc.icon}</span>
+                  <span>{acc.label}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteAccount(acc.id)}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/15 transition-colors"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <Button variant="secondary" onClick={() => setShowAccountModal(false)}>
+              Close
             </Button>
           </div>
         </div>
