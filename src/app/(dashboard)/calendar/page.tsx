@@ -460,23 +460,30 @@ export default function CalendarPage() {
 
   // Card status action buttons
   const StatusActions = ({ item }: { item: CombinedItem }) => (
-    <div className="flex items-center gap-1 flex-wrap pt-1.5 border-t border-white/10">
-      {item.status !== 'planned' && (
-        <button onClick={() => handleMoveStatus(item, 'planned')}
-          className="px-2 py-1 rounded-lg bg-white/10 text-[10px] font-semibold text-slate-300 hover:text-white transition-all">← To Do</button>
-      )}
-      {item.status !== 'in_progress' && (
-        <button onClick={() => handleMoveStatus(item, 'in_progress')}
-          className="px-2 py-1 rounded-lg bg-amber-500/20 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/30 transition-all">⚡ Progress</button>
-      )}
-      {item.status !== 'completed' && (
-        <button onClick={() => handleMoveStatus(item, 'completed')}
-          className="px-2 py-1 rounded-lg bg-emerald-500/20 text-[10px] font-semibold text-emerald-300 hover:bg-emerald-500/30 transition-all">✓ Done</button>
-      )}
-      <button onClick={() => handleDelete(item)}
-        className="ml-auto p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/25 transition-all" title="Delete">
-        <Trash2 size={13} />
-      </button>
+    <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
+      {item.type === 'todo' ? (
+        <div className="flex items-center gap-1 flex-wrap">
+          {item.status !== 'planned' && (
+            <button onClick={(e) => { e.stopPropagation(); handleMoveStatus(item, 'planned'); }}
+              className="px-2 py-1 rounded-lg bg-white/10 text-[10px] font-semibold text-slate-300 hover:text-white transition-all">← To Do</button>
+          )}
+          {item.status !== 'in_progress' && (
+            <button onClick={(e) => { e.stopPropagation(); handleMoveStatus(item, 'in_progress'); }}
+              className="px-2 py-1 rounded-lg bg-amber-500/20 text-[10px] font-semibold text-amber-300 hover:bg-amber-500/30 transition-all">⚡ Progress</button>
+          )}
+          {item.status !== 'completed' && (
+            <button onClick={(e) => { e.stopPropagation(); handleMoveStatus(item, 'completed'); }}
+              className="px-2 py-1 rounded-lg bg-emerald-500/20 text-[10px] font-semibold text-emerald-300 hover:bg-emerald-500/30 transition-all">✓ Done</button>
+          )}
+        </div>
+      ) : <div />}
+      <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
+        <AddToGoogleCalendar title={item.title} description={item.description} dateString={item.dateString} />
+        <button onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
+          className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/25 transition-all" title="Delete">
+          <Trash2 size={13} />
+        </button>
+      </div>
     </div>
   );
 
@@ -655,33 +662,35 @@ export default function CalendarPage() {
                         </div>
                       </div>
 
-                      {/* Status action bar */}
-                      <div className="flex items-center gap-1.5 pt-1">
-                        {it.status !== 'planned' && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'planned'); }}
-                            className="px-2 py-0.5 rounded bg-black/30 text-[10px] font-bold hover:bg-black/50 transition-all"
-                          >
-                            ← To Do
-                          </button>
-                        )}
-                        {it.status !== 'in_progress' && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'in_progress'); }}
-                            className="px-2 py-0.5 rounded bg-amber-500/30 text-amber-200 text-[10px] font-bold hover:bg-amber-500/40 transition-all"
-                          >
-                            ⚡ Progress
-                          </button>
-                        )}
-                        {it.status !== 'completed' && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'completed'); }}
-                            className="px-2 py-0.5 rounded bg-emerald-500/30 text-emerald-200 text-[10px] font-bold hover:bg-emerald-500/40 transition-all"
-                          >
-                            ✓ Done
-                          </button>
-                        )}
-                      </div>
+                      {/* Status action bar — only for Todo/Task items */}
+                      {it.type === 'todo' && (
+                        <div className="flex items-center gap-1.5 pt-1">
+                          {it.status !== 'planned' && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'planned'); }}
+                              className="px-2 py-0.5 rounded bg-black/30 text-[10px] font-bold hover:bg-black/50 transition-all"
+                            >
+                              ← To Do
+                            </button>
+                          )}
+                          {it.status !== 'in_progress' && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'in_progress'); }}
+                              className="px-2 py-0.5 rounded bg-amber-500/30 text-amber-200 text-[10px] font-bold hover:bg-amber-500/40 transition-all"
+                            >
+                              ⚡ Progress
+                            </button>
+                          )}
+                          {it.status !== 'completed' && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleMoveStatus(it, 'completed'); }}
+                              className="px-2 py-0.5 rounded bg-emerald-500/30 text-emerald-200 text-[10px] font-bold hover:bg-emerald-500/40 transition-all"
+                            >
+                              ✓ Done
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -793,14 +802,11 @@ export default function CalendarPage() {
                         dragItemId === item.id ? 'opacity-50 scale-[0.97]' : ''
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-1.5 min-w-0">
-                          <GripVertical size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
-                          <p className={`text-sm font-bold text-white ${item.status === 'completed' ? 'line-through text-slate-400' : ''}`}>
-                            {item.title}
-                          </p>
-                        </div>
-                        <AddToGoogleCalendar title={item.title} description={item.description} dateString={item.dateString} />
+                      <div className="flex items-start gap-1.5 w-full">
+                        <GripVertical size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
+                        <p className={`text-sm font-bold text-white break-words ${item.status === 'completed' ? 'line-through text-slate-400' : ''}`}>
+                          {item.title}
+                        </p>
                       </div>
 
                       {/* Subtasks */}

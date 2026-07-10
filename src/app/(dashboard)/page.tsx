@@ -14,6 +14,9 @@ interface FinanceSummary {
   personal_expenses: number;
 }
 
+import Modal from '@/components/ui/Modal';
+import Input from '@/components/ui/Input';
+
 export default function DashboardPage() {
   const [urgentTodos, setUrgentTodos] = useState<Todo[]>([]);
   const [todaySchedule, setTodaySchedule] = useState<WorkActivity[]>([]);
@@ -24,15 +27,25 @@ export default function DashboardPage() {
     personal_expenses: 0,
   });
   const [loading, setLoading] = useState(true);
+
+  // Edit Modal State
+  const [editingActivity, setEditingActivity] = useState<WorkActivity | null>(null);
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [formTitle, setFormTitle] = useState('');
+  const [formDate, setFormDate] = useState('');
+  const [formStartTime, setFormStartTime] = useState('08:00');
+  const [formEndTime, setFormEndTime] = useState('09:00');
+  const [formPriority, setFormPriority] = useState('medium');
+  const [saving, setSaving] = useState(false);
+
   const supabase = createClient();
 
-  useEffect(() => {
-    async function fetchDashboard() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+  const fetchDashboard = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
       const today = new Date().toISOString().split('T')[0];
       const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
@@ -92,10 +105,59 @@ export default function DashboardPage() {
       setUrgentTodos(todos || []);
       setTodaySchedule(schedule || []);
       setLoading(false);
-    }
+  };
 
+  useEffect(() => {
     fetchDashboard();
-  }, [supabase]);
+  }, []);
+
+  const openEditActivity = (act: WorkActivity) => {
+    setEditingTodo(null);
+    setEditingActivity(act);
+    setFormTitle(act.title);
+    const dateStr = act.scheduled_at ? act.scheduled_at.split('T')[0] : new Date().toISOString().split('T')[0];
+    const startT = act.scheduled_at ? act.scheduled_at.split('T')[1]?.slice(0, 5) : '08:00';
+    const endT = act.deadline ? act.deadline.split('T')[1]?.slice(0, 5) : '09:00';
+    setFormDate(dateStr);
+    setFormStartTime(startT || '08:00');
+    setFormEndTime(endT || '09:00');
+  };
+
+  const openEditTodo = (todo: Todo) => {
+    setEditingActivity(null);
+    setEditingTodo(todo);
+    setFormTitle(todo.title);
+    setFormDate(todo.due_date || new Date().toISOString().split('T')[0]);
+    setFormPriority(todo.priority);
+  };
+
+  const handleSaveActivity = async () => {
+    if (!editingActivity || !formTitle.trim()) return;
+    setSaving(true);
+    const startIso = `${formDate}T${formStartTime}:00`;
+    const endIso = `${formDate}T${formEndTime}:00`;
+    await supabase.from('work_activities').update({
+      title: formTitle,
+      scheduled_at: startIso,
+      deadline: endIso,
+    }).eq('id', editingActivity.id);
+    setSaving(false);
+    setEditingActivity(null);
+    fetchDashboard();
+  };
+
+  const handleSaveTodo = async () => {
+    if (!editingTodo || !formTitle.trim()) return;
+    setSaving(true);
+    await supabase.from('todos').update({
+      title: formTitle,
+      due_date: formDate,
+      priority: formPriority as any,
+    }).eq('id', editingTodo.id);
+    setSaving(false);
+    setEditingTodo(null);
+    fetchDashboard();
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -185,7 +247,11 @@ export default function DashboardPage() {
         ) : (
           <div className="space-y-2.5">
             {urgentTodos.map((todo) => (
-              <div key={todo.id} className="glass-card rounded-2xl p-3.5 flex items-center gap-3 border border-white/10">
+              <div
+                key={todo.id}
+                onClick={() => openEditTodo(todo)}
+                className="glass-card rounded-2xl p-3.5 flex items-center gap-3 border border-white/10 cursor-pointer hover:bg-white/[0.08] transition-all"
+              >
                 <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm ${
                   todo.priority === 'urgent' ? 'bg-red-500 animate-pulse' :
                   todo.priority === 'high' ? 'bg-amber-400' : 'bg-blue-400'
@@ -227,7 +293,11 @@ export default function DashboardPage() {
         ) : (
           <div className="space-y-2.5">
             {todaySchedule.map((activity) => (
-              <div key={activity.id} className="glass-card rounded-2xl p-3.5 flex items-center gap-3 border border-white/10">
+              <div
+                key={activity.id}
+                onClick={() => openEditActivity(activity)}
+                className="glass-card rounded-2xl p-3.5 flex items-center gap-3 border border-white/10 cursor-pointer hover:bg-white/[0.08] transition-all"
+              >
                 <div className="w-11 h-11 rounded-2xl bg-blue-500/15 border border-blue-400/25 flex items-center justify-center flex-shrink-0">
                   <Calendar size={18} className="text-blue-400" />
                 </div>
@@ -249,6 +319,106 @@ export default function DashboardPage() {
           </div>
         )}
       </section>
+
+      {/* ── EDIT MODAL ──────────────────────────────────────────────────────── */}
+      <Modal
+        isOpen={!!editingActivity || !!editingTodo}
+        onClose={() => { setEditingActivity(null); setEditingTodo(null); }}
+        title={editingActivity ? 'Edit Today Schedule' : 'Edit Urgent Task'}
+      >
+        <div className="space-y-4">
+          <Input
+            label="Title"
+            value={formTitle}
+            onChange={(e) => setFormTitle(e.target.value)}
+          />
+
+          {editingActivity && (
+            <>
+              <Input
+                label="Date"
+                type="date"
+                value={formDate}
+                onChange={(e) => setFormDate(e.target.value)}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="w-full">
+                  <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Start Time</label>
+                  <select
+                    value={formStartTime}
+                    onChange={(e) => setFormStartTime(e.target.value)}
+                    className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 font-mono font-bold"
+                  >
+                    {Array.from({ length: 48 }, (_, i) => {
+                      const h = Math.floor(i / 2);
+                      const m = i % 2 === 0 ? '00' : '30';
+                      const t = `${String(h).padStart(2, '0')}:${m}`;
+                      return <option key={`start-${t}`} value={t} className="bg-slate-900">{t}</option>;
+                    })}
+                  </select>
+                </div>
+                <div className="w-full">
+                  <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">End Time</label>
+                  <select
+                    value={formEndTime}
+                    onChange={(e) => setFormEndTime(e.target.value)}
+                    className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 font-mono font-bold"
+                  >
+                    {Array.from({ length: 48 }, (_, i) => {
+                      const h = Math.floor(i / 2);
+                      const m = i % 2 === 0 ? '00' : '30';
+                      const t = `${String(h).padStart(2, '0')}:${m}`;
+                      return <option key={`end-${t}`} value={t} className="bg-slate-900">{t}</option>;
+                    })}
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
+
+          {editingTodo && (
+            <>
+              <Input
+                label="Due Date"
+                type="date"
+                value={formDate}
+                onChange={(e) => setFormDate(e.target.value)}
+              />
+              <div className="w-full">
+                <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Priority</label>
+                <select
+                  value={formPriority}
+                  onChange={(e) => setFormPriority(e.target.value as any)}
+                  className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white font-bold"
+                >
+                  <option value="low" className="bg-slate-900">Low</option>
+                  <option value="medium" className="bg-slate-900">Medium</option>
+                  <option value="high" className="bg-slate-900">High</option>
+                  <option value="urgent" className="bg-slate-900">Urgent</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          <div className="flex justify-end gap-3 pt-3">
+            <button
+              type="button"
+              onClick={() => { setEditingActivity(null); setEditingTodo(null); }}
+              className="px-5 py-2.5 rounded-2xl text-sm font-bold text-slate-400 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={editingActivity ? handleSaveActivity : handleSaveTodo}
+              className="px-6 py-2.5 rounded-2xl text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white transition-colors shadow-lg shadow-blue-500/25 disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
