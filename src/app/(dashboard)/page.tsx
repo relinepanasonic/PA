@@ -32,6 +32,13 @@ interface NewsItem {
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 
+const getLocalDateString = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function DashboardPage() {
   const [urgentTodos, setUrgentTodos] = useState<Todo[]>([]);
   const [todaySchedule, setTodaySchedule] = useState<WorkActivity[]>([]);
@@ -72,8 +79,9 @@ export default function DashboardPage() {
       return;
     }
 
-      const today = new Date().toISOString().split('T')[0];
-      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+      // Use LOCAL date string instead of UTC (.toISOString()) so past-midnight local time (e.g. 00:25 WIB) gets today's date correctly
+      const today = getLocalDateString();
+      const monthStart = `${today.slice(0, 8)}01`;
 
       // Fetch urgent/overdue todos (limit 5)
       const { data: todos } = await supabase
@@ -85,15 +93,14 @@ export default function DashboardPage() {
         .order('due_date', { ascending: true, nullsFirst: false })
         .limit(5);
 
-      // Fetch today's schedule (limit 10)
+      // Fetch today's schedule strictly within today's local boundaries (00:00:00 to 23:59:59)
       const todayStart = `${today}T00:00:00`;
       const todayEnd = `${today}T23:59:59`;
       const { data: schedule } = await supabase
         .from('work_activities')
         .select('*')
         .eq('user_id', user.id)
-        .or(`scheduled_at.gte.${todayStart},deadline.gte.${todayStart}`)
-        .or(`scheduled_at.lte.${todayEnd},deadline.lte.${todayEnd}`)
+        .or(`and(scheduled_at.gte.${todayStart},scheduled_at.lte.${todayEnd}),and(deadline.gte.${todayStart},deadline.lte.${todayEnd})`)
         .neq('status', 'completed')
         .neq('status', 'cancelled')
         .order('scheduled_at', { ascending: true })
@@ -271,7 +278,7 @@ export default function DashboardPage() {
     setEditingTodo(null);
     setEditingActivity(act);
     setFormTitle(act.title);
-    const dateStr = act.scheduled_at ? act.scheduled_at.split('T')[0] : new Date().toISOString().split('T')[0];
+    const dateStr = act.scheduled_at ? act.scheduled_at.split('T')[0] : getLocalDateString();
     const startT = act.scheduled_at ? act.scheduled_at.split('T')[1]?.slice(0, 5) : '08:00';
     const endT = act.deadline ? act.deadline.split('T')[1]?.slice(0, 5) : '09:00';
     setFormDate(dateStr);
@@ -283,7 +290,7 @@ export default function DashboardPage() {
     setEditingActivity(null);
     setEditingTodo(todo);
     setFormTitle(todo.title);
-    setFormDate(todo.due_date || new Date().toISOString().split('T')[0]);
+    setFormDate(todo.due_date || getLocalDateString());
     setFormPriority(todo.priority);
   };
 
