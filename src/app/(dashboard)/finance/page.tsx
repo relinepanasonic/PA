@@ -390,19 +390,25 @@ export default function FinancePage() {
   });
 
   return (
-    <div className="p-4 space-y-4 animate-fade-in pb-28">
+    <div className="p-4 space-y-4 animate-fade-in pb-28 max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Wallet className="text-blue-400" size={22} />
-          <h1 className="text-xl font-bold text-white">Finance & Ledger</h1>
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-2xl bg-blue-500/15 border border-blue-400/30 flex items-center justify-center text-blue-400 shadow-sm">
+            <Wallet size={18} />
+          </div>
+          <div>
+            <h1 className="text-lg font-extrabold text-white tracking-tight">Finance & Ledger</h1>
+            <p className="text-[11px] text-slate-400 font-medium">Multi-account cashflow tracking</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowStatementModal(true)}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold text-slate-300 transition-colors border border-white/10"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-bold text-slate-300 transition-all border border-white/10 active:scale-95"
           >
-            <FileSpreadsheet size={14} className="text-emerald-400" /> E-Statement
+            <FileSpreadsheet size={14} className="text-emerald-400" />
+            <span>Import</span>
           </button>
           <Button onClick={openCreate} size="sm">
             <Plus size={16} /> Add
@@ -410,73 +416,95 @@ export default function FinancePage() {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="glow-card p-3 text-center rounded-2xl border border-white/10 bg-white/[0.03]">
-          <TrendingUp size={16} className="text-emerald-400 mx-auto mb-1" />
-          <p className="text-[10px] text-slate-400 font-semibold">Income</p>
-          <p className="text-sm font-bold text-emerald-400 mt-0.5">{formatCurrency(totalIncome)}</p>
+      {/* Hero Financial Balance Card */}
+      <div className="p-4 rounded-3xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 shadow-xl space-y-3.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Net Cashflow Balance</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-medium">
+            This Month
+          </span>
         </div>
-        <div className="glow-card p-3 text-center rounded-2xl border border-white/10 bg-white/[0.03]">
-          <TrendingDown size={16} className="text-red-400 mx-auto mb-1" />
-          <p className="text-[10px] text-slate-400 font-semibold">Expenses</p>
-          <p className="text-sm font-bold text-red-400 mt-0.5">{formatCurrency(totalExpenses)}</p>
+        <div className="flex items-baseline justify-between">
+          <h2 className={`text-2xl sm:text-3xl font-extrabold font-mono tracking-tight ${netBalance >= 0 ? 'text-white' : 'text-red-400'}`}>
+            {formatCurrency(netBalance)}
+          </h2>
         </div>
-        <div className="glow-card p-3 text-center rounded-2xl border border-white/10 bg-white/[0.03]">
-          <DollarSign size={16} className={`${netBalance >= 0 ? 'text-blue-400' : 'text-red-400'} mx-auto mb-1`} />
-          <p className="text-[10px] text-slate-400 font-semibold">Net Balance</p>
-          <p className={`text-sm font-bold mt-0.5 ${netBalance >= 0 ? 'text-blue-400' : 'text-red-400'}`}>{formatCurrency(netBalance)}</p>
+
+        {/* Income / Expense Split Divider */}
+        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
+          <div className="flex items-center gap-2.5 p-2 rounded-2xl bg-emerald-500/[0.06] border border-emerald-500/20">
+            <div className="w-7 h-7 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <TrendingUp size={14} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-slate-400 font-semibold uppercase">Income</p>
+              <p className="text-xs sm:text-sm font-bold font-mono text-emerald-400 truncate">{formatCurrency(totalIncome)}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 p-2 rounded-2xl bg-red-500/[0.06] border border-red-500/20">
+            <div className="w-7 h-7 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400">
+              <TrendingDown size={14} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-slate-400 font-semibold uppercase">Expenses</p>
+              <p className="text-xs sm:text-sm font-bold font-mono text-red-400 truncate">{formatCurrency(totalExpenses)}</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Account / Wallet Switcher Carousel */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-        {BANK_ACCOUNTS.map((acc) => (
-          <button
-            key={acc.id}
-            onClick={() => { setAccountFilter(acc.id); setPage(0); }}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
-              accountFilter === acc.id
-                ? `${acc.color} shadow-lg scale-105`
-                : 'bg-white/[0.04] text-slate-400 border-white/10 hover:text-white'
-            }`}
-          >
-            <span>{acc.icon}</span>
-            <span>{acc.label}</span>
-          </button>
-        ))}
+      {/* Account / Wallet Selector Pills */}
+      <div className="space-y-1.5">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">Accounts & Wallets</p>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar">
+          {BANK_ACCOUNTS.map((acc) => (
+            <button
+              key={acc.id}
+              onClick={() => { setAccountFilter(acc.id); setPage(0); }}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                accountFilter === acc.id
+                  ? 'bg-blue-600 text-white border-blue-400 shadow-md scale-[1.02]'
+                  : 'bg-white/[0.04] text-slate-400 border-white/10 hover:text-white hover:bg-white/[0.08]'
+              }`}
+            >
+              <span>{acc.icon}</span>
+              <span>{acc.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Filters: Type & Tag */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex gap-1.5">
+      {/* Compact Filters Bar */}
+      <div className="flex items-center justify-between gap-2 p-1.5 rounded-2xl bg-white/[0.03] border border-white/10">
+        <div className="flex items-center gap-1">
           {(['all', 'income', 'expense'] as const).map((f) => (
             <button
               key={f}
               onClick={() => { setTypeFilter(f); setPage(0); }}
-              className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
                 typeFilter === f
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-white/[0.05] text-slate-400 hover:text-white'
+                  ? 'bg-white/15 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              {f === 'all' ? 'All' : f === 'income' ? 'Income' : 'Expenses'}
+              {f === 'all' ? 'All' : f === 'income' ? 'Income' : 'Expense'}
             </button>
           ))}
         </div>
 
-        <div className="flex gap-1.5">
+        <div className="flex items-center gap-1">
           {(['all', 'professional', 'personal'] as const).map((t) => (
             <button
               key={t}
               onClick={() => { setTagFilter(t); setPage(0); }}
-              className={`px-3 py-1 rounded-full text-[11px] font-medium transition-all ${
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
                 tagFilter === t
-                  ? 'bg-white/15 text-white border border-white/20'
-                  : 'bg-white/[0.03] text-slate-400 border border-transparent'
+                  ? 'bg-blue-500/20 text-blue-300 border border-blue-400/40'
+                  : 'text-slate-500 hover:text-slate-300'
               }`}
             >
-              {t === 'all' ? 'All Tags' : t.charAt(0).toUpperCase() + t.slice(1)}
+              {t === 'all' ? 'All Tags' : t === 'professional' ? 'Pro' : 'Personal'}
             </button>
           ))}
         </div>
@@ -500,38 +528,49 @@ export default function FinancePage() {
             return (
               <div
                 key={tx.id}
-                className="glass-card p-3.5 rounded-2xl flex items-center gap-3 border border-white/10 hover:bg-white/[0.07] transition-all cursor-pointer"
                 onClick={() => openEdit(tx)}
+                className="group p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-white/20 transition-all cursor-pointer flex items-center justify-between gap-3"
               >
-                <div
-                  className="w-3 h-3 rounded-full flex-shrink-0 shadow-sm"
-                  style={{ backgroundColor: tx.finance_categories?.color || (tx.type === 'income' ? '#10b981' : '#ef4444') }}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white truncate">
-                    {parsed.cleanDesc || tx.finance_categories?.name || (tx.type === 'income' ? 'Income' : 'Expense')}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className="text-[10px] text-slate-400">
-                      {new Date(tx.transaction_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 font-semibold">
-                      💳 {parsed.account}
-                    </span>
-                    <Badge variant={tx.tag === 'professional' ? 'accent' : 'muted'} size="sm">
-                      {tx.tag}
-                    </Badge>
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  {/* Category Tile */}
+                  <div
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center text-lg flex-shrink-0 border border-white/10 shadow-inner"
+                    style={{ backgroundColor: `${tx.finance_categories?.color || '#3b82f6'}18` }}
+                  >
+                    {tx.finance_categories?.icon || (tx.type === 'income' ? '💰' : '💸')}
+                  </div>
+
+                  {/* Text & Meta */}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-white truncate group-hover:text-blue-300 transition-colors">
+                      {parsed.cleanDesc || tx.finance_categories?.name || (tx.type === 'income' ? 'Income' : 'Expense')}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-400 flex-wrap">
+                      <span>{new Date(tx.transaction_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                      <span>•</span>
+                      <span className="font-semibold text-slate-300">{parsed.account}</span>
+                      <span>•</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        tx.tag === 'professional' ? 'bg-cyan-500/15 text-cyan-300' : 'bg-slate-500/15 text-slate-300'
+                      }`}>
+                        {tx.tag === 'professional' ? 'Pro' : 'Personal'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <p className={`text-sm font-extrabold flex-shrink-0 font-mono ${tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
-                </p>
-                <button
-                  onClick={(e) => { e.stopPropagation(); deleteTx(tx.id); }}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/15 transition-colors flex-shrink-0"
-                >
-                  <Trash2 size={14} />
-                </button>
+
+                {/* Amount & Actions */}
+                <div className="flex items-center gap-2.5 flex-shrink-0">
+                  <p className={`text-sm font-extrabold font-mono ${tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
+                  </p>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deleteTx(tx.id); }}
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/15 transition-colors opacity-80 group-hover:opacity-100"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             );
           })}
