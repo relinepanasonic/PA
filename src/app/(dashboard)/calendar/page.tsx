@@ -26,7 +26,7 @@ import AddToGoogleCalendar from '@/components/ui/AddToGoogleCalendar';
 import InstallPWA from '@/components/pwa/InstallPWA';
 
 type ViewMode = 'daily' | 'month' | 'todos';
-type TaskCategory = 'My Tasks' | 'Work' | 'Shopping List' | 'Personal';
+type TaskCategory = 'My Tasks' | 'Work' | 'Shopping List';
 
 interface SubtaskItem {
   id: string;
@@ -436,11 +436,9 @@ export default function CalendarPage() {
           onTouchEnd={handleTouchEnd}
           className="glow-card rounded-[28px] border border-white/15 overflow-hidden bg-slate-950/90 shadow-2xl"
         >
-          <div className="divide-y divide-white/[0.06] max-h-[72vh] overflow-y-auto">
+          <div className="relative divide-y divide-white/[0.06] max-h-[72vh] overflow-y-auto">
+            {/* Background 24-Hour Slots Grid */}
             {HOURS.map(({ label, hour }) => {
-              const hourItems = items.filter(
-                (it) => it.dateString === dailyDs && hour >= it.hourStart && hour < it.hourEnd
-              );
               const isNow = isToday && hour === nowHour;
               const isDragTarget = dragOverHour === hour && dragItemId !== null;
 
@@ -451,87 +449,113 @@ export default function CalendarPage() {
                   onDragLeave={() => setDragOverHour(null)}
                   onDrop={(e) => handleHourDrop(e, hour, dailyDs)}
                   onClick={() => openModal(dailyDs, hour)}
-                  className={`flex items-stretch min-h-[62px] cursor-pointer group transition-all ${
+                  className={`flex items-stretch h-16 cursor-pointer group transition-all ${
                     isDragTarget ? 'bg-blue-500/25 border-l-4 border-l-blue-300'
                     : isNow ? 'bg-blue-600/15 border-l-4 border-l-blue-400'
                     : 'hover:bg-white/[0.025]'
                   }`}
                 >
                   {/* Time label */}
-                  <div className="w-[68px] p-2 flex flex-col items-center justify-center border-r border-white/10 bg-white/[0.01] flex-shrink-0">
+                  <div className="w-[68px] h-full flex flex-col items-center justify-center border-r border-white/10 bg-white/[0.01] flex-shrink-0">
                     <span className="text-xs font-extrabold text-slate-400 font-mono">{label}</span>
                     {isNow && <span className="text-[9px] text-blue-400 animate-pulse font-bold">NOW</span>}
                     {isDragTarget && <span className="text-[9px] text-blue-300 font-bold">DROP</span>}
                   </div>
 
-                  {/* Events */}
-                  <div className="flex-1 px-2 py-1.5 flex flex-col justify-center gap-1.5">
-                    {hourItems.length === 0 ? (
-                      <p className="opacity-0 group-hover:opacity-100 text-[11px] text-slate-500 px-1 transition-opacity flex items-center gap-1">
-                        <Plus size={11} /> Add at {label}
-                      </p>
-                    ) : (
-                      hourItems.map((it) => {
-                        const isContinuation = hour > it.hourStart;
-                        if (isContinuation) {
-                          return (
-                            <div
-                              key={`${it.id}-cont-${hour}`}
-                              onClick={(e) => { e.stopPropagation(); openModal(dailyDs, it.hourStart); }}
-                              className="p-2.5 rounded-xl border-l-4 border border-teal-500/30 bg-teal-500/10 flex items-center justify-between gap-2 text-teal-100/90"
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse flex-shrink-0" />
-                                <div className="min-w-0">
-                                  <p className="text-xs font-bold truncate">↳ Blocked: {it.title}</p>
-                                  <p className="text-[10px] opacity-75 font-mono">({String(it.hourStart).padStart(2,'0')}.00–{String(it.hourEnd).padStart(2,'0')}.00)</p>
-                                </div>
-                              </div>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleDelete(it); }}
-                                className="p-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/25 flex-shrink-0"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <div
-                            key={it.id}
-                            draggable={it.type === 'activity'}
-                            onDragStart={(e) => { e.stopPropagation(); handleDailyDragStart(e, it.id); }}
-                            onDragEnd={() => { setDragItemId(null); setDragOverHour(null); }}
-                            onClick={(e) => e.stopPropagation()}
-                            className={`p-2.5 rounded-xl border-l-4 border border-white/10 flex items-center justify-between gap-2 transition-all ${
-                              dragItemId === it.id ? 'opacity-40 scale-[0.97]'
-                              : it.status === 'completed'
-                                ? 'bg-emerald-500/15 border-l-emerald-400 text-emerald-200'
-                              : it.type === 'activity'
-                                ? 'bg-teal-500/20 border-l-teal-400 text-teal-50 cursor-grab active:cursor-grabbing'
-                              : 'bg-violet-600/25 border-l-violet-400 text-violet-50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              {it.type === 'activity' && <GripVertical size={13} className="text-cyan-400/60 flex-shrink-0" />}
-                              <div className="min-w-0">
-                                <p className={`text-xs font-extrabold truncate ${it.status === 'completed' ? 'line-through' : ''}`}>{it.title}</p>
-                                <p className="text-[10px] opacity-60 font-mono">{String(it.hourStart).padStart(2,'0')}.00–{String(it.hourEnd).padStart(2,'0')}.00</p>
-                              </div>
-                            </div>
-                            <button onClick={() => handleDelete(it)}
-                              className="p-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/25 flex-shrink-0">
-                              <Trash2 size={12} />
-                            </button>
-                          </div>
-                        );
-                      })
-                    )}
+                  {/* Clickable slot prompt */}
+                  <div className="flex-1 px-3 flex items-center">
+                    <p className="opacity-0 group-hover:opacity-100 text-[11px] text-slate-500 transition-opacity flex items-center gap-1">
+                      <Plus size={12} /> Add at {label}
+                    </p>
                   </div>
                 </div>
               );
             })}
+
+            {/* Absolute Spanning Unified Cards Overlay (1 Kesatuan Kotak) */}
+            <div className="absolute top-0 left-[68px] right-0 bottom-0 pointer-events-none">
+              {items
+                .filter((it) => it.dateString === dailyDs)
+                .map((it) => {
+                  const durationHours = Math.max(1, it.hourEnd - it.hourStart);
+                  const topPx = it.hourStart * 64 + 3;
+                  const heightPx = durationHours * 64 - 6;
+
+                  return (
+                    <div
+                      key={it.id}
+                      draggable={it.type === 'activity'}
+                      onDragStart={(e) => { e.stopPropagation(); handleDailyDragStart(e, it.id); }}
+                      onDragEnd={() => { setDragItemId(null); setDragOverHour(null); }}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ top: `${topPx}px`, height: `${heightPx}px` }}
+                      className={`absolute left-2 right-3 p-3 rounded-2xl border-l-4 border shadow-xl pointer-events-auto flex flex-col justify-between overflow-hidden transition-all ${
+                        dragItemId === it.id ? 'opacity-40 scale-[0.98]'
+                        : it.status === 'completed'
+                          ? 'bg-emerald-500/20 border-l-emerald-400 border-emerald-400/30 text-emerald-100'
+                        : it.type === 'activity'
+                          ? 'bg-teal-600/35 border-l-teal-400 border-teal-400/30 text-teal-50 backdrop-blur-md cursor-grab active:cursor-grabbing'
+                        : 'bg-violet-600/35 border-l-violet-400 border-violet-400/30 text-violet-50 backdrop-blur-md'
+                      }`}
+                    >
+                      {/* Top Header: Title + Time range + Delete */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {it.type === 'activity' && <GripVertical size={14} className="text-teal-300/70 flex-shrink-0" />}
+                          <p className={`text-sm font-extrabold truncate ${it.status === 'completed' ? 'line-through opacity-70' : ''}`}>
+                            {it.title}
+                          </p>
+                          <span className="text-[11px] px-2 py-0.5 rounded-md bg-black/40 font-mono font-bold flex-shrink-0">
+                            {String(it.hourStart).padStart(2, '0')}.00–{String(it.hourEnd).padStart(2, '0')}.00
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleDelete(it)}
+                          className="p-1.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/40 flex-shrink-0 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+
+                      {/* Description if duration > 1 hour */}
+                      {durationHours > 1 && it.description && (
+                        <p className="text-xs opacity-80 line-clamp-2 my-1 px-1">
+                          {it.description}
+                        </p>
+                      )}
+
+                      {/* Status action bar */}
+                      <div className="flex items-center gap-1.5 pt-1">
+                        {it.status !== 'planned' && (
+                          <button
+                            onClick={() => handleMoveStatus(it, 'planned')}
+                            className="px-2 py-0.5 rounded bg-black/30 text-[10px] font-bold hover:bg-black/50 transition-all"
+                          >
+                            ← To Do
+                          </button>
+                        )}
+                        {it.status !== 'in_progress' && (
+                          <button
+                            onClick={() => handleMoveStatus(it, 'in_progress')}
+                            className="px-2 py-0.5 rounded bg-amber-500/30 text-amber-200 text-[10px] font-bold hover:bg-amber-500/40 transition-all"
+                          >
+                            ⚡ Progress
+                          </button>
+                        )}
+                        {it.status !== 'completed' && (
+                          <button
+                            onClick={() => handleMoveStatus(it, 'completed')}
+                            className="px-2 py-0.5 rounded bg-emerald-500/30 text-emerald-200 text-[10px] font-bold hover:bg-emerald-500/40 transition-all"
+                          >
+                            ✓ Done
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
         </div>
       )}
@@ -702,7 +726,7 @@ export default function CalendarPage() {
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-300">List Category</label>
               <div className="flex flex-wrap gap-1.5">
-                {(['My Tasks', 'Work', 'Shopping List', 'Personal'] as TaskCategory[]).map((cat) => (
+                {(['My Tasks', 'Work', 'Shopping List'] as TaskCategory[]).map((cat) => (
                   <button key={cat} type="button" onClick={() => setFormCategory(cat)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                       formCategory === cat ? 'bg-blue-600 border-blue-400 text-white' : 'bg-white/[0.04] border-white/10 text-slate-400 hover:text-white'
@@ -726,7 +750,7 @@ export default function CalendarPage() {
           {/* Date fields — different layout per type */}
           {formType === 'activity' ? (
             <>
-              {/* Activity: Date + Start & End in 24h */}
+              {/* Activity: Date + Start & End */}
               <Input
                 label="Date"
                 type="date"
@@ -735,7 +759,7 @@ export default function CalendarPage() {
               />
               <div className="grid grid-cols-2 gap-3">
                 <div className="w-full">
-                  <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Start Time (24h)</label>
+                  <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Start Time</label>
                   <select
                     value={formStartTime}
                     onChange={(e) => setFormStartTime(e.target.value)}
@@ -750,7 +774,7 @@ export default function CalendarPage() {
                   </select>
                 </div>
                 <div className="w-full">
-                  <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">End Time (24h)</label>
+                  <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">End Time</label>
                   <select
                     value={formEndTime}
                     onChange={(e) => setFormEndTime(e.target.value)}
@@ -776,7 +800,7 @@ export default function CalendarPage() {
                 onChange={(e) => setFormDate(e.target.value)}
               />
               <div className="w-full">
-                <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Due Time (24h, optional)</label>
+                <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Due Time (Optional)</label>
                 <select
                   value={formStartTime}
                   onChange={(e) => setFormStartTime(e.target.value)}
