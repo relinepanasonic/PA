@@ -172,31 +172,68 @@ export default function DashboardPage() {
       return;
     }
 
-    // Build the script
-    let script = 'Selamat pagi, Jax. Berikut adalah ringkasan hari ini. ';
+    // Build the script in exact requested order:
+    // Greeting -> 1. Today Schedule -> 2. To Do list -> 3. Hot News -> 4. IDX Watch
+    let script = 'Selamat pagi Nico. Berikut adalah ringkasan hari ini dari Jax. ';
 
-    // Stock prices
+    // 1. Today Schedule
+    if (todaySchedule.length > 0) {
+      script += `Jadwal hari ini ada ${todaySchedule.length} kegiatan. `;
+      todaySchedule.forEach((act, idx) => {
+        const timeStr = act.scheduled_at
+          ? new Date(act.scheduled_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+          : '';
+        script += `${idx + 1}. ${act.title} ${timeStr ? `pukul ${timeStr}` : ''}. `;
+      });
+    } else {
+      script += 'Jadwal hari ini kosong. ';
+    }
+
+    // 2. To Do list
+    if (urgentTodos.length > 0) {
+      script += `Daftar tugas penting ada ${urgentTodos.length} tugas. `;
+      urgentTodos.forEach((todo, idx) => {
+        script += `${idx + 1}. ${todo.title}. `;
+      });
+    } else {
+      script += 'Semua tugas penting sudah selesai. ';
+    }
+
+    // 3. Hot News
+    if (news.length > 0) {
+      script += 'Berita utama hari ini. ';
+      news.forEach((item, idx) => {
+        script += `${idx + 1}. ${item.title}. `;
+      });
+    }
+
+    // 4. IDX Watch
     if (stocks.length > 0) {
-      script += 'Harga saham terkini. ';
-      for (const s of stocks) {
+      script += 'Pantauan saham IDX terkini. ';
+      stocks.forEach((s) => {
         const direction = s.changePercent >= 0 ? 'naik' : 'turun';
         const absPercent = Math.abs(s.changePercent).toFixed(2);
         script += `${s.ticker.replace('.JK', '')} di harga ${Math.round(s.price)} rupiah, ${direction} ${absPercent} persen. `;
-      }
-    }
-
-    // News headlines
-    if (news.length > 0) {
-      script += 'Berita utama hari ini. ';
-      for (let i = 0; i < news.length; i++) {
-        script += `${i + 1}. ${news[i].title}. `;
-      }
+      });
     }
 
     const utterance = new SpeechSynthesisUtterance(script);
     utterance.lang = 'id-ID';
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
+
+    // Prefer Indonesian male voice if available in browser
+    const voices = synth.getVoices();
+    const idVoices = voices.filter(v => v.lang.toLowerCase().includes('id'));
+    const maleIdVoice = idVoices.find(v =>
+      /male|man|pria|ardi|andika|dika|budi/i.test(v.name)
+    ) || idVoices[0];
+
+    if (maleIdVoice) {
+      utterance.voice = maleIdVoice;
+    }
+
+    // Deep man voice tuning (lower pitch + natural executive speed)
+    utterance.pitch = 0.82;
+    utterance.rate = 0.96;
 
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
