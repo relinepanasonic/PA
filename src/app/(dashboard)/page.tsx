@@ -172,68 +172,82 @@ export default function DashboardPage() {
       return;
     }
 
-    // Build the script in exact requested order:
+    // Build the script with natural conversational pauses (...) so it sounds human, not robotic
     // Greeting -> 1. Today Schedule -> 2. To Do list -> 3. Hot News -> 4. IDX Watch
-    let script = 'Selamat pagi Nico. Berikut adalah ringkasan hari ini dari Jax. ';
+    let script = 'Selamat Pagi Nico, Jax Disini... Berikut adalah ringkasan hari ini... ';
 
     // 1. Today Schedule
     if (todaySchedule.length > 0) {
-      script += `Jadwal hari ini ada ${todaySchedule.length} kegiatan. `;
+      script += `Pertama, jadwal hari ini ada ${todaySchedule.length} kegiatan... `;
       todaySchedule.forEach((act, idx) => {
         const timeStr = act.scheduled_at
           ? new Date(act.scheduled_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
           : '';
-        script += `${idx + 1}. ${act.title} ${timeStr ? `pukul ${timeStr}` : ''}. `;
+        script += `${idx + 1}. ${act.title}${timeStr ? `, pukul ${timeStr}` : ''}... `;
       });
     } else {
-      script += 'Jadwal hari ini kosong. ';
+      script += 'Pertama, jadwal hari ini kosong... ';
     }
 
     // 2. To Do list
     if (urgentTodos.length > 0) {
-      script += `Daftar tugas penting ada ${urgentTodos.length} tugas. `;
+      script += `Kedua, daftar tugas penting ada ${urgentTodos.length} tugas... `;
       urgentTodos.forEach((todo, idx) => {
-        script += `${idx + 1}. ${todo.title}. `;
+        script += `${idx + 1}. ${todo.title}... `;
       });
     } else {
-      script += 'Semua tugas penting sudah selesai. ';
+      script += 'Kedua, semua tugas penting sudah selesai... ';
     }
 
     // 3. Hot News
     if (news.length > 0) {
-      script += 'Berita utama hari ini. ';
+      script += 'Ketiga, berita utama hari ini... ';
       news.forEach((item, idx) => {
-        script += `${idx + 1}. ${item.title}. `;
+        script += `${idx + 1}. ${item.title}... `;
       });
     }
 
     // 4. IDX Watch
     if (stocks.length > 0) {
-      script += 'Pantauan saham IDX terkini. ';
+      script += 'Keempat, pantauan saham IDX terkini... ';
       stocks.forEach((s) => {
         const direction = s.changePercent >= 0 ? 'naik' : 'turun';
         const absPercent = Math.abs(s.changePercent).toFixed(2);
-        script += `${s.ticker.replace('.JK', '')} di harga ${Math.round(s.price)} rupiah, ${direction} ${absPercent} persen. `;
+        script += `${s.ticker.replace('.JK', '')} di harga ${Math.round(s.price)} rupiah, ${direction} ${absPercent} persen... `;
       });
     }
 
     const utterance = new SpeechSynthesisUtterance(script);
     utterance.lang = 'id-ID';
 
-    // Prefer Indonesian male voice if available in browser
+    // Score and select the most natural, deep Indonesian male voice available (e.g., Natural / Neural / Ardi / Andika)
     const voices = synth.getVoices();
-    const idVoices = voices.filter(v => v.lang.toLowerCase().includes('id'));
-    const maleIdVoice = idVoices.find(v =>
-      /male|man|pria|ardi|andika|dika|budi/i.test(v.name)
-    ) || idVoices[0];
+    let bestVoice: SpeechSynthesisVoice | null = null;
+    let bestScore = -1000;
 
-    if (maleIdVoice) {
-      utterance.voice = maleIdVoice;
+    for (const v of voices) {
+      let score = 0;
+      const name = v.name.toLowerCase();
+      const lang = v.lang.toLowerCase();
+
+      if (lang.includes('id')) score += 50;
+      if (name.includes('natural') || name.includes('online') || name.includes('neural')) score += 35;
+      if (/male|man|pria|ardi|andika|budi|dika/i.test(name)) score += 45;
+      if (/female|woman|wanita|gadis|siti|rani/i.test(name)) score -= 50;
+
+      if (score > bestScore && score > 0) {
+        bestScore = score;
+        bestVoice = v;
+      }
     }
 
-    // Deep man voice tuning (lower pitch + natural executive speed)
-    utterance.pitch = 0.82;
-    utterance.rate = 0.96;
+    if (bestVoice) {
+      utterance.voice = bestVoice;
+    }
+
+    // Deep man baritone tuning: slightly lower pitch + calm executive cadence
+    utterance.pitch = 0.85;
+    utterance.rate = 0.93;
 
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
