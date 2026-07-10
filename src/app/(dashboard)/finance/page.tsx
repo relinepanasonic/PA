@@ -49,6 +49,87 @@ const DEFAULT_EXPENSE_CATEGORIES = [
   { name: 'Other', icon: '📦', color: '#64748b', type: 'expense' as const, tag: 'personal' as const },
 ];
 
+interface ParsedReceipt {
+  amount: number | null;
+  merchant: string;
+  categoryName: string;
+}
+
+const parseReceiptText = (text: string): ParsedReceipt => {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  
+  let detectedAmount: number | null = null;
+  const totalKeywords = /(grand\s*total|total|edc|bayar|tagihan|amount|subtotal)/i;
+  const candidateAmounts: number[] = [];
+
+  for (const line of lines) {
+    if (totalKeywords.test(line)) {
+      const matches = line.match(/\b\d{1,3}([.,]\d{3})+(?:[.,]\d{2})?\b|\b\d{4,9}\b/g);
+      if (matches) {
+        for (const m of matches) {
+          const cleanNum = Number(m.replace(/[.,]/g, ''));
+          if (!isNaN(cleanNum) && cleanNum >= 1000 && cleanNum <= 500000000) {
+            candidateAmounts.push(cleanNum);
+          }
+        }
+      }
+    }
+  }
+
+  if (candidateAmounts.length > 0) {
+    detectedAmount = Math.max(...candidateAmounts);
+  } else {
+    const allNumbers: number[] = [];
+    const numRegex = /\b\d{1,3}([.,]\d{3})+\b/g;
+    let match;
+    while ((match = numRegex.exec(text)) !== null) {
+      const val = Number(match[0].replace(/[.,]/g, ''));
+      if (!isNaN(val) && val >= 5000 && val <= 500000000) {
+        allNumbers.push(val);
+      }
+    }
+    if (allNumbers.length > 0) {
+      detectedAmount = Math.max(...allNumbers);
+    }
+  }
+
+  let detectedMerchant = 'Merchant Receipt';
+  for (const line of lines.slice(0, 8)) {
+    if (line.length > 3 && !/^\d+$/.test(line) && !/^\d{2}[-/.]\d{2}/.test(line)) {
+      const cleaned = line.replace(/[^a-zA-Z0-9\s&.-]/g, '').trim();
+      if (cleaned.length >= 3) {
+        detectedMerchant = cleaned.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        break;
+      }
+    }
+  }
+
+  const upperText = text.toUpperCase();
+  if (upperText.includes('STARBUCKS')) detectedMerchant = 'Starbucks Coffee';
+  else if (upperText.includes('SUSHI TEI')) detectedMerchant = 'Sushi Tei';
+  else if (upperText.includes('INDOMARET')) detectedMerchant = 'Indomaret';
+  else if (upperText.includes('ALFAMART')) detectedMerchant = 'Alfamart';
+  else if (upperText.includes('MCDONALD')) detectedMerchant = "McDonald's";
+  else if (upperText.includes('KFC')) detectedMerchant = 'KFC';
+
+  let detectedCategory = 'Makan';
+  if (/starbucks|sushi|coffee|kopi|cafe|resto|makan|food|bakmi|pizza|burger|tea|kfc|mcd|bread|roti/i.test(text)) {
+    detectedCategory = 'Makan';
+  } else if (/grab|gojek|gocar|goride|uber|parkir|parking|bensin|pertamina|shell|toll|transport/i.test(text)) {
+    detectedCategory = 'Transport';
+  } else if (/cinema|xxi|cgv|netflix|spotify|entertainment|nonton/i.test(text)) {
+    detectedCategory = 'Entertainment';
+  } else if (/apple|samsung|ibox|gadget|tokopedia|shopee|electronic/i.test(text)) {
+    detectedCategory = 'Gadget';
+  }
+
+  return {
+    amount: detectedAmount,
+    merchant: detectedMerchant,
+    categoryName: detectedCategory,
+  };
+};
+
 export default function FinancePage() {
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
   const [categories, setCategories] = useState<FinanceCategory[]>([]);
@@ -67,6 +148,7 @@ export default function FinancePage() {
   const [statementAccount, setStatementAccount] = useState('BCA Utama');
   const [importingStatement, setImportingStatement] = useState(false);
   const [scanningReceipt, setScanningReceipt] = useState(false);
+  const [ocrStatus, setOcrStatus] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Summary state
@@ -169,6 +251,7 @@ export default function FinancePage() {
 
   const openCreate = () => {
     setEditingTx(null);
+    setOcrStatus(null);
     setFormAmount('');
     setFormType('expense');
     setFormTag('personal');
@@ -181,6 +264,7 @@ export default function FinancePage() {
 
   const openEdit = (tx: FinanceTransaction) => {
     setEditingTx(tx);
+    setOcrStatus(null);
     const parsed = parseAccountFromDesc(tx.description || '');
     setFormAccount(parsed.account);
     setFormAmount(String(tx.amount));
@@ -192,17 +276,40 @@ export default function FinancePage() {
     setShowModal(true);
   };
 
-  const handleScanReceipt = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleScanReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setScanningReceipt(true);
-    setTimeout(() => {
-      setFormAmount('125000');
+    setOcrStatus('Scanning receipt image with Tesseract AI...');
+
+    try {
+      const Tesseract = (await import('tesseract.js')).default;
+      const result = await Tesseract.recognize(file, 'eng');
+      const text = result.data.text || '';
+      
+      const parsed = parseReceiptText(text);
+
+      if (parsed.amount) {
+        setFormAmount(String(parsed.amount));
+      }
       setFormType('expense');
       setFormTag('personal');
-      setFormDescription('Lunch at Sushi Tei (Verified Receipt Photo)');
+      setFormDescription(`${parsed.merchant} (Verified OCR Receipt)`);
+
+      const matchedCat = categories.find(
+        c => c.name.toLowerCase() === parsed.categoryName.toLowerCase()
+      );
+      if (matchedCat) {
+        setFormCategoryId(matchedCat.id);
+      }
+
+      setOcrStatus(`✨ OCR Result: ${parsed.merchant} — ${parsed.amount ? 'Rp ' + parsed.amount.toLocaleString('id-ID') : 'Detected'} (${parsed.categoryName})`);
+    } catch (err) {
+      console.error('OCR scan failed:', err);
+      setOcrStatus('⚠️ Could not auto-read text from image. Please verify amount.');
+    } finally {
       setScanningReceipt(false);
-    }, 1000);
+    }
   };
 
   const handleSave = async () => {
@@ -475,6 +582,12 @@ export default function FinancePage() {
               </button>
             </div>
           </div>
+
+          {ocrStatus && (
+            <div className="p-2.5 rounded-xl bg-blue-500/15 border border-blue-400/30 text-xs font-semibold text-blue-200">
+              {ocrStatus}
+            </div>
+          )}
 
           {/* Account / Bank Selector */}
           <div>
