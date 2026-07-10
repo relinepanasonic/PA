@@ -375,7 +375,13 @@ export default function DashboardPage() {
             <BarChart3 size={16} className="text-cyan-400" />
             <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">IDX Watchlist</h2>
           </div>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-400 font-medium">Live</span>
+          <Link
+            href="/investasi"
+            className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+          >
+            <span>Portofolio Saya</span>
+            <ChevronRight size={14} />
+          </Link>
         </div>
         {stocksLoading ? (
           <div className="grid grid-cols-2 gap-3">

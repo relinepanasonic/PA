@@ -117,6 +117,20 @@ export interface Database {
         Insert: Omit<SportActivity, 'id' | 'created_at' | 'updated_at'> & { id?: string };
         Update: Partial<Omit<SportActivity, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;
       };
+      portfolio_stocks: {
+        Row: PortfolioStock;
+        Insert: Omit<PortfolioStock, 'id' | 'created_at'> & { id?: string };
+        Update: Partial<Omit<PortfolioStock, 'id' | 'user_id' | 'created_at'>>;
+      };
     };
   };
+}
+
+export interface PortfolioStock {
+  id: string;
+  user_id: string;
+  ticker: string;
+  buy_price: number;
+  lots: number;
+  created_at: string;
 }

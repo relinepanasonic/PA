@@ -2,12 +2,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Calendar, Wallet, Activity } from 'lucide-react';
+import { LayoutDashboard, Calendar, Wallet, Activity, TrendingUp } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Brief', icon: LayoutDashboard },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/finance', label: 'Finance', icon: Wallet },
+  { href: '/investasi', label: 'Investasi', icon: TrendingUp },
   { href: '/activities', label: 'Activities', icon: Activity },
 ];
 
