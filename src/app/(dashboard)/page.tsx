@@ -519,7 +519,7 @@ export default function DashboardPage() {
             <p className="text-xs text-slate-400">Unable to load stock data. Try refreshing.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-2 gap-3">
             {stocks.map((s) => {
               const isUp = s.changePercent >= 0;
               const baseTicker = s.ticker.toUpperCase().replace('.JK', '');
@@ -532,58 +532,58 @@ export default function DashboardPage() {
               return (
                 <div
                   key={s.ticker}
-                  className="glow-card rounded-[24px] p-4.5 border border-white/15 bg-gradient-to-br from-slate-900/95 via-[#0d1829]/90 to-slate-900 shadow-xl hover:border-blue-400/40 transition-all flex flex-col justify-between"
+                  className="glow-card rounded-2xl p-3.5 border border-white/15 bg-gradient-to-br from-slate-900/95 via-[#0d1829]/90 to-slate-900 shadow-xl hover:border-blue-400/40 transition-all flex flex-col justify-between"
                 >
-                  {/* Top Row: Ticker Symbol + Lot Badge */}
+                  {/* Top Row: Compact Ticker + Lot Badge */}
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-base font-black text-white tracking-tight">{baseTicker}</span>
-                        <span className="text-[10px] text-slate-500 font-mono">.JK</span>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-baseline gap-0.5">
+                        <span className="text-sm font-extrabold text-white tracking-tight">{baseTicker}</span>
+                        <span className="text-[9px] text-slate-500 font-mono">.JK</span>
                       </div>
                       {portInfo && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-blue-300 text-[10px] font-extrabold tracking-wide">
+                        <span className="px-2 py-0.5 rounded-md bg-blue-500/15 border border-blue-400/30 text-blue-300 text-[9px] font-bold">
                           {portInfo.lots} Lot
                         </span>
                       )}
                     </div>
 
-                    {/* Middle Row: Live Price + Daily Change Pill */}
-                    <div className="flex items-baseline justify-between gap-2 mt-1">
-                      <p className="text-2xl font-black text-white font-mono tracking-tight">
+                    {/* Middle Row: Crisp Compact Price + Daily Change Pill */}
+                    <div className="flex items-center justify-between gap-1.5 mt-0.5">
+                      <p className="text-base sm:text-lg font-extrabold text-white font-mono tracking-tight">
                         Rp {Math.round(s.price).toLocaleString('id-ID')}
                       </p>
                       <div
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-extrabold border ${
+                        className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[11px] font-extrabold border ${
                           isUp
                             ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                             : 'bg-red-500/15 text-red-400 border-red-500/30'
                         }`}
                       >
-                        {isUp ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                        {isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
                         <span>{isUp ? '+' : ''}{s.changePercent.toFixed(2)}%</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Bottom Footer: 2-Column Structured Portfolio Holdings Grid */}
+                  {/* Bottom Footer: Crisp 2-Column Compact Grid */}
                   {portInfo && (
-                    <div className="mt-4 pt-3 border-t border-white/10 grid grid-cols-2 gap-2">
+                    <div className="mt-2.5 pt-2 border-t border-white/10 grid grid-cols-2 gap-1">
                       <div>
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                        <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider">
                           Avg Price
                         </p>
-                        <p className="text-xs font-bold text-slate-200 font-mono mt-0.5">
+                        <p className="text-[11px] font-bold text-slate-200 font-mono">
                           Rp {portInfo.avgPrice.toLocaleString('id-ID')}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                          Total Return
+                        <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider">
+                          Return
                         </p>
                         {pnlPercent !== null ? (
                           <p
-                            className={`text-xs font-black font-mono mt-0.5 ${
+                            className={`text-[11px] font-extrabold font-mono ${
                               pnlPercent >= 0 ? 'text-emerald-400' : 'text-red-400'
                             }`}
                           >
@@ -591,7 +591,7 @@ export default function DashboardPage() {
                             {pnlPercent.toFixed(2)}%
                           </p>
                         ) : (
-                          <p className="text-xs text-slate-400 mt-0.5">-</p>
+                          <p className="text-[11px] text-slate-400">-</p>
                         )}
                       </div>
                     </div>
