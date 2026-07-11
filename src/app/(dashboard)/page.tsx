@@ -84,15 +84,21 @@ export default function DashboardPage() {
       const today = getLocalDateString();
       const monthStart = `${today.slice(0, 8)}01`;
 
-      // Fetch urgent/overdue todos (limit 5)
-      const { data: todos } = await supabase
+      // Fetch To Do list (sorted closest to due date, including completed items for vertical scrolling)
+      const { data: rawTodos } = await supabase
         .from('todos')
         .select('*')
         .eq('user_id', user.id)
-        .eq('is_completed', false)
-        .or(`due_date.lte.${today},priority.in.(high,urgent)`)
-        .order('due_date', { ascending: true, nullsFirst: false })
-        .limit(5);
+        .limit(30);
+
+      const sortedTodos = (rawTodos || []).sort((a, b) => {
+        if (a.is_completed !== b.is_completed) {
+          return a.is_completed ? 1 : -1; // incomplete first
+        }
+        const dateA = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+        const dateB = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+        return dateA - dateB;
+      });
 
       // Fetch today's schedule strictly within today's local boundaries (00:00:00 to 23:59:59)
       const todayStart = `${today}T00:00:00`;
@@ -135,7 +141,7 @@ export default function DashboardPage() {
         setFinanceSummary(summary);
       }
 
-      setUrgentTodos(todos || []);
+      setUrgentTodos(sortedTodos);
       setTodaySchedule(schedule || []);
       setLoading(false);
   };
@@ -352,6 +358,13 @@ export default function DashboardPage() {
     fetchDashboard();
   };
 
+  const handleToggleTodo = async (todo: Todo, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newStatus = !todo.is_completed;
+    await supabase.from('todos').update({ is_completed: newStatus }).eq('id', todo.id);
+    fetchDashboard();
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -443,46 +456,72 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* 2. URGENT & OVERDUE */}
+      {/* 2. TO DO LIST */}
       <section>
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
-            <AlertTriangle size={16} className="text-amber-400" />
-            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Urgent & Overdue</h2>
+            <CheckCircle2 size={16} className="text-emerald-400" />
+            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">To Do List</h2>
           </div>
-          <Link href="/todos" className="text-xs text-blue-400 font-semibold flex items-center gap-0.5 hover:underline">
-            All Tasks <ChevronRight size={14} />
-          </Link>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-medium">
+              {urgentTodos.filter(t => !t.is_completed).length} Pending
+            </span>
+            <Link href="/todos" className="text-xs text-blue-400 font-semibold flex items-center gap-0.5 hover:underline">
+              All Tasks <ChevronRight size={14} />
+            </Link>
+          </div>
         </div>
         {urgentTodos.length === 0 ? (
           <div className="glass-card rounded-[28px] p-6 text-center border border-white/10">
             <CheckCircle2 size={28} className="text-emerald-400 mx-auto mb-2" />
             <p className="text-sm font-semibold text-white">All caught up!</p>
-            <p className="text-xs text-slate-400 mt-0.5">No urgent or overdue tasks.</p>
+            <p className="text-xs text-slate-400 mt-0.5">Your to-do list is clean.</p>
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="max-h-[310px] overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
             {urgentTodos.map((todo) => (
               <div
                 key={todo.id}
                 onClick={() => openEditTodo(todo)}
-                className="glass-card rounded-2xl p-3.5 flex items-center gap-3 border border-white/10 cursor-pointer hover:bg-white/[0.08] transition-all"
+                className={`glass-card rounded-2xl p-3.5 flex items-center gap-3 border transition-all cursor-pointer ${
+                  todo.is_completed
+                    ? 'border-white/5 bg-white/[0.02] opacity-70'
+                    : 'border-white/10 hover:bg-white/[0.08]'
+                }`}
               >
-                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm ${
-                  todo.priority === 'urgent' ? 'bg-red-500 animate-pulse' :
-                  todo.priority === 'high' ? 'bg-amber-400' : 'bg-blue-400'
-                }`} />
+                {/* Toggle Completion Button */}
+                <button
+                  type="button"
+                  onClick={(e) => handleToggleTodo(todo, e)}
+                  className="p-1 rounded-full hover:bg-white/10 transition-colors flex-shrink-0"
+                  title={todo.is_completed ? 'Tandai belum selesai' : 'Tandai selesai'}
+                >
+                  {todo.is_completed ? (
+                    <CheckCircle2 size={18} className="text-emerald-400" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full border-2 border-slate-400 hover:border-emerald-400 transition-colors" />
+                  )}
+                </button>
+
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{todo.title}</p>
+                  <p className={`text-sm truncate ${todo.is_completed ? 'line-through text-slate-400 font-normal' : 'font-semibold text-white'}`}>
+                    {todo.title}
+                  </p>
                   {todo.due_date && (
                     <p className="text-[11px] text-slate-400 mt-0.5">
                       Due: {new Date(todo.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </p>
                   )}
                 </div>
-                <Badge variant={priorityVariant(todo.priority)} size="sm">
-                  {todo.priority}
-                </Badge>
+
+                {todo.is_completed ? (
+                  <Badge variant="success" size="sm">Done</Badge>
+                ) : (
+                  <Badge variant={priorityVariant(todo.priority)} size="sm">
+                    {todo.priority}
+                  </Badge>
+                )}
               </div>
             ))}
           </div>
@@ -548,19 +587,21 @@ export default function DashboardPage() {
                       )}
                     </div>
 
-                    {/* Middle Row: Crisp Compact Price + Daily Change Pill */}
-                    <div className="flex items-center justify-between gap-1.5 mt-0.5">
-                      <p className="text-base sm:text-lg font-extrabold text-white font-mono tracking-tight">
-                        Rp {Math.round(s.price).toLocaleString('id-ID')}
-                      </p>
+                    {/* Full-width Price Row */}
+                    <p className="text-xl sm:text-2xl font-black text-white font-mono tracking-tight mt-1.5">
+                      Rp {Math.round(s.price).toLocaleString('id-ID')}
+                    </p>
+
+                    {/* Daily Trend Pill positioned lower on the right side */}
+                    <div className="flex justify-end mt-1.5">
                       <div
-                        className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[11px] font-extrabold border ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-extrabold border ${
                           isUp
                             ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                             : 'bg-red-500/15 text-red-400 border-red-500/30'
                         }`}
                       >
-                        {isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                        {isUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                         <span>{isUp ? '+' : ''}{s.changePercent.toFixed(2)}%</span>
                       </div>
                     </div>
