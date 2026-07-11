@@ -72,8 +72,23 @@ function fetchYahooChart(ticker: string): Promise<StockResult> {
   });
 }
 
-export async function GET() {
-  const tickers = ['BBCA.JK', 'ELTY.JK'];
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const symbolsParam = searchParams.get('symbols');
+  let tickers = ['BBCA.JK', 'ELTY.JK'];
+
+  if (symbolsParam) {
+    tickers = symbolsParam
+      .split(',')
+      .map((s) => {
+        let clean = s.trim().toUpperCase();
+        if (!clean.endsWith('.JK') && !clean.startsWith('^')) {
+          clean = `${clean}.JK`;
+        }
+        return clean;
+      })
+      .filter(Boolean);
+  }
 
   try {
     const results = await Promise.all(tickers.map((t) => fetchYahooChart(t)));

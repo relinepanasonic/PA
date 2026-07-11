@@ -309,18 +309,79 @@ const LQ45_STOCKS: LQ45StockItem[] = [
   },
 ];
 
+import https from 'https';
+
+function fetchLiveYahooQuote(ticker: string): Promise<{ price: number; change: number; changePercent: number } | null> {
+  return new Promise((resolve) => {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}`;
+    const options = {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+      rejectUnauthorized: false,
+    };
+
+    https.get(url, options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => (data += chunk));
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          const meta = json?.chart?.result?.[0]?.meta;
+          if (!meta) {
+            resolve(null);
+            return;
+          }
+          const price = Number(meta.regularMarketPrice ?? 0);
+          const prevClose = Number(meta.chartPreviousClose ?? meta.previousClose ?? price);
+          const change = price - prevClose;
+          const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+          resolve({ price, change, changePercent });
+        } catch (err) {
+          resolve(null);
+        }
+      });
+    }).on('error', () => resolve(null));
+  });
+}
+
 export async function GET() {
-  // IHSG Index info
+  // Fetch live IHSG and all LQ45 stock prices in parallel
+  const ihsgQuotePromise = fetchLiveYahooQuote('^JKSE');
+  const stockQuotesPromises = LQ45_STOCKS.map((s) => fetchLiveYahooQuote(s.ticker));
+
+  const [ihsgQuote, ...stockQuotes] = await Promise.all([ihsgQuotePromise, ...stockQuotesPromises]);
+
   const ihsg = {
     ticker: '^JKSE',
     name: 'IHSG (Indeks Harga Saham Gabungan)',
-    price: 7325.45,
-    change: 48.25,
-    changePercent: 0.66,
+    price: ihsgQuote?.price ? Math.round(ihsgQuote.price * 100) / 100 : 7325.45,
+    change: ihsgQuote ? Math.round(ihsgQuote.change * 100) / 100 : 48.25,
+    changePercent: ihsgQuote ? Math.round(ihsgQuote.changePercent * 100) / 100 : 0.66,
   };
+
+  const stocks = LQ45_STOCKS.map((s, idx) => {
+    const live = stockQuotes[idx];
+    if (live && live.price > 0) {
+      const price = Math.round(live.price);
+      const change = Math.round(live.change);
+      const changePercent = Math.round(live.changePercent * 100) / 100;
+      // update miniChart last point to reflect live price
+      const updatedChart = [...s.miniChart];
+      updatedChart[updatedChart.length - 1] = price;
+      return {
+        ...s,
+        price,
+        change,
+        changePercent,
+        miniChart: updatedChart,
+      };
+    }
+    return s;
+  });
 
   return NextResponse.json({
     ihsg,
-    stocks: LQ45_STOCKS,
+    stocks,
   });
 }

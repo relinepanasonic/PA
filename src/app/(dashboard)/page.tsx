@@ -53,6 +53,7 @@ export default function DashboardPage() {
   // Stocks & News state
   const [stocks, setStocks] = useState<StockData[]>([]);
   const [stocksLoading, setStocksLoading] = useState(true);
+  const [portfolioSummary, setPortfolioSummary] = useState<Record<string, { avgPrice: number; lots: number }>>({});
   const [news, setNews] = useState<NewsItem[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
 
@@ -142,7 +143,34 @@ export default function DashboardPage() {
   const fetchStocks = async () => {
     setStocksLoading(true);
     try {
-      const res = await fetch('/api/stocks');
+      // 1. Fetch user portfolio holdings to calculate average buy price & get portfolio tickers
+      const portRes = await fetch('/api/investasi/portfolio');
+      const summaryMap: Record<string, { avgPrice: number; lots: number }> = {};
+      let portSymbols: string[] = [];
+
+      if (portRes.ok) {
+        const portData = await portRes.json();
+        const items = portData.portfolio || [];
+        const portMap: Record<string, { totalCost: number; totalLots: number }> = {};
+        items.forEach((item: any) => {
+          const base = item.ticker.toUpperCase().replace('.JK', '');
+          if (!portMap[base]) portMap[base] = { totalCost: 0, totalLots: 0 };
+          portMap[base].totalCost += Number(item.buy_price) * Number(item.lots);
+          portMap[base].totalLots += Number(item.lots);
+        });
+        Object.keys(portMap).forEach((base) => {
+          summaryMap[base] = {
+            avgPrice: Math.round(portMap[base].totalCost / portMap[base].totalLots),
+            lots: portMap[base].totalLots,
+          };
+          portSymbols.push(`${base}.JK`);
+        });
+      }
+      setPortfolioSummary(summaryMap);
+
+      // 2. Fetch live Yahoo Finance prices for default tickers + user portfolio tickers
+      const allTickers = Array.from(new Set(['BBCA.JK', 'ELTY.JK', ...portSymbols]));
+      const res = await fetch(`/api/stocks?symbols=${allTickers.join(',')}`);
       if (res.ok) {
         const data = await res.json();
         setStocks(data.stocks || []);
@@ -494,20 +522,49 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-3">
             {stocks.map((s) => {
               const isUp = s.changePercent >= 0;
+              const baseTicker = s.ticker.toUpperCase().replace('.JK', '');
+              const portInfo = portfolioSummary[baseTicker];
+              let pnlPercent: number | null = null;
+              if (portInfo && portInfo.avgPrice > 0 && s.price > 0) {
+                pnlPercent = ((s.price - portInfo.avgPrice) / portInfo.avgPrice) * 100;
+              }
+
               return (
-                <div key={s.ticker} className="glow-card rounded-2xl p-4 border border-white/10 bg-gradient-to-br from-slate-900/50 to-slate-800/30">
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">{s.ticker.replace('.JK', '')}</p>
-                  <p className="text-xl font-extrabold text-white font-mono tracking-tight">
-                    {new Intl.NumberFormat('id-ID').format(Math.round(s.price))}
-                  </p>
-                  <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                    isUp
-                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-red-500/15 text-red-400 border border-red-500/30'
-                  }`}>
-                    {isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                    {isUp ? '+' : ''}{s.changePercent.toFixed(2)}%
+                <div key={s.ticker} className="glow-card rounded-2xl p-4 border border-white/10 bg-gradient-to-br from-slate-900/50 to-slate-800/30 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{baseTicker}</p>
+                      {portInfo && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-semibold">
+                          {portInfo.lots} Lot
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xl font-extrabold text-white font-mono tracking-tight">
+                      {new Intl.NumberFormat('id-ID').format(Math.round(s.price))}
+                    </p>
+                    <div className={`inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                      isUp
+                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-red-500/15 text-red-400 border border-red-500/30'
+                    }`}>
+                      {isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                      {isUp ? '+' : ''}{s.changePercent.toFixed(2)}%
+                    </div>
                   </div>
+
+                  {portInfo && (
+                    <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-400">
+                        Avg: <strong className="text-slate-200 font-mono">Rp {portInfo.avgPrice.toLocaleString('id-ID')}</strong>
+                      </span>
+                      {pnlPercent !== null && (
+                        <span className={`font-extrabold flex items-center gap-0.5 ${pnlPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}% PnL
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
