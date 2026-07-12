@@ -279,7 +279,11 @@ export default function FinancePage() {
       .eq('user_id', user.id)
       .order('transaction_date', { ascending: false });
 
-    if (typeFilter !== 'all') query = query.eq('type', typeFilter);
+    if (typeFilter === 'transfer') {
+      query = query.ilike('description', '%___TRANSFER___%');
+    } else if (typeFilter !== 'all') {
+      query = query.eq('type', typeFilter).not('description', 'ilike', '%___TRANSFER___%');
+    }
     if (tagFilter !== 'all') query = query.eq('tag', tagFilter);
 
     const { data, count } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
@@ -409,7 +413,7 @@ export default function FinancePage() {
 
     const payload = {
       amount: parseFloat(formAmount),
-      type: formType,
+      type: formType === 'transfer' ? 'expense' : formType,
       tag: formTag,
       category_id: formType === 'transfer' ? null : (formCategoryId || null),
       description: finalDesc,
@@ -583,6 +587,7 @@ export default function FinancePage() {
             <option value="all">All Types</option>
             <option value="income">Income Only (+)</option>
             <option value="expense">Expenses Only (-)</option>
+            <option value="transfer">Transfers Only (🔄)</option>
           </select>
         </div>
 
