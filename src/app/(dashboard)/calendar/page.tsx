@@ -149,13 +149,25 @@ export default function CalendarPage() {
     (todos || []).forEach((t) => {
       let subtasks: SubtaskItem[] = [];
       let desc = t.description || '';
+      let kanbanStatus: CombinedItem['status'] = t.is_completed ? 'completed' : 'planned';
+
       try {
-        if (desc.includes('___SUBTASKS___')) {
-          const [d, raw] = desc.split('___SUBTASKS___');
-          desc = d.trim();
-          subtasks = JSON.parse(raw);
+        if (desc.includes('___STATUS___')) {
+          const match = desc.match(/___STATUS___(planned|in_progress|completed)/);
+          if (match) {
+            kanbanStatus = match[1] as CombinedItem['status'];
+          }
         }
+        if (desc.includes('___SUBTASKS___')) {
+          const match = desc.match(/___SUBTASKS___(\[.*\])/);
+          if (match) {
+            subtasks = JSON.parse(match[1]);
+          }
+        }
+        desc = desc.replace(/___STATUS___[^\s_]+/g, '').replace(/___SUBTASKS___\[.*\]/g, '').trim();
       } catch { /* ignore */ }
+
+      if (t.is_completed && kanbanStatus !== 'in_progress') kanbanStatus = 'completed';
 
       combined.push({
         id: `todo-${t.id}`,
@@ -164,7 +176,7 @@ export default function CalendarPage() {
         dateString: t.due_date || null,
         hourStart: 8, hourEnd: 9,
         type: 'todo',
-        status: t.is_completed ? 'completed' : 'planned',
+        status: kanbanStatus,
         priority: t.priority || 'medium',
         subtasks,
         original: t,
@@ -261,7 +273,14 @@ export default function CalendarPage() {
   const handleMoveStatus = async (item: CombinedItem, newStatus: CombinedItem['status']) => {
     setItems((p) => p.map((i) => i.id === item.id ? { ...i, status: newStatus } : i));
     if (item.type === 'todo') {
-      await supabase.from('todos').update({ is_completed: newStatus === 'completed' }).eq('id', item.original.id);
+      let baseDesc = item.description || '';
+      baseDesc = baseDesc.replace(/___STATUS___[^\s_]+/g, '').replace(/___SUBTASKS___\[.*\]/g, '').trim();
+
+      const encodedDesc = `${baseDesc}___STATUS___${newStatus}${item.subtasks?.length ? `___SUBTASKS___${JSON.stringify(item.subtasks)}` : ''}`;
+      await supabase.from('todos').update({
+        is_completed: newStatus === 'completed',
+        description: encodedDesc,
+      }).eq('id', item.original.id);
     } else {
       await supabase.from('work_activities').update({ status: newStatus }).eq('id', item.original.id);
     }
@@ -317,8 +336,9 @@ export default function CalendarPage() {
     );
     setItems((p) => p.map((i) => i.id === item.id ? { ...i, subtasks: updated } : i));
     if (item.type === 'todo') {
+      const fullDesc = `${item.description}___STATUS___${item.status}___SUBTASKS___${JSON.stringify(updated)}`;
       await supabase.from('todos')
-        .update({ description: `${item.description}___SUBTASKS___${JSON.stringify(updated)}` })
+        .update({ description: fullDesc })
         .eq('id', item.original.id);
     }
   };
@@ -336,9 +356,10 @@ export default function CalendarPage() {
     if (editingItem) {
       const orig = editingItem.original as any;
       if (formType === 'todo') {
+        const fullDesc = `${formDescription}___STATUS___${editingItem.status}${editingItem.subtasks?.length ? `___SUBTASKS___${JSON.stringify(editingItem.subtasks)}` : ''}`;
         await supabase.from('todos').update({
           title: formTitle,
-          description: formDescription,
+          description: fullDesc,
           due_date: dateToUse,
           priority: formPriority,
         }).eq('id', orig.id);

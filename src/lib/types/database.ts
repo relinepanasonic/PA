@@ -1,5 +1,5 @@
 export type TodoPriority = 'low' | 'medium' | 'high' | 'urgent';
-export type FinanceType = 'income' | 'expense';
+export type FinanceType = 'income' | 'expense' | 'transfer';
 export type FinanceTag = 'professional' | 'personal';
 export type WorkActivityType = 'livestream' | 'campaign' | 'milestone' | 'meeting' | 'deadline' | 'other';
 export type ActivityStatus = 'planned' | 'in_progress' | 'completed' | 'cancelled';

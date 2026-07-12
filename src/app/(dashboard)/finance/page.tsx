@@ -21,22 +21,54 @@ interface BankAccount {
   color: string;
 }
 
+export const ACCOUNT_ICON_PRESETS = [
+  { icon: '📱', label: 'Digital Bank (Blu, Jenius...)', defaultName: 'Blu by BCA' },
+  { icon: '🏦', label: 'Bank Account (BCA, Mandiri...)', defaultName: 'Bank BCA' },
+  { icon: '💵', label: 'Cash / Tunai', defaultName: 'Dompet Cash' },
+  { icon: '📲', label: 'E-Money (Gopay, OVO, DANA)', defaultName: 'E-Wallet / Gopay' },
+  { icon: '💳', label: 'Credit Card / Paylater', defaultName: 'Kartu Kredit' },
+  { icon: '🪙', label: 'Crypto / Investment', defaultName: 'Akun Investasi' },
+  { icon: '🏢', label: 'Business Account', defaultName: 'Rekening Bisnis' },
+  { icon: '💎', label: 'Savings / Deposito', defaultName: 'Tabungan Utama' },
+];
+
 const DEFAULT_BANK_ACCOUNTS: BankAccount[] = [
   { id: 'all', label: 'All Accounts', icon: '🏦', color: 'bg-slate-800 text-slate-200 border-white/20' },
+  { id: 'Blu by BCA', label: 'Blu by BCA', icon: '📱', color: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40' },
   { id: 'BCA Utama', label: 'BCA Utama', icon: '💳', color: 'bg-blue-500/20 text-blue-300 border-blue-400/40' },
   { id: 'Mandiri Bisnis', label: 'Mandiri Bisnis', icon: '🏛️', color: 'bg-amber-500/20 text-amber-300 border-amber-400/40' },
-  { id: 'Jenius Digital', label: 'Jenius Digital', icon: '📱', color: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40' },
+  { id: 'Jenius Digital', label: 'Jenius Digital', icon: '📱', color: 'bg-teal-500/20 text-teal-300 border-teal-400/40' },
   { id: 'Kartu Kredit', label: 'Kartu Kredit', icon: '💳', color: 'bg-purple-500/20 text-purple-300 border-purple-400/40' },
   { id: 'Dompet Cash', label: 'Dompet Cash', icon: '💵', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40' },
+  { id: 'E-Money / Gopay', label: 'E-Money / Gopay', icon: '📲', color: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/40' },
 ];
 
 const parseAccountFromDesc = (desc: string) => {
-  if (!desc) return { account: 'BCA Utama', cleanDesc: '' };
+  if (!desc) return { account: 'Blu by BCA', cleanDesc: '', isTransfer: false, targetAccount: '' };
+  const transferMatch = desc.match(/^\[([^\]]+)\s*→\s*([^\]]+)\]\s*(.*)$/);
+  if (transferMatch) {
+    return {
+      account: transferMatch[1].trim(),
+      targetAccount: transferMatch[2].trim(),
+      cleanDesc: transferMatch[3].replace(/___TRANSFER___/g, '').trim(),
+      isTransfer: true,
+    };
+  }
   const match = desc.match(/^\[([^\]]+)\]\s*(.*)$/);
   if (match) {
-    return { account: match[1], cleanDesc: match[2] };
+    return {
+      account: match[1],
+      cleanDesc: match[2].replace(/___TRANSFER___/g, '').trim(),
+      isTransfer: desc.includes('___TRANSFER___'),
+      targetAccount: '',
+    };
   }
-  return { account: 'BCA Utama', cleanDesc: desc };
+  return {
+    account: 'Blu by BCA',
+    cleanDesc: desc.replace(/___TRANSFER___/g, '').trim(),
+    isTransfer: desc.includes('___TRANSFER___'),
+    targetAccount: '',
+  };
 };
 
 const DEFAULT_EXPENSE_CATEGORIES = [
@@ -151,7 +183,7 @@ export default function FinancePage() {
 
   // E-Statement & Receipt AI Simulation state
   const [showStatementModal, setShowStatementModal] = useState(false);
-  const [statementAccount, setStatementAccount] = useState('BCA Utama');
+  const [statementAccount, setStatementAccount] = useState('Blu by BCA');
   const [importingStatement, setImportingStatement] = useState(false);
   const [scanningReceipt, setScanningReceipt] = useState(false);
   const [ocrStatus, setOcrStatus] = useState<string | null>(null);
@@ -165,7 +197,8 @@ export default function FinancePage() {
   const [formAmount, setFormAmount] = useState('');
   const [formType, setFormType] = useState<FinanceType>('expense');
   const [formTag, setFormTag] = useState<FinanceTag>('personal');
-  const [formAccount, setFormAccount] = useState<string>('BCA Utama');
+  const [formAccount, setFormAccount] = useState<string>('Blu by BCA');
+  const [formTransferTo, setFormTransferTo] = useState<string>('BCA Utama');
   const [formCategoryId, setFormCategoryId] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
@@ -214,7 +247,7 @@ export default function FinancePage() {
 
     const { data: income } = await supabase
       .from('finance_transactions')
-      .select('amount')
+      .select('amount, description')
       .eq('user_id', user.id)
       .eq('type', 'income')
       .gte('transaction_date', monthStart)
@@ -222,14 +255,17 @@ export default function FinancePage() {
     
     const { data: expenses } = await supabase
       .from('finance_transactions')
-      .select('amount')
+      .select('amount, description')
       .eq('user_id', user.id)
       .eq('type', 'expense')
       .gte('transaction_date', monthStart)
       .lte('transaction_date', today);
 
-    setTotalIncome((income || []).reduce((s, t) => s + Number(t.amount), 0));
-    setTotalExpenses((expenses || []).reduce((s, t) => s + Number(t.amount), 0));
+    const validIncome = (income || []).filter(t => !t.description?.includes('___TRANSFER___'));
+    const validExpenses = (expenses || []).filter(t => !t.description?.includes('___TRANSFER___'));
+
+    setTotalIncome(validIncome.reduce((s, t) => s + Number(t.amount), 0));
+    setTotalExpenses(validExpenses.reduce((s, t) => s + Number(t.amount), 0));
   }, []);
 
   const fetchTransactions = useCallback(async () => {
@@ -302,7 +338,8 @@ export default function FinancePage() {
     setFormAmount('');
     setFormType('expense');
     setFormTag('personal');
-    setFormAccount(accountFilter !== 'all' ? accountFilter : 'BCA Utama');
+    setFormAccount(accountFilter !== 'all' ? accountFilter : 'Blu by BCA');
+    setFormTransferTo('BCA Utama');
     setFormCategoryId('');
     setFormDescription('');
     setFormDate(new Date().toISOString().split('T')[0]);
@@ -313,9 +350,10 @@ export default function FinancePage() {
     setEditingTx(tx);
     setOcrStatus(null);
     const parsed = parseAccountFromDesc(tx.description || '');
-    setFormAccount(parsed.account);
+    setFormAccount(parsed.account || 'Blu by BCA');
+    if (parsed.targetAccount) setFormTransferTo(parsed.targetAccount);
     setFormAmount(String(tx.amount));
-    setFormType(tx.type);
+    setFormType(parsed.isTransfer ? 'transfer' : tx.type);
     setFormTag(tx.tag);
     setFormCategoryId(tx.category_id || '');
     setFormDescription(parsed.cleanDesc);
@@ -364,14 +402,16 @@ export default function FinancePage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const cleanDesc = formDescription.replace(/^\[.*?\]\s*/, '').trim();
-    const finalDesc = `[${formAccount}] ${cleanDesc || 'Transaction'}`;
+    const cleanDesc = formDescription.replace(/^\[.*?\]\s*/, '').replace(/___TRANSFER___/g, '').trim();
+    const finalDesc = formType === 'transfer'
+      ? `[${formAccount} → ${formTransferTo}] ${cleanDesc || 'Transfer Antar Bank'}___TRANSFER___`
+      : `[${formAccount}] ${cleanDesc || 'Transaction'}`;
 
     const payload = {
       amount: parseFloat(formAmount),
       type: formType,
       tag: formTag,
-      category_id: formCategoryId || null,
+      category_id: formType === 'transfer' ? null : (formCategoryId || null),
       description: finalDesc,
       transaction_date: formDate,
     };
@@ -585,34 +625,48 @@ export default function FinancePage() {
                   {/* Category Tile */}
                   <div
                     className="w-10 h-10 rounded-2xl flex items-center justify-center text-lg flex-shrink-0 border border-white/10 shadow-inner"
-                    style={{ backgroundColor: `${tx.finance_categories?.color || '#3b82f6'}18` }}
+                    style={{ backgroundColor: parsed.isTransfer ? '#06b6d418' : `${tx.finance_categories?.color || '#3b82f6'}18` }}
                   >
-                    {tx.finance_categories?.icon || (tx.type === 'income' ? '💰' : '💸')}
+                    {parsed.isTransfer ? '🔄' : (tx.finance_categories?.icon || (tx.type === 'income' ? '💰' : '💸'))}
                   </div>
 
                   {/* Text & Meta */}
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-white truncate group-hover:text-blue-300 transition-colors">
-                      {parsed.cleanDesc || tx.finance_categories?.name || (tx.type === 'income' ? 'Income' : 'Expense')}
+                      {parsed.cleanDesc || (parsed.isTransfer ? 'Transfer Antar Bank' : tx.finance_categories?.name || (tx.type === 'income' ? 'Income' : 'Expense'))}
                     </p>
                     <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-400 flex-wrap">
                       <span>{new Date(tx.transaction_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                       <span>•</span>
-                      <span className="font-semibold text-slate-300">{parsed.account}</span>
-                      <span>•</span>
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                        tx.tag === 'professional' ? 'bg-cyan-500/15 text-cyan-300' : 'bg-slate-500/15 text-slate-300'
-                      }`}>
-                        {tx.tag === 'professional' ? 'Pro' : 'Personal'}
-                      </span>
+                      {parsed.isTransfer ? (
+                        <span className="font-semibold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-md border border-cyan-500/30">
+                          {parsed.account} → {parsed.targetAccount || 'Bank Lain'}
+                        </span>
+                      ) : (
+                        <span className="font-semibold text-slate-300">{parsed.account}</span>
+                      )}
+                      {!parsed.isTransfer && (
+                        <>
+                          <span>•</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                            tx.tag === 'professional' ? 'bg-cyan-500/15 text-cyan-300' : 'bg-slate-500/15 text-slate-300'
+                          }`}>
+                            {tx.tag === 'professional' ? 'Pro' : 'Personal'}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Amount & Actions */}
                 <div className="flex items-center gap-2.5 flex-shrink-0">
-                  <p className={`text-sm font-extrabold font-mono ${tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
+                  <p className={`text-sm font-extrabold font-mono ${
+                    parsed.isTransfer
+                      ? 'text-cyan-400'
+                      : tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'
+                  }`}>
+                    {parsed.isTransfer ? '🔄 ' : (tx.type === 'income' ? '+' : '-')}{formatCurrency(tx.amount)}
                   </p>
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteTx(tx.id); }}
@@ -706,7 +760,7 @@ export default function FinancePage() {
               <button
                 type="button"
                 onClick={() => setFormType('income')}
-                className={`flex-1 py-2.5 text-sm font-bold transition-all ${
+                className={`flex-1 py-2.5 text-xs sm:text-sm font-bold transition-all ${
                   formType === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-900 text-slate-400'
                 }`}
               >
@@ -715,14 +769,52 @@ export default function FinancePage() {
               <button
                 type="button"
                 onClick={() => setFormType('expense')}
-                className={`flex-1 py-2.5 text-sm font-bold transition-all ${
+                className={`flex-1 py-2.5 text-xs sm:text-sm font-bold transition-all ${
                   formType === 'expense' ? 'bg-red-500/20 text-red-400' : 'bg-slate-900 text-slate-400'
                 }`}
               >
                 Expense
               </button>
+              <button
+                type="button"
+                onClick={() => setFormType('transfer')}
+                className={`flex-1 py-2.5 text-xs sm:text-sm font-bold transition-all ${
+                  formType === 'transfer' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-900 text-slate-400'
+                }`}
+              >
+                🔄 Transfer Bank
+              </button>
             </div>
           </div>
+
+          {formType === 'transfer' && (
+            <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-cyan-300 uppercase tracking-wider mb-1">Dari Rekening (Source)</label>
+                <select
+                  value={formAccount}
+                  onChange={(e) => setFormAccount(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-cyan-500/30 text-xs font-bold text-white focus:outline-none focus:border-cyan-400"
+                >
+                  {accounts.filter(a => a.id !== 'all').map(a => (
+                    <option key={a.id} value={a.id}>{a.icon} {a.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-cyan-300 uppercase tracking-wider mb-1">Ke Rekening (Destination)</label>
+                <select
+                  value={formTransferTo}
+                  onChange={(e) => setFormTransferTo(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-cyan-500/30 text-xs font-bold text-white focus:outline-none focus:border-cyan-400"
+                >
+                  {accounts.filter(a => a.id !== 'all').map(a => (
+                    <option key={a.id} value={a.id}>{a.icon} {a.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
 
           <Input
             id="tx-amount"
@@ -734,75 +826,79 @@ export default function FinancePage() {
             icon={<DollarSign size={16} />}
           />
 
-          {/* Tag Toggle */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Tag</label>
-            <div className="flex rounded-xl overflow-hidden border border-white/15">
-              <button
-                type="button"
-                onClick={() => setFormTag('personal')}
-                className={`flex-1 py-2.5 text-sm font-bold transition-all ${
-                  formTag === 'personal' ? 'bg-blue-600/20 text-blue-400' : 'bg-slate-900 text-slate-400'
-                }`}
-              >
-                Personal
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormTag('professional')}
-                className={`flex-1 py-2.5 text-sm font-bold transition-all ${
-                  formTag === 'professional' ? 'bg-blue-600/20 text-blue-400' : 'bg-slate-900 text-slate-400'
-                }`}
-              >
-                Professional
-              </button>
-            </div>
-          </div>
-
-          {/* 1-Row Quick Category (Exactly 4 Categories: Makan, Transport, Work, Entertainment) */}
-          {formType === 'expense' && (
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Quick Category</label>
-              <div className="grid grid-cols-4 gap-1.5">
-                {['Makan', 'Transport', 'Work', 'Entertainment']
-                  .map(name => filteredCategories.find(c => c.name.toLowerCase() === name.toLowerCase()))
-                  .filter(Boolean)
-                  .map((c) => {
-                    const cat = c!;
-                    const isSelected = formCategoryId === cat.id;
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => {
-                          setFormCategoryId(cat.id);
-                          if (cat.tag) setFormTag(cat.tag);
-                        }}
-                        className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border ${
-                          isSelected
-                            ? 'bg-blue-600/30 border-blue-400 text-white shadow-md scale-[1.02]'
-                            : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]'
-                        }`}
-                      >
-                        <span className="text-base leading-none">{cat.icon || '🏷️'}</span>
-                        <span className="text-[11px] font-bold truncate w-full text-center leading-tight">{cat.name}</span>
-                      </button>
-                    );
-                  })}
+          {formType !== 'transfer' && (
+            <>
+              {/* Tag Toggle */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Tag</label>
+                <div className="flex rounded-xl overflow-hidden border border-white/15">
+                  <button
+                    type="button"
+                    onClick={() => setFormTag('personal')}
+                    className={`flex-1 py-2.5 text-sm font-bold transition-all ${
+                      formTag === 'personal' ? 'bg-blue-600/20 text-blue-400' : 'bg-slate-900 text-slate-400'
+                    }`}
+                  >
+                    Personal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormTag('professional')}
+                    className={`flex-1 py-2.5 text-sm font-bold transition-all ${
+                      formTag === 'professional' ? 'bg-blue-600/20 text-blue-400' : 'bg-slate-900 text-slate-400'
+                    }`}
+                  >
+                    Professional
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
 
-          <Select
-            id="tx-category"
-            label="Category"
-            options={[
-              { value: '', label: 'Select category...' },
-              ...filteredCategories.map(c => ({ value: c.id, label: `${c.icon ? c.icon + ' ' : ''}${c.name}` })),
-            ]}
-            value={formCategoryId}
-            onChange={(e) => setFormCategoryId(e.target.value)}
-          />
+              {/* 1-Row Quick Category */}
+              {formType === 'expense' && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Quick Category</label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {['Makan', 'Transport', 'Work', 'Entertainment']
+                      .map(name => filteredCategories.find(c => c.name.toLowerCase() === name.toLowerCase()))
+                      .filter(Boolean)
+                      .map((c) => {
+                        const cat = c!;
+                        const isSelected = formCategoryId === cat.id;
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => {
+                              setFormCategoryId(cat.id);
+                              if (cat.tag) setFormTag(cat.tag);
+                            }}
+                            className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border ${
+                              isSelected
+                                ? 'bg-blue-600/30 border-blue-400 text-white shadow-md scale-[1.02]'
+                                : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]'
+                            }`}
+                          >
+                            <span className="text-base leading-none">{cat.icon || '🏷️'}</span>
+                            <span className="text-[11px] font-bold truncate w-full text-center leading-tight">{cat.name}</span>
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              <Select
+                id="tx-category"
+                label="Category"
+                options={[
+                  { value: '', label: 'Select category...' },
+                  ...filteredCategories.map(c => ({ value: c.id, label: `${c.icon ? c.icon + ' ' : ''}${c.name}` })),
+                ]}
+                value={formCategoryId}
+                onChange={(e) => setFormCategoryId(e.target.value)}
+              />
+            </>
+          )}
 
           <Input
             id="tx-desc"
@@ -901,22 +997,48 @@ export default function FinancePage() {
         title="Manage Bank Accounts & Wallets"
       >
         <div className="space-y-4">
-          <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
-            <p className="text-xs font-bold text-white uppercase tracking-wider">Add New Account</p>
-            <div className="flex gap-2">
+          <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+            <p className="text-xs font-bold text-white uppercase tracking-wider">Add New Account / Wallet</p>
+            
+            {/* Quick Icon Selector Presets */}
+            <div>
+              <p className="text-[11px] font-semibold text-slate-400 mb-1.5">Pick Icon & Category:</p>
+              <div className="grid grid-cols-4 gap-1.5">
+                {ACCOUNT_ICON_PRESETS.map((preset) => (
+                  <button
+                    key={preset.icon + preset.label}
+                    type="button"
+                    onClick={() => {
+                      setNewAccountIcon(preset.icon);
+                      if (!newAccountName.trim()) setNewAccountName(preset.defaultName);
+                    }}
+                    className={`p-2 rounded-xl border text-left transition-all flex flex-col gap-0.5 ${
+                      newAccountIcon === preset.icon
+                        ? 'bg-cyan-500/20 border-cyan-400 text-white shadow-md'
+                        : 'bg-slate-900/80 border-white/10 text-slate-300 hover:border-white/20'
+                    }`}
+                  >
+                    <span className="text-base">{preset.icon}</span>
+                    <span className="text-[10px] font-bold truncate leading-tight">{preset.label.split(' ')[0]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
               <input
                 type="text"
-                placeholder="Icon (💳, 🏦...)"
+                placeholder="Icon"
                 value={newAccountIcon}
                 onChange={(e) => setNewAccountIcon(e.target.value)}
-                className="w-16 px-2.5 py-2 rounded-xl bg-slate-900 border border-white/15 text-center text-sm font-bold text-white focus:outline-none focus:border-blue-400"
+                className="w-14 px-2 py-2 rounded-xl bg-slate-900 border border-white/15 text-center text-sm font-bold text-white focus:outline-none focus:border-cyan-400"
               />
               <input
                 type="text"
-                placeholder="Account Name (e.g. Bank Jago)"
+                placeholder="Account Name (e.g. Blu by BCA, Bank Jago, Gopay...)"
                 value={newAccountName}
                 onChange={(e) => setNewAccountName(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs font-semibold text-white focus:outline-none focus:border-blue-400"
+                className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400"
               />
               <Button size="sm" onClick={handleAddAccount} disabled={!newAccountName.trim()}>
                 Add
