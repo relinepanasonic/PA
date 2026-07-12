@@ -245,27 +245,24 @@ export default function FinancePage() {
     const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
     const today = new Date().toISOString().split('T')[0];
 
-    const { data: income } = await supabase
+    const { data: allMonthTx } = await supabase
       .from('finance_transactions')
-      .select('amount, description')
+      .select('amount, type, description')
       .eq('user_id', user.id)
-      .eq('type', 'income')
-      .gte('transaction_date', monthStart)
-      .lte('transaction_date', today);
-    
-    const { data: expenses } = await supabase
-      .from('finance_transactions')
-      .select('amount, description')
-      .eq('user_id', user.id)
-      .eq('type', 'expense')
       .gte('transaction_date', monthStart)
       .lte('transaction_date', today);
 
-    const validIncome = (income || []).filter(t => !t.description?.includes('___TRANSFER___'));
-    const validExpenses = (expenses || []).filter(t => !t.description?.includes('___TRANSFER___'));
+    let inc = 0;
+    let exp = 0;
+    (allMonthTx || []).forEach(t => {
+      if (t.description?.includes('___TRANSFER___')) return;
+      const amt = Number(t.amount) || 0;
+      if (t.type === 'income') inc += amt;
+      else if (t.type === 'expense') exp += amt;
+    });
 
-    setTotalIncome(validIncome.reduce((s, t) => s + Number(t.amount), 0));
-    setTotalExpenses(validExpenses.reduce((s, t) => s + Number(t.amount), 0));
+    setTotalIncome(inc);
+    setTotalExpenses(exp);
   }, []);
 
   const fetchTransactions = useCallback(async () => {

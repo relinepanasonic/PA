@@ -140,8 +140,8 @@ export default function CalendarPage() {
     if (!user) return;
 
     const [{ data: todos }, { data: activities }] = await Promise.all([
-      supabase.from('todos').select('*').eq('user_id', user.id),
-      supabase.from('work_activities').select('*').eq('user_id', user.id),
+      supabase.from('todos').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200),
+      supabase.from('work_activities').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200),
     ]);
 
     const combined: CombinedItem[] = [];

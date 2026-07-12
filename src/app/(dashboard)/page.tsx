@@ -84,42 +84,44 @@ export default function DashboardPage() {
       const today = getLocalDateString();
       const monthStart = `${today.slice(0, 8)}01`;
 
-      // Fetch To Do list (sorted closest to due date, including completed items for vertical scrolling)
-      const { data: rawTodos } = await supabase
-        .from('todos')
-        .select('*')
-        .eq('user_id', user.id)
-        .limit(30);
+      const todayStart = `${today}T00:00:00`;
+      const todayEnd = `${today}T23:59:59`;
+
+      const [
+        { data: rawTodos },
+        { data: schedule },
+        { data: transactions }
+      ] = await Promise.all([
+        supabase
+          .from('todos')
+          .select('*')
+          .eq('user_id', user.id)
+          .limit(30),
+        supabase
+          .from('work_activities')
+          .select('*')
+          .eq('user_id', user.id)
+          .or(`and(scheduled_at.gte.${todayStart},scheduled_at.lte.${todayEnd}),and(deadline.gte.${todayStart},deadline.lte.${todayEnd})`)
+          .neq('status', 'completed')
+          .neq('status', 'cancelled')
+          .order('scheduled_at', { ascending: true })
+          .limit(10),
+        supabase
+          .from('finance_transactions')
+          .select('amount, type, tag, description')
+          .eq('user_id', user.id)
+          .gte('transaction_date', monthStart)
+          .lte('transaction_date', today)
+      ]);
 
       const sortedTodos = (rawTodos || []).sort((a, b) => {
         if (a.is_completed !== b.is_completed) {
-          return a.is_completed ? 1 : -1; // incomplete first
+          return a.is_completed ? 1 : -1;
         }
         const dateA = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
         const dateB = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
         return dateA - dateB;
       });
-
-      // Fetch today's schedule strictly within today's local boundaries (00:00:00 to 23:59:59)
-      const todayStart = `${today}T00:00:00`;
-      const todayEnd = `${today}T23:59:59`;
-      const { data: schedule } = await supabase
-        .from('work_activities')
-        .select('*')
-        .eq('user_id', user.id)
-        .or(`and(scheduled_at.gte.${todayStart},scheduled_at.lte.${todayEnd}),and(deadline.gte.${todayStart},deadline.lte.${todayEnd})`)
-        .neq('status', 'completed')
-        .neq('status', 'cancelled')
-        .order('scheduled_at', { ascending: true })
-        .limit(10);
-
-      // Fetch finance summary for current month
-      const { data: transactions } = await supabase
-        .from('finance_transactions')
-        .select('amount, type, tag')
-        .eq('user_id', user.id)
-        .gte('transaction_date', monthStart)
-        .lte('transaction_date', today);
 
       if (transactions) {
         const summary: FinanceSummary = {
@@ -129,6 +131,7 @@ export default function DashboardPage() {
           personal_expenses: 0,
         };
         for (const tx of transactions) {
+          if (tx.description?.includes('___TRANSFER___')) continue;
           const amt = Number(tx.amount);
           if (tx.type === 'income') {
             summary.total_income += amt;
