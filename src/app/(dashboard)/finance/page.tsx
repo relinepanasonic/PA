@@ -464,8 +464,13 @@ export default function FinancePage() {
     fetchSummary();
   };
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount);
+  const formatCurrency = (amount: number) => {
+    const formatted = new Intl.NumberFormat('id-ID', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+    return `Rp ${formatted}`;
+  };
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const netBalance = totalIncome - totalExpenses;
@@ -513,7 +518,7 @@ export default function FinancePage() {
           </span>
         </div>
         <div className="flex items-baseline justify-between">
-          <h2 className={`text-2xl sm:text-3xl font-extrabold font-mono tracking-tight ${netBalance >= 0 ? 'text-white' : 'text-red-400'}`}>
+          <h2 className={`text-xl sm:text-2xl font-extrabold font-mono tracking-tight ${netBalance >= 0 ? 'text-white' : 'text-red-400'}`}>
             {formatCurrency(netBalance)}
           </h2>
         </div>
@@ -526,7 +531,7 @@ export default function FinancePage() {
             </div>
             <div className="min-w-0">
               <p className="text-[10px] text-slate-400 font-semibold uppercase">Income</p>
-              <p className="text-xs sm:text-sm font-bold font-mono text-emerald-400 truncate">{formatCurrency(totalIncome)}</p>
+              <p className="text-xs font-bold font-mono tracking-tight text-emerald-400 truncate">{formatCurrency(totalIncome)}</p>
             </div>
           </div>
 
@@ -536,7 +541,7 @@ export default function FinancePage() {
             </div>
             <div className="min-w-0">
               <p className="text-[10px] text-slate-400 font-semibold uppercase">Expenses</p>
-              <p className="text-xs sm:text-sm font-bold font-mono text-red-400 truncate">{formatCurrency(totalExpenses)}</p>
+              <p className="text-xs font-bold font-mono tracking-tight text-red-400 truncate">{formatCurrency(totalExpenses)}</p>
             </div>
           </div>
         </div>
@@ -663,7 +668,7 @@ export default function FinancePage() {
 
                 {/* Amount & Actions */}
                 <div className="flex items-center gap-2.5 flex-shrink-0">
-                  <p className={`text-sm font-extrabold font-mono ${
+                  <p className={`text-xs sm:text-sm font-extrabold font-mono tracking-tight ${
                     parsed.isTransfer
                       ? 'text-cyan-400'
                       : tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'

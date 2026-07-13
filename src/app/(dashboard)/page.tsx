@@ -369,12 +369,11 @@ export default function DashboardPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    const formatted = new Intl.NumberFormat('id-ID', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+    return `Rp ${formatted}`;
   };
 
   const priorityVariant = (priority: Todo['priority']) => {
@@ -699,18 +698,18 @@ export default function DashboardPage() {
               </div>
               <span className="text-xs font-semibold text-slate-300">Income</span>
             </div>
-            <p className="text-2xl font-extrabold text-emerald-400 tracking-tight">{formatCurrency(financeSummary.total_income)}</p>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Pro Agency: {formatCurrency(financeSummary.professional_income)}</p>
+            <p className="text-base sm:text-lg font-extrabold font-mono text-emerald-400 tracking-tight truncate">{formatCurrency(financeSummary.total_income)}</p>
+            <p className="text-[10px] text-slate-400 mt-1 font-medium truncate">Pro Agency: {formatCurrency(financeSummary.professional_income)}</p>
           </div>
-          <div className="glow-card rounded-[28px] p-4.5 bg-gradient-to-br from-red-950/30 to-slate-900/50">
+          <div className="glow-card rounded-[28px] p-4.5 bg-gradient-to-br from-red-950/30 to-slate-900/50 min-w-0">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-9 h-9 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center">
                 <TrendingDown size={16} className="text-red-400" />
               </div>
               <span className="text-xs font-semibold text-slate-300">Expenses</span>
             </div>
-            <p className="text-2xl font-extrabold text-red-400 tracking-tight">{formatCurrency(financeSummary.total_expenses)}</p>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Personal: {formatCurrency(financeSummary.personal_expenses)}</p>
+            <p className="text-base sm:text-lg font-extrabold font-mono text-red-400 tracking-tight truncate">{formatCurrency(financeSummary.total_expenses)}</p>
+            <p className="text-[10px] text-slate-400 mt-1 font-medium truncate">Personal: {formatCurrency(financeSummary.personal_expenses)}</p>
           </div>
         </div>
       </section>
