@@ -31,6 +31,7 @@ interface NewsItem {
 
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
+import AddToGoogleCalendar from '@/components/ui/AddToGoogleCalendar';
 
 const getLocalDateString = (d = new Date()) => {
   const year = d.getFullYear();
@@ -336,12 +337,22 @@ export default function DashboardPage() {
   const handleSaveActivity = async () => {
     if (!editingActivity || !formTitle.trim()) return;
     setSaving(true);
-    const startIso = `${formDate}T${formStartTime}:00`;
-    const endIso = `${formDate}T${formEndTime}:00`;
+    const [y, m, d] = formDate.split('-').map(Number);
+    const [sHr, sMin] = formStartTime.split(':').map(Number);
+    const [eHr, eMin] = formEndTime.split(':').map(Number);
+    const startIso = new Date(y, m - 1, d, sHr || 0, sMin || 0, 0).toISOString();
+    const endIso = new Date(y, m - 1, d, eHr || 0, eMin || 0, 0).toISOString();
+
+    const origMeta = (editingActivity.metadata as Record<string, any>) || {};
     await supabase.from('work_activities').update({
       title: formTitle,
       scheduled_at: startIso,
       deadline: endIso,
+      metadata: {
+        ...origMeta,
+        start_time: formStartTime,
+        end_time: formEndTime,
+      },
     }).eq('id', editingActivity.id);
     setSaving(false);
     setEditingActivity(null);
@@ -374,6 +385,19 @@ export default function DashboardPage() {
       maximumFractionDigits: 0,
     }).format(amount);
     return `Rp ${formatted}`;
+  };
+
+  const formatActivityTime = (activity: WorkActivity) => {
+    const meta = activity.metadata as Record<string, any> | null;
+    if (meta?.all_day) return 'All Day';
+    if (meta?.start_time) {
+      const endStr = meta.end_time ? ` - ${meta.end_time}` : '';
+      return `${meta.start_time}${endStr}`;
+    }
+    if (activity.scheduled_at) {
+      return new Date(activity.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+    return 'No time set';
   };
 
   const priorityVariant = (priority: Todo['priority']) => {
@@ -442,16 +466,21 @@ export default function DashboardPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-white truncate">{activity.title}</p>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    {activity.activity_type} · 
-                    {activity.scheduled_at 
-                      ? new Date(activity.scheduled_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-                      : 'No time set'
-                    }
+                    {activity.activity_type} · {formatActivityTime(activity)}
                   </p>
                 </div>
-                <Badge variant={activity.status === 'in_progress' ? 'warning' : 'accent'} size="sm">
-                  {activity.status.replace('_', ' ')}
-                </Badge>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <AddToGoogleCalendar
+                    title={activity.title}
+                    description={activity.description}
+                    dateString={activity.scheduled_at}
+                    startTime={(activity.metadata as any)?.start_time}
+                    endTime={(activity.metadata as any)?.end_time}
+                  />
+                  <Badge variant={activity.status === 'in_progress' ? 'warning' : 'accent'} size="sm">
+                    {activity.status.replace('_', ' ')}
+                  </Badge>
+                </div>
               </div>
             ))}
           </div>

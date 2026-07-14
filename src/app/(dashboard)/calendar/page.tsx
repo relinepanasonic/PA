@@ -368,8 +368,11 @@ export default function CalendarPage() {
         let endHr = formAllDay ? 24 : (parseInt(formEndTime.split(':')[0], 10) || (startHr + 1));
         if (endHr <= startHr) endHr = startHr + 1;
 
-        const startIso = `${dateToUse}T${formAllDay ? '00:00' : formStartTime}:00`;
-        const endIso = `${dateToUse}T${formAllDay ? '23:59' : formEndTime}:00`;
+        const [y, m, d] = dateToUse.split('-').map(Number);
+        const [sHr, sMin] = (formAllDay ? '00:00' : formStartTime).split(':').map(Number);
+        const [eHr, eMin] = (formAllDay ? '23:59' : formEndTime).split(':').map(Number);
+        const startIso = new Date(y, m - 1, d, sHr || 0, sMin || 0, 0).toISOString();
+        const endIso = new Date(y, m - 1, d, eHr || 0, eMin || 0, 0).toISOString();
 
         await supabase.from('work_activities').update({
           title: formTitle,
@@ -407,8 +410,11 @@ export default function CalendarPage() {
       let endHr = formAllDay ? 24 : (parseInt(formEndTime.split(':')[0], 10) || (startHr + 1));
       if (endHr <= startHr) endHr = startHr + 1;
 
-      const startIso = `${dateToUse}T${formAllDay ? '00:00' : formStartTime}:00`;
-      const endIso = `${dateToUse}T${formAllDay ? '23:59' : formEndTime}:00`;
+      const [y, m, d] = dateToUse.split('-').map(Number);
+      const [sHr, sMin] = (formAllDay ? '00:00' : formStartTime).split(':').map(Number);
+      const [eHr, eMin] = (formAllDay ? '23:59' : formEndTime).split(':').map(Number);
+      const startIso = new Date(y, m - 1, d, sHr || 0, sMin || 0, 0).toISOString();
+      const endIso = new Date(y, m - 1, d, eHr || 0, eMin || 0, 0).toISOString();
 
       const { error } = await supabase.from('work_activities').insert({
         user_id: user.id,
@@ -499,7 +505,13 @@ export default function CalendarPage() {
         </div>
       ) : <div />}
       <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
-        <AddToGoogleCalendar title={item.title} description={item.description} dateString={item.dateString} />
+        <AddToGoogleCalendar
+          title={item.title}
+          description={item.description}
+          dateString={item.dateString}
+          startTime={'metadata' in item.original ? (item.original.metadata as any)?.start_time : undefined}
+          endTime={'metadata' in item.original ? (item.original.metadata as any)?.end_time : undefined}
+        />
         <button onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
           className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/25 transition-all" title="Delete">
           <Trash2 size={13} />
