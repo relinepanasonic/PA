@@ -71,13 +71,20 @@ const parseAccountFromDesc = (desc: string) => {
   };
 };
 
+const DEFAULT_INCOME_CATEGORIES = [
+  { name: 'Salary', icon: '💰', color: '#10b981', type: 'income' as const, tag: 'personal' as const },
+  { name: 'Project', icon: '💻', color: '#3b82f6', type: 'income' as const, tag: 'professional' as const },
+  { name: 'Transfer from other', icon: '🔄', color: '#8b5cf6', type: 'income' as const, tag: 'personal' as const },
+  { name: 'Others', icon: '💵', color: '#64748b', type: 'income' as const, tag: 'personal' as const },
+];
+
 const DEFAULT_EXPENSE_CATEGORIES = [
   { name: 'Makan', icon: '🍽️', color: '#f97316', type: 'expense' as const, tag: 'personal' as const },
   { name: 'Transport', icon: '🚗', color: '#3b82f6', type: 'expense' as const, tag: 'personal' as const },
-  { name: 'Pribadi', icon: '👤', color: '#8b5cf6', type: 'expense' as const, tag: 'personal' as const },
-  { name: 'Work', icon: '💼', color: '#0ea5e9', type: 'expense' as const, tag: 'professional' as const },
   { name: 'Entertainment', icon: '🎬', color: '#ec4899', type: 'expense' as const, tag: 'personal' as const },
+  { name: 'Work', icon: '💼', color: '#0ea5e9', type: 'expense' as const, tag: 'professional' as const },
   { name: 'Gadget', icon: '📱', color: '#06b6d4', type: 'expense' as const, tag: 'personal' as const },
+  { name: 'Personal', icon: '👤', color: '#8b5cf6', type: 'expense' as const, tag: 'personal' as const },
   { name: 'Other', icon: '📦', color: '#64748b', type: 'expense' as const, tag: 'personal' as const },
 ];
 
@@ -215,9 +222,11 @@ export default function FinancePage() {
       .eq('user_id', user.id)
       .order('name');
 
-    const existingNames = new Set((data || []).map(c => c.name.toLowerCase()));
-    const missing = DEFAULT_EXPENSE_CATEGORIES.filter(def => !existingNames.has(def.name.toLowerCase()));
+    const allDefaults = [...DEFAULT_INCOME_CATEGORIES, ...DEFAULT_EXPENSE_CATEGORIES];
+    const allowedNames = new Set(allDefaults.map(d => d.name.toLowerCase()));
+    const existingMap = new Map((data || []).map(c => [c.name.toLowerCase(), c]));
 
+    const missing = allDefaults.filter(def => !existingMap.has(def.name.toLowerCase()));
     if (missing.length > 0) {
       const inserts = missing.map(def => ({
         user_id: user.id,
@@ -228,16 +237,32 @@ export default function FinancePage() {
         icon: def.icon,
       }));
       await supabase.from('finance_categories').insert(inserts);
-
-      const { data: refreshed } = await supabase
-        .from('finance_categories')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('name');
-      setCategories(refreshed || []);
-    } else {
-      setCategories(data || []);
     }
+
+    const unwanted = (data || []).filter(c => !allowedNames.has(c.name.toLowerCase()));
+    if (unwanted.length > 0) {
+      const unwantedIds = unwanted.map(u => u.id);
+      const otherExpenseCat = (data || []).find(c => c.name.toLowerCase() === 'other');
+      if (otherExpenseCat) {
+        await supabase
+          .from('finance_transactions')
+          .update({ category_id: otherExpenseCat.id })
+          .in('category_id', unwantedIds);
+      } else {
+        await supabase
+          .from('finance_transactions')
+          .update({ category_id: null })
+          .in('category_id', unwantedIds);
+      }
+      await supabase.from('finance_categories').delete().in('id', unwantedIds);
+    }
+
+    const { data: refreshed } = await supabase
+      .from('finance_categories')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('name');
+    setCategories(refreshed || []);
   }, []);
 
   const fetchSummary = useCallback(async () => {
@@ -319,6 +344,31 @@ export default function FinancePage() {
     if (accountFilter === id) setAccountFilter('all');
   };
 
+  const handleTypeSwitch = (newType: FinanceType | 'transfer') => {
+    setFormType(newType);
+    if (newType === 'transfer') {
+      const transferCat = categories.find(c => c.name.toLowerCase() === 'transfer from other');
+      if (transferCat) setFormCategoryId(transferCat.id);
+    } else {
+      const currentCat = categories.find(c => c.id === formCategoryId);
+      if (!currentCat || currentCat.type !== newType) {
+        if (newType === 'income') {
+          const salCat = categories.find(c => c.name.toLowerCase() === 'salary') || categories.find(c => c.type === 'income');
+          if (salCat) {
+            setFormCategoryId(salCat.id);
+            if (salCat.tag) setFormTag(salCat.tag);
+          }
+        } else if (newType === 'expense') {
+          const makCat = categories.find(c => c.name.toLowerCase() === 'makan') || categories.find(c => c.type === 'expense');
+          if (makCat) {
+            setFormCategoryId(makCat.id);
+            if (makCat.tag) setFormTag(makCat.tag);
+          }
+        }
+      }
+    }
+  };
+
   const openCreate = () => {
     setEditingTx(null);
     setOcrStatus(null);
@@ -327,7 +377,9 @@ export default function FinancePage() {
     setFormTag('personal');
     setFormAccount(accountFilter !== 'all' ? accountFilter : 'Blu by BCA');
     setFormTransferTo('BCA Utama');
-    setFormCategoryId('');
+    const makCat = categories.find(c => c.name.toLowerCase() === 'makan') || categories.find(c => c.type === 'expense');
+    setFormCategoryId(makCat?.id || '');
+    if (makCat?.tag) setFormTag(makCat.tag);
     setFormDescription('');
     setFormDate(new Date().toISOString().split('T')[0]);
     setShowModal(true);
@@ -398,7 +450,9 @@ export default function FinancePage() {
       amount: parseFloat(formAmount),
       type: formType === 'transfer' ? 'expense' : formType,
       tag: formTag,
-      category_id: formType === 'transfer' ? null : (formCategoryId || null),
+      category_id: formType === 'transfer'
+        ? (categories.find(c => c.name.toLowerCase() === 'transfer from other')?.id || null)
+        : (formCategoryId || null),
       description: finalDesc,
       transaction_date: formDate,
     };
@@ -799,7 +853,7 @@ export default function FinancePage() {
             <div className="flex rounded-xl overflow-hidden border border-white/15">
               <button
                 type="button"
-                onClick={() => setFormType('income')}
+                onClick={() => handleTypeSwitch('income')}
                 className={`flex-1 py-2.5 text-xs sm:text-sm font-bold transition-all ${
                   formType === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-900 text-slate-400'
                 }`}
@@ -808,7 +862,7 @@ export default function FinancePage() {
               </button>
               <button
                 type="button"
-                onClick={() => setFormType('expense')}
+                onClick={() => handleTypeSwitch('expense')}
                 className={`flex-1 py-2.5 text-xs sm:text-sm font-bold transition-all ${
                   formType === 'expense' ? 'bg-red-500/20 text-red-400' : 'bg-slate-900 text-slate-400'
                 }`}
@@ -817,7 +871,7 @@ export default function FinancePage() {
               </button>
               <button
                 type="button"
-                onClick={() => setFormType('transfer')}
+                onClick={() => handleTypeSwitch('transfer')}
                 className={`flex-1 py-2.5 text-xs sm:text-sm font-bold transition-all ${
                   formType === 'transfer' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-900 text-slate-400'
                 }`}
@@ -893,39 +947,40 @@ export default function FinancePage() {
                 </div>
               </div>
 
-              {/* 1-Row Quick Category */}
-              {formType === 'expense' && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Quick Category</label>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {['Makan', 'Transport', 'Work', 'Entertainment']
-                      .map(name => filteredCategories.find(c => c.name.toLowerCase() === name.toLowerCase()))
-                      .filter(Boolean)
-                      .map((c) => {
-                        const cat = c!;
-                        const isSelected = formCategoryId === cat.id;
-                        return (
-                          <button
-                            key={cat.id}
-                            type="button"
-                            onClick={() => {
-                              setFormCategoryId(cat.id);
-                              if (cat.tag) setFormTag(cat.tag);
-                            }}
-                            className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border ${
-                              isSelected
-                                ? 'bg-blue-600/30 border-blue-400 text-white shadow-md scale-[1.02]'
-                                : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]'
-                            }`}
-                          >
-                            <span className="text-base leading-none">{cat.icon || '🏷️'}</span>
-                            <span className="text-[11px] font-bold truncate w-full text-center leading-tight">{cat.name}</span>
-                          </button>
-                        );
-                      })}
-                  </div>
+              {/* Quick Category Grid */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Quick Category</label>
+                <div className={`grid gap-1.5 ${formType === 'income' ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 sm:grid-cols-4'}`}>
+                  {(formType === 'income'
+                    ? ['Salary', 'Project', 'Transfer from other', 'Others']
+                    : ['Makan', 'Transport', 'Entertainment', 'Work', 'Gadget', 'Personal', 'Other']
+                  )
+                    .map(name => filteredCategories.find(c => c.name.toLowerCase() === name.toLowerCase()))
+                    .filter(Boolean)
+                    .map((c) => {
+                      const cat = c!;
+                      const isSelected = formCategoryId === cat.id;
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setFormCategoryId(cat.id);
+                            if (cat.tag) setFormTag(cat.tag);
+                          }}
+                          className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border ${
+                            isSelected
+                              ? 'bg-blue-600/30 border-blue-400 text-white shadow-md scale-[1.02]'
+                              : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]'
+                          }`}
+                        >
+                          <span className="text-base leading-none">{cat.icon || '🏷️'}</span>
+                          <span className="text-[11px] font-bold truncate w-full text-center leading-tight">{cat.name}</span>
+                        </button>
+                      );
+                    })}
                 </div>
-              )}
+              </div>
 
               <Select
                 id="tx-category"
@@ -935,7 +990,12 @@ export default function FinancePage() {
                   ...filteredCategories.map(c => ({ value: c.id, label: `${c.icon ? c.icon + ' ' : ''}${c.name}` })),
                 ]}
                 value={formCategoryId}
-                onChange={(e) => setFormCategoryId(e.target.value)}
+                onChange={(e) => {
+                  const cid = e.target.value;
+                  setFormCategoryId(cid);
+                  const cat = categories.find(c => c.id === cid);
+                  if (cat?.tag) setFormTag(cat.tag);
+                }}
               />
             </>
           )}
