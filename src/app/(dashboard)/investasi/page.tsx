@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Modal from '@/components/ui/Modal';
+import CurrencyInput from '@/components/ui/CurrencyInput';
 import Badge from '@/components/ui/Badge';
 import { PortfolioStock } from '@/lib/types/database';
 import { LQ45StockItem } from '@/app/api/stocks/lq45/route';
@@ -780,15 +781,13 @@ export default function InvestasiPage() {
               <h4 className="text-xs font-bold text-white mb-2.5">Tambah Saham Ini ke Portofolio Kamu</h4>
               <form onSubmit={handleAddStock} className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Harga Beli Rata-Rata (Rp)</label>
-                  <input
-                    type="number"
+                  <CurrencyInput
+                    label="Harga Beli Rata-Rata (Rp)"
                     placeholder="Contoh: 10150"
                     value={formBuyPrice}
                     onChange={(e) => setFormBuyPrice(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-blue-500"
+                    onValueChange={(val) => setFormBuyPrice(val)}
                     required
-                    min="1"
                   />
                 </div>
                 <div>
@@ -848,17 +847,13 @@ export default function InvestasiPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Harga Beli Rata-Rata (IDR per lembar)
-            </label>
-            <input
-              type="number"
+            <CurrencyInput
+              label="Harga Beli Rata-Rata (IDR per lembar)"
               placeholder="Contoh: 6000"
               value={formBuyPrice}
               onChange={(e) => setFormBuyPrice(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500"
+              onValueChange={(val) => setFormBuyPrice(val)}
               required
-              min="1"
             />
           </div>
 

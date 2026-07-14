@@ -5,6 +5,7 @@ import type { FinanceTransaction, FinanceCategory, FinanceType, FinanceTag } fro
 import { Plus, Wallet, TrendingUp, TrendingDown, DollarSign, Tag, Trash2, Edit3, Calendar, Camera, UploadCloud, CheckCircle2, FileSpreadsheet, Sparkles, Building2, Settings } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import CurrencyInput from '@/components/ui/CurrencyInput';
 import Select from '@/components/ui/Select';
 import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
@@ -910,14 +911,13 @@ export default function FinancePage() {
             </div>
           )}
 
-          <Input
+          <CurrencyInput
             id="tx-amount"
-            type="number"
-            label="Amount (IDR / USD)"
-            placeholder="0.00"
+            label="Amount (Rp)"
+            placeholder="0"
             value={formAmount}
             onChange={(e) => setFormAmount(e.target.value)}
-            icon={<DollarSign size={16} />}
+            onValueChange={(val) => setFormAmount(val)}
           />
 
           {formType !== 'transfer' && (
