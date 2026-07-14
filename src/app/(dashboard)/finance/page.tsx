@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { FinanceTransaction, FinanceCategory, FinanceType, FinanceTag } from '@/lib/types/database';
 import { Plus, Wallet, TrendingUp, TrendingDown, DollarSign, Tag, Trash2, Edit3, Calendar, Camera, UploadCloud, CheckCircle2, FileSpreadsheet, Sparkles, Building2, Settings } from 'lucide-react';
@@ -190,6 +190,7 @@ export default function FinancePage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Summary state
+  const [allSummaryTx, setAllSummaryTx] = useState<any[]>([]);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpenses, setTotalExpenses] = useState(0);
 
@@ -242,27 +243,12 @@ export default function FinancePage() {
   const fetchSummary = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-    const today = new Date().toISOString().split('T')[0];
-
-    const { data: allMonthTx } = await supabase
+    const { data: allTx } = await supabase
       .from('finance_transactions')
       .select('amount, type, description')
-      .eq('user_id', user.id)
-      .gte('transaction_date', monthStart)
-      .lte('transaction_date', today);
+      .eq('user_id', user.id);
 
-    let inc = 0;
-    let exp = 0;
-    (allMonthTx || []).forEach(t => {
-      if (t.description?.includes('___TRANSFER___')) return;
-      const amt = Number(t.amount) || 0;
-      if (t.type === 'income') inc += amt;
-      else if (t.type === 'expense') exp += amt;
-    });
-
-    setTotalIncome(inc);
-    setTotalExpenses(exp);
+    setAllSummaryTx(allTx || []);
   }, []);
 
   const fetchTransactions = useCallback(async () => {
@@ -472,14 +458,59 @@ export default function FinancePage() {
     return `Rp ${formatted}`;
   };
 
+  const { filteredSaldo, filteredIncome, filteredExpenses } = useMemo(() => {
+    let inc = 0;
+    let exp = 0;
+    let saldo = 0;
+
+    allSummaryTx.forEach(t => {
+      const parsed = parseAccountFromDesc(t.description || '');
+      const amt = Number(t.amount) || 0;
+
+      if (accountFilter === 'all') {
+        if (!parsed.isTransfer) {
+          if (t.type === 'income') {
+            inc += amt;
+            saldo += amt;
+          } else if (t.type === 'expense') {
+            exp += amt;
+            saldo -= amt;
+          }
+        }
+      } else {
+        if (parsed.isTransfer) {
+          if (parsed.account === accountFilter) {
+            saldo -= amt;
+            exp += amt;
+          }
+          if (parsed.targetAccount === accountFilter) {
+            saldo += amt;
+            inc += amt;
+          }
+        } else {
+          if (parsed.account === accountFilter) {
+            if (t.type === 'income') {
+              inc += amt;
+              saldo += amt;
+            } else if (t.type === 'expense') {
+              exp += amt;
+              saldo -= amt;
+            }
+          }
+        }
+      }
+    });
+
+    return { filteredSaldo: saldo, filteredIncome: inc, filteredExpenses: exp };
+  }, [allSummaryTx, accountFilter]);
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-  const netBalance = totalIncome - totalExpenses;
   const filteredCategories = categories.filter(c => c.type === formType);
 
   const filteredTransactions = transactions.filter(tx => {
     if (accountFilter === 'all') return true;
     const parsed = parseAccountFromDesc(tx.description || '');
-    return parsed.account === accountFilter;
+    return parsed.account === accountFilter || parsed.targetAccount === accountFilter;
   });
 
   return (
@@ -512,14 +543,16 @@ export default function FinancePage() {
       {/* Hero Financial Balance Card */}
       <div className="p-4 rounded-3xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 shadow-xl space-y-3.5">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Net Cashflow Balance</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            {accountFilter === 'all' ? 'Total Saldo (All Accounts)' : `Saldo — ${accountFilter}`}
+          </span>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-medium">
-            This Month
+            {accountFilter === 'all' ? 'All Banks' : accountFilter}
           </span>
         </div>
         <div className="flex items-baseline justify-between">
-          <h2 className={`text-xl sm:text-2xl font-extrabold font-mono tracking-tight ${netBalance >= 0 ? 'text-white' : 'text-red-400'}`}>
-            {formatCurrency(netBalance)}
+          <h2 className={`text-xl sm:text-2xl font-extrabold font-mono tracking-tight ${filteredSaldo >= 0 ? 'text-white' : 'text-red-400'}`}>
+            {formatCurrency(filteredSaldo)}
           </h2>
         </div>
 
@@ -530,8 +563,8 @@ export default function FinancePage() {
               <TrendingUp size={14} />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Income</p>
-              <p className="text-xs font-bold font-mono tracking-tight text-emerald-400 truncate">{formatCurrency(totalIncome)}</p>
+              <p className="text-[10px] text-slate-400 font-semibold uppercase">Money In</p>
+              <p className="text-xs font-bold font-mono tracking-tight text-emerald-400 truncate">{formatCurrency(filteredIncome)}</p>
             </div>
           </div>
 
@@ -540,8 +573,8 @@ export default function FinancePage() {
               <TrendingDown size={14} />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Expenses</p>
-              <p className="text-xs font-bold font-mono tracking-tight text-red-400 truncate">{formatCurrency(totalExpenses)}</p>
+              <p className="text-[10px] text-slate-400 font-semibold uppercase">Money Out</p>
+              <p className="text-xs font-bold font-mono tracking-tight text-red-400 truncate">{formatCurrency(filteredExpenses)}</p>
             </div>
           </div>
         </div>
