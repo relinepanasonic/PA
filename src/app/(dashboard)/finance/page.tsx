@@ -46,7 +46,7 @@ const DEFAULT_BANK_ACCOUNTS: BankAccount[] = [
 
 const parseAccountFromDesc = (desc: string) => {
   if (!desc) return { account: 'Blu by BCA', cleanDesc: '', isTransfer: false, targetAccount: '' };
-  const transferMatch = desc.match(/^\[([^\]]+)\s*→\s*([^\]]+)\]\s*(.*)$/);
+  const transferMatch = desc.match(/^\[([^\]]+?)\s*(?:→|->|-to-|\bto\b)\s*([^\]]+?)\]\s*(.*)$/i);
   if (transferMatch) {
     return {
       account: transferMatch[1].trim(),
@@ -58,7 +58,7 @@ const parseAccountFromDesc = (desc: string) => {
   const match = desc.match(/^\[([^\]]+)\]\s*(.*)$/);
   if (match) {
     return {
-      account: match[1],
+      account: match[1].trim(),
       cleanDesc: match[2].replace(/___TRANSFER___/g, '').trim(),
       isTransfer: desc.includes('___TRANSFER___'),
       targetAccount: '',
@@ -70,6 +70,18 @@ const parseAccountFromDesc = (desc: string) => {
     isTransfer: desc.includes('___TRANSFER___'),
     targetAccount: '',
   };
+};
+
+const matchAccount = (parsedAccName: string, filterId: string, allAccounts: BankAccount[]) => {
+  if (!parsedAccName || filterId === 'all') return false;
+  const cleanParsed = parsedAccName.trim().toLowerCase();
+  const cleanFilter = filterId.trim().toLowerCase();
+  if (cleanParsed === cleanFilter) return true;
+  const accObj = allAccounts.find(a => a.id.trim().toLowerCase() === cleanFilter || a.label.trim().toLowerCase() === cleanFilter);
+  if (accObj && (accObj.id.trim().toLowerCase() === cleanParsed || accObj.label.trim().toLowerCase() === cleanParsed)) {
+    return true;
+  }
+  return false;
 };
 
 const DEFAULT_INCOME_CATEGORIES = [
@@ -350,6 +362,11 @@ export default function FinancePage() {
     if (newType === 'transfer') {
       const transferCat = categories.find(c => c.name.toLowerCase() === 'transfer from other');
       if (transferCat) setFormCategoryId(transferCat.id);
+      const validAccs = accounts.filter(a => a.id !== 'all');
+      if (!validAccs.some(a => a.id === formTransferTo) || formTransferTo === formAccount) {
+        const targetAcc = validAccs.find(a => a.id !== formAccount)?.id || validAccs[0]?.id || 'BCA Utama';
+        setFormTransferTo(targetAcc);
+      }
     } else {
       const currentCat = categories.find(c => c.id === formCategoryId);
       if (!currentCat || currentCat.type !== newType) {
@@ -376,8 +393,11 @@ export default function FinancePage() {
     setFormAmount('');
     setFormType('expense');
     setFormTag('personal');
-    setFormAccount(accountFilter !== 'all' ? accountFilter : 'Blu by BCA');
-    setFormTransferTo('BCA Utama');
+    const validAccs = accounts.filter(a => a.id !== 'all');
+    const sourceAcc = accountFilter !== 'all' ? accountFilter : (validAccs[0]?.id || 'Blu by BCA');
+    const targetAcc = validAccs.find(a => a.id !== sourceAcc)?.id || validAccs[0]?.id || 'BCA Utama';
+    setFormAccount(sourceAcc);
+    setFormTransferTo(targetAcc);
     const makCat = categories.find(c => c.name.toLowerCase() === 'makan') || categories.find(c => c.type === 'expense');
     setFormCategoryId(makCat?.id || '');
     if (makCat?.tag) setFormTag(makCat.tag);
@@ -390,8 +410,15 @@ export default function FinancePage() {
     setEditingTx(tx);
     setOcrStatus(null);
     const parsed = parseAccountFromDesc(tx.description || '');
-    setFormAccount(parsed.account || 'Blu by BCA');
-    if (parsed.targetAccount) setFormTransferTo(parsed.targetAccount);
+    const validAccs = accounts.filter(a => a.id !== 'all');
+    const sourceAcc = parsed.account || validAccs[0]?.id || 'Blu by BCA';
+    setFormAccount(sourceAcc);
+    if (parsed.targetAccount) {
+      setFormTransferTo(parsed.targetAccount);
+    } else {
+      const targetAcc = validAccs.find(a => a.id !== sourceAcc)?.id || validAccs[0]?.id || 'BCA Utama';
+      setFormTransferTo(targetAcc);
+    }
     setFormAmount(String(tx.amount));
     setFormType(parsed.isTransfer ? 'transfer' : tx.type);
     setFormTag(tx.tag);
@@ -534,16 +561,16 @@ export default function FinancePage() {
         }
       } else {
         if (parsed.isTransfer) {
-          if (parsed.account === accountFilter) {
+          if (matchAccount(parsed.account, accountFilter, accounts)) {
             saldo -= amt;
             exp += amt;
           }
-          if (parsed.targetAccount === accountFilter) {
+          if (matchAccount(parsed.targetAccount, accountFilter, accounts)) {
             saldo += amt;
             inc += amt;
           }
         } else {
-          if (parsed.account === accountFilter) {
+          if (matchAccount(parsed.account, accountFilter, accounts)) {
             if (t.type === 'income') {
               inc += amt;
               saldo += amt;
@@ -557,7 +584,7 @@ export default function FinancePage() {
     });
 
     return { filteredSaldo: saldo, filteredIncome: inc, filteredExpenses: exp };
-  }, [allSummaryTx, accountFilter]);
+  }, [allSummaryTx, accountFilter, accounts]);
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const filteredCategories = categories.filter(c => c.type === formType);
@@ -565,7 +592,7 @@ export default function FinancePage() {
   const filteredTransactions = transactions.filter(tx => {
     if (accountFilter === 'all') return true;
     const parsed = parseAccountFromDesc(tx.description || '');
-    return parsed.account === accountFilter || parsed.targetAccount === accountFilter;
+    return matchAccount(parsed.account, accountFilter, accounts) || matchAccount(parsed.targetAccount, accountFilter, accounts);
   });
 
   return (
@@ -758,10 +785,12 @@ export default function FinancePage() {
                 <div className="flex items-center gap-2.5 flex-shrink-0">
                   <p className={`text-xs sm:text-sm font-extrabold font-mono tracking-tight ${
                     parsed.isTransfer
-                      ? 'text-cyan-400'
+                      ? (accountFilter !== 'all' && matchAccount(parsed.targetAccount, accountFilter, accounts) ? 'text-emerald-400' : accountFilter !== 'all' && matchAccount(parsed.account, accountFilter, accounts) ? 'text-red-400' : 'text-cyan-400')
                       : tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'
                   }`}>
-                    {parsed.isTransfer ? '🔄 ' : (tx.type === 'income' ? '+' : '-')}{formatCurrency(tx.amount)}
+                    {parsed.isTransfer
+                      ? (accountFilter !== 'all' && matchAccount(parsed.targetAccount, accountFilter, accounts) ? '+' : accountFilter !== 'all' && matchAccount(parsed.account, accountFilter, accounts) ? '-' : '🔄 ')
+                      : (tx.type === 'income' ? '+' : '-')}{formatCurrency(tx.amount)}
                   </p>
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteTx(tx.id); }}
@@ -827,28 +856,7 @@ export default function FinancePage() {
             </div>
           )}
 
-          {/* Account / Bank Selector */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Account / Wallet</label>
-            <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              {accounts.filter(a => a.id !== 'all').map((acc) => (
-                <button
-                  key={acc.id}
-                  type="button"
-                  onClick={() => setFormAccount(acc.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border whitespace-nowrap ${
-                    formAccount === acc.id
-                      ? 'bg-blue-600/30 text-blue-300 border-blue-400'
-                      : 'bg-slate-900 text-slate-400 border-white/10 hover:text-white'
-                  }`}
-                >
-                  {acc.icon} {acc.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Type Toggle */}
+          {/* Type Toggle comes FIRST */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Type</label>
             <div className="flex rounded-xl overflow-hidden border border-white/15">
@@ -882,31 +890,86 @@ export default function FinancePage() {
             </div>
           </div>
 
-          {formType === 'transfer' && (
-            <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-cyan-300 uppercase tracking-wider mb-1">Dari Rekening (Source)</label>
-                <select
-                  value={formAccount}
-                  onChange={(e) => setFormAccount(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-cyan-500/30 text-xs font-bold text-white focus:outline-none focus:border-cyan-400"
+          {/* Account / Bank Selector or Transfer Flow Selector */}
+          {formType === 'transfer' ? (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-950/40 to-slate-900/90 border border-cyan-500/30 space-y-3 shadow-inner">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>🔄</span> Transfer Antar Rekening
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const prevSrc = formAccount;
+                    setFormAccount(formTransferTo);
+                    setFormTransferTo(prevSrc);
+                  }}
+                  className="px-2.5 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/40 text-[11px] font-bold flex items-center gap-1 transition-all"
+                  title="Swap Source and Destination"
                 >
-                  {accounts.filter(a => a.id !== 'all').map(a => (
-                    <option key={a.id} value={a.id}>{a.icon} {a.label}</option>
-                  ))}
-                </select>
+                  <span>↔ Swap</span>
+                </button>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-cyan-300 uppercase tracking-wider mb-1">Ke Rekening (Destination)</label>
-                <select
-                  value={formTransferTo}
-                  onChange={(e) => setFormTransferTo(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-cyan-500/30 text-xs font-bold text-white focus:outline-none focus:border-cyan-400"
-                >
-                  {accounts.filter(a => a.id !== 'all').map(a => (
-                    <option key={a.id} value={a.id}>{a.icon} {a.label}</option>
-                  ))}
-                </select>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Source Account */}
+                <div className="p-2.5 rounded-xl bg-slate-900/90 border border-red-500/30 space-y-1.5">
+                  <label className="block text-[10px] font-extrabold text-red-400 uppercase tracking-wide">
+                    Dari Rekening (Source - Keluar)
+                  </label>
+                  <select
+                    value={formAccount}
+                    onChange={(e) => {
+                      const newSrc = e.target.value;
+                      setFormAccount(newSrc);
+                      if (newSrc === formTransferTo) {
+                        const validAccs = accounts.filter(a => a.id !== 'all' && a.id !== newSrc);
+                        if (validAccs[0]) setFormTransferTo(validAccs[0].id);
+                      }
+                    }}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-red-400 font-sans"
+                  >
+                    {accounts.filter(a => a.id !== 'all').map(a => (
+                      <option key={a.id} value={a.id}>{a.icon} {a.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Destination Account */}
+                <div className="p-2.5 rounded-xl bg-slate-900/90 border border-emerald-500/30 space-y-1.5">
+                  <label className="block text-[10px] font-extrabold text-emerald-400 uppercase tracking-wide">
+                    Ke Rekening (Destination - Masuk)
+                  </label>
+                  <select
+                    value={formTransferTo}
+                    onChange={(e) => setFormTransferTo(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-emerald-400 font-sans"
+                  >
+                    {accounts.filter(a => a.id !== 'all' && a.id !== formAccount).map(a => (
+                      <option key={a.id} value={a.id}>{a.icon} {a.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Account / Wallet</label>
+              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                {accounts.filter(a => a.id !== 'all').map((acc) => (
+                  <button
+                    key={acc.id}
+                    type="button"
+                    onClick={() => setFormAccount(acc.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border whitespace-nowrap ${
+                      formAccount === acc.id
+                        ? 'bg-blue-600/30 text-blue-300 border-blue-400 shadow-sm'
+                        : 'bg-slate-900 text-slate-400 border-white/10 hover:text-white'
+                    }`}
+                  >
+                    {acc.icon} {acc.label}
+                  </button>
+                ))}
               </div>
             </div>
           )}
