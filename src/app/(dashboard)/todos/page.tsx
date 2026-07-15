@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function TodosPage() {
-  redirect('/calendar');
+  redirect('/calendar?view=todos');
 }

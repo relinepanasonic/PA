@@ -16,6 +16,8 @@ import {
   PlusCircle,
   Trash2,
   GripVertical,
+  Edit3,
+  Check,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -102,8 +104,23 @@ const computeOverlappingColumns = (dayItems: CombinedItem[]) => {
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('daily');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      const v = new URLSearchParams(window.location.search).get('view');
+      if (v === 'todos' || v === 'month' || v === 'daily') return v as ViewMode;
+    }
+    return 'daily';
+  });
   const [items, setItems] = useState<CombinedItem[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const v = new URLSearchParams(window.location.search).get('view');
+      if (v === 'todos' || v === 'month' || v === 'daily') {
+        setViewMode(v as ViewMode);
+      }
+    }
+  }, []);
 
   // Touch swipe
   const touchStartX = useRef<number | null>(null);
@@ -330,10 +347,75 @@ export default function CalendarPage() {
   };
 
   // ── Subtask toggle ───────────────────────────────────────────────────────
-  const handleToggleSubtask = async (item: CombinedItem, subtaskId: string) => {
+  const handleToggleSubtask = async (e: React.MouseEvent, item: CombinedItem, subtaskId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
     const updated = item.subtasks.map((st) =>
       st.id === subtaskId ? { ...st, completed: !st.completed } : st
     );
+    setItems((p) => p.map((i) => i.id === item.id ? { ...i, subtasks: updated } : i));
+    if (item.type === 'todo') {
+      const fullDesc = `${item.description}___STATUS___${item.status}___SUBTASKS___${JSON.stringify(updated)}`;
+      await supabase.from('todos')
+        .update({ description: fullDesc })
+        .eq('id', item.original.id);
+    }
+  };
+
+  // ── Inline Subtask state & handlers ──────────────────────────────────────
+  const [inlineSubtaskInputs, setInlineSubtaskInputs] = useState<Record<string, string>>({});
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
+  const [editingSubtaskTitle, setEditingSubtaskTitle] = useState<string>('');
+
+  const handleAddInlineSubtask = async (e: React.FormEvent | React.MouseEvent, item: CombinedItem) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const text = (inlineSubtaskInputs[item.id] || '').trim();
+    if (!text) return;
+    const newSubtask: SubtaskItem = { id: `st-${Date.now()}-${Math.random()}`, title: text, completed: false };
+    const updated = [...(item.subtasks || []), newSubtask];
+    setItems((p) => p.map((i) => i.id === item.id ? { ...i, subtasks: updated } : i));
+    setInlineSubtaskInputs((p) => ({ ...p, [item.id]: '' }));
+    if (item.type === 'todo') {
+      const fullDesc = `${item.description}___STATUS___${item.status}___SUBTASKS___${JSON.stringify(updated)}`;
+      await supabase.from('todos')
+        .update({ description: fullDesc })
+        .eq('id', item.original.id);
+    }
+  };
+
+  const startEditingSubtask = (e: React.MouseEvent, st: SubtaskItem) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setEditingSubtaskId(st.id);
+    setEditingSubtaskTitle(st.title);
+  };
+
+  const handleSaveInlineSubtask = async (e: React.FormEvent | React.MouseEvent, item: CombinedItem, subtaskId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const text = editingSubtaskTitle.trim();
+    if (!text) {
+      setEditingSubtaskId(null);
+      return;
+    }
+    const updated = item.subtasks.map((st) =>
+      st.id === subtaskId ? { ...st, title: text } : st
+    );
+    setItems((p) => p.map((i) => i.id === item.id ? { ...i, subtasks: updated } : i));
+    setEditingSubtaskId(null);
+    if (item.type === 'todo') {
+      const fullDesc = `${item.description}___STATUS___${item.status}___SUBTASKS___${JSON.stringify(updated)}`;
+      await supabase.from('todos')
+        .update({ description: fullDesc })
+        .eq('id', item.original.id);
+    }
+  };
+
+  const handleDeleteInlineSubtask = async (e: React.MouseEvent, item: CombinedItem, subtaskId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const updated = item.subtasks.filter((st) => st.id !== subtaskId);
     setItems((p) => p.map((i) => i.id === item.id ? { ...i, subtasks: updated } : i));
     if (item.type === 'todo') {
       const fullDesc = `${item.description}___STATUS___${item.status}___SUBTASKS___${JSON.stringify(updated)}`;
@@ -832,34 +914,129 @@ export default function CalendarPage() {
                       draggable
                       onDragStart={(e) => handleKanbanDragStart(e, item.id)}
                       onDragEnd={() => setDragItemId(null)}
-                      onClick={() => openEditModal(item)}
-                      className={`glow-card rounded-xl p-3.5 border border-white/15 bg-white/[0.05] hover:bg-white/[0.08] transition-all space-y-2 cursor-pointer ${
+                      className={`glow-card rounded-xl p-3.5 border border-white/15 bg-white/[0.05] hover:bg-white/[0.08] transition-all space-y-2.5 ${
                         dragItemId === item.id ? 'opacity-50 scale-[0.97]' : ''
                       }`}
                     >
-                      <div className="flex items-start gap-1.5 w-full">
-                        <GripVertical size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
-                        <p className={`text-sm font-bold text-white break-words ${item.status === 'completed' ? 'line-through text-slate-400' : ''}`}>
-                          {item.title}
-                        </p>
+                      {/* Title row with click-to-edit header or explicit Edit button */}
+                      <div className="flex items-start justify-between gap-2 w-full">
+                        <div
+                          onClick={(e) => { e.stopPropagation(); openEditModal(item); }}
+                          className="flex items-start gap-1.5 flex-1 min-w-0 cursor-pointer group/title"
+                          title="Click to edit task details"
+                        >
+                          <GripVertical size={14} className="text-slate-500 mt-0.5 flex-shrink-0" />
+                          <p className={`text-sm font-bold text-white break-words group-hover/title:text-blue-300 transition-colors ${item.status === 'completed' ? 'line-through text-slate-400 opacity-70' : ''}`}>
+                            {item.title}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); openEditModal(item); }}
+                          className="px-2 py-1 rounded-lg bg-blue-500/15 border border-blue-400/30 text-blue-300 text-[10px] font-bold hover:bg-blue-500/30 flex items-center gap-1 transition-all flex-shrink-0"
+                          title="Edit Task & Subtasks"
+                        >
+                          <Edit3 size={11} />
+                          <span>Edit</span>
+                        </button>
                       </div>
 
-                      {/* Subtasks */}
+                      {/* Subtasks List */}
                       {item.subtasks.length > 0 && (
-                        <div className="space-y-1 pt-1.5 border-t border-white/10">
+                        <div className="space-y-1.5 pt-1.5 border-t border-white/10">
                           {item.subtasks.map((st) => (
-                            <div key={st.id} onClick={() => handleToggleSubtask(item, st.id)}
-                              className="flex items-center gap-2 cursor-pointer group/sub">
-                              {st.completed
-                                ? <CheckCircle2 size={14} className="text-emerald-400 flex-shrink-0" />
-                                : <Circle size={14} className="text-slate-400 group-hover/sub:text-blue-400 flex-shrink-0" />}
-                              <span className={`text-xs ${st.completed ? 'line-through text-slate-500' : 'text-slate-200'}`}>{st.title}</span>
+                            <div
+                              key={st.id}
+                              onClick={(e) => handleToggleSubtask(e, item, st.id)}
+                              className="flex items-center justify-between gap-2 py-1 px-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.07] cursor-pointer transition-all group/sub border border-transparent hover:border-white/10"
+                            >
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                {st.completed
+                                  ? <CheckCircle2 size={15} className="text-emerald-400 flex-shrink-0" />
+                                  : <Circle size={15} className="text-slate-400 group-hover/sub:text-blue-400 flex-shrink-0 transition-colors" />}
+                                {editingSubtaskId === st.id ? (
+                                  <input
+                                    type="text"
+                                    value={editingSubtaskTitle}
+                                    onChange={(e) => setEditingSubtaskTitle(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        handleSaveInlineSubtask(e, item, st.id);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingSubtaskId(null);
+                                      }
+                                    }}
+                                    autoFocus
+                                    className="w-full bg-slate-900 border border-blue-400/60 rounded px-2 py-0.5 text-xs text-white focus:outline-none"
+                                  />
+                                ) : (
+                                  <span className={`text-xs break-words font-medium transition-all duration-300 ${st.completed ? 'line-through text-slate-500 opacity-60' : 'text-slate-200'}`}>
+                                    {st.title}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-1 opacity-80 sm:opacity-0 sm:group-hover/sub:opacity-100 transition-opacity flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                                {editingSubtaskId === st.id ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleSaveInlineSubtask(e, item, st.id)}
+                                    className="p-1 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/40 transition-colors"
+                                    title="Save"
+                                  >
+                                    <Check size={12} />
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => startEditingSubtask(e, st)}
+                                    className="p-1 rounded hover:bg-white/15 text-slate-400 hover:text-blue-300 transition-colors"
+                                    title="Edit Subtask"
+                                  >
+                                    <Edit3 size={12} />
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteInlineSubtask(e, item, st.id)}
+                                  className="p-1 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-300 transition-colors"
+                                  title="Delete Subtask"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between">
+                      {/* Inline Add Subtask input inside Todo card */}
+                      <form
+                        onSubmit={(e) => handleAddInlineSubtask(e, item)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1.5 pt-1"
+                      >
+                        <input
+                          type="text"
+                          placeholder="+ Add sub to do..."
+                          value={inlineSubtaskInputs[item.id] || ''}
+                          onChange={(e) => setInlineSubtaskInputs((p) => ({ ...p, [item.id]: e.target.value }))}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1 px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-white/20 focus:border-blue-400/60 text-xs text-white placeholder-slate-500 focus:outline-none focus:bg-white/[0.08] transition-all"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!(inlineSubtaskInputs[item.id] || '').trim()}
+                          className="px-2.5 py-1.5 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 border border-blue-400/30 text-blue-300 text-xs font-bold disabled:opacity-30 disabled:pointer-events-none transition-all flex items-center gap-1 flex-shrink-0"
+                          title="Add Subtask"
+                        >
+                          <Plus size={12} />
+                          <span>Add</span>
+                        </button>
+                      </form>
+
+                      <div className="flex items-center justify-between pt-1">
                         <Badge variant={item.type === 'activity' ? 'accent' : 'warning'} size="sm">
                           {item.type === 'activity' ? 'Activity' : 'Task'}
                         </Badge>
