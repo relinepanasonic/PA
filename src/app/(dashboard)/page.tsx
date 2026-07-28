@@ -474,8 +474,8 @@ export default function DashboardPage() {
                     title={activity.title}
                     description={activity.description}
                     dateString={activity.scheduled_at}
-                    startTime={(activity.metadata as any)?.start_time}
-                    endTime={(activity.metadata as any)?.end_time}
+                    startTime={(activity.metadata as any)?.start_time || (activity.scheduled_at ? new Date(activity.scheduled_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : undefined)}
+                    endTime={(activity.metadata as any)?.end_time || (activity.deadline ? new Date(activity.deadline).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : undefined)}
                   />
                   <Badge variant={activity.status === 'in_progress' ? 'warning' : 'accent'} size="sm">
                     {activity.status.replace('_', ' ')}

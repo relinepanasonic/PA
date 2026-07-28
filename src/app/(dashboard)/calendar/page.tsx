@@ -66,14 +66,21 @@ const todayStr = () => localDateStr(new Date());
 
 // Parse hour from ISO datetime in LOCAL time
 const localHourFromISO = (iso: string): number => {
-  // "2026-07-10T08:00:00" -> hour 8 (already local if stored without Z)
-  const t = iso.split('T')[1];
-  if (!t) return 9;
-  return parseInt(t.slice(0, 2), 10);
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) {
+    const t = iso.split('T')[1];
+    if (!t) return 9;
+    return parseInt(t.slice(0, 2), 10);
+  }
+  return d.getHours();
 };
 
 // Parse date from ISO datetime in LOCAL time
-const localDateFromISO = (iso: string): string => iso.split('T')[0];
+const localDateFromISO = (iso: string): string => {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso.split('T')[0];
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 const matchesDate = (it: CombinedItem, targetDs: string) => {
   if (!it.dateString) return false;
@@ -327,7 +334,10 @@ export default function CalendarPage() {
     ));
 
     // Persist to DB
-    const newIso = `${targetDate}T${String(targetHour).padStart(2, '0')}:00:00`;
+    const [y, m, d] = targetDate.split('-').map(Number);
+    const dropDateObj = new Date(y, m - 1, d, targetHour, 0, 0);
+    const newIso = dropDateObj.toISOString();
+    
     await supabase.from('work_activities').update({ scheduled_at: newIso }).eq('id', item.original.id);
 
     setDragItemId(null);
@@ -591,8 +601,14 @@ export default function CalendarPage() {
           title={item.title}
           description={item.description}
           dateString={item.dateString}
-          startTime={'metadata' in item.original ? (item.original.metadata as any)?.start_time : undefined}
-          endTime={'metadata' in item.original ? (item.original.metadata as any)?.end_time : undefined}
+          startTime={
+            ('metadata' in item.original ? (item.original.metadata as any)?.start_time : undefined) ||
+            `${String(item.hourStart).padStart(2, '0')}:00`
+          }
+          endTime={
+            ('metadata' in item.original ? (item.original.metadata as any)?.end_time : undefined) ||
+            `${String(item.hourEnd).padStart(2, '0')}:00`
+          }
         />
         <button onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
           className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/25 transition-all" title="Delete">
@@ -805,7 +821,19 @@ export default function CalendarPage() {
                           </div>
                         ) : <div />}
                         <div className="ml-auto flex-shrink-0">
-                          <AddToGoogleCalendar title={it.title} description={it.description} dateString={it.dateString} />
+                          <AddToGoogleCalendar
+                            title={it.title}
+                            description={it.description}
+                            dateString={it.dateString}
+                            startTime={
+                              ('metadata' in it.original ? (it.original.metadata as any)?.start_time : undefined) ||
+                              `${String(it.hourStart).padStart(2, '0')}:00`
+                            }
+                            endTime={
+                              ('metadata' in it.original ? (it.original.metadata as any)?.end_time : undefined) ||
+                              `${String(it.hourEnd).padStart(2, '0')}:00`
+                            }
+                          />
                         </div>
                       </div>
                     </div>

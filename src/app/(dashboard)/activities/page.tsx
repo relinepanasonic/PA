@@ -293,6 +293,8 @@ export default function ActivitiesPage() {
                     title={w.title}
                     description={w.description || ''}
                     dateString={w.scheduled_at || w.deadline}
+                    startTime={w.scheduled_at ? new Date(w.scheduled_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : undefined}
+                    endTime={w.deadline ? new Date(w.deadline).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : undefined}
                   />
                   <button
                     onClick={() => deleteWork(w.id)}
