@@ -71,6 +71,7 @@ function MiniSparkline({ data, isUp }: { data: number[]; isUp: boolean }) {
 
 export default function InvestasiPage() {
   const [portfolio, setPortfolio] = useState<PortfolioStock[]>([]);
+  const [livePortfolioQuotes, setLivePortfolioQuotes] = useState<Record<string, { price: number; change: number; changePercent: number }>>({});
   const [lq45Stocks, setLq45Stocks] = useState<LQ45StockItem[]>([]);
   const [ihsgData, setIhsgData] = useState<{
     ticker: string;
@@ -111,20 +112,31 @@ export default function InvestasiPage() {
   const fetchPageData = useCallback(async () => {
     setLoading(true);
     try {
-      const [portRes, lqRes] = await Promise.all([
-        fetch('/api/investasi/portfolio'),
-        fetch('/api/stocks/lq45'),
-      ]);
-
+      const portRes = await fetch('/api/investasi/portfolio');
+      let pData = { portfolio: [] };
       if (portRes.ok) {
-        const pData = await portRes.json();
+        pData = await portRes.json();
         setPortfolio(pData.portfolio || []);
       }
 
+      const lqRes = await fetch('/api/stocks/lq45');
       if (lqRes.ok) {
         const lqData = await lqRes.json();
         setLq45Stocks(lqData.stocks || []);
         setIhsgData(lqData.ihsg || null);
+      }
+
+      if (pData.portfolio && pData.portfolio.length > 0) {
+        const symbols = pData.portfolio.map((p: any) => p.ticker).join(',');
+        const stocksRes = await fetch(`/api/stocks?symbols=${symbols}`);
+        if (stocksRes.ok) {
+          const stocksData = await stocksRes.json();
+          const quotesMap: Record<string, any> = {};
+          stocksData.stocks.forEach((s: any) => {
+             quotesMap[s.ticker.toUpperCase()] = s;
+          });
+          setLivePortfolioQuotes(quotesMap);
+        }
       }
     } catch (err) {
       console.error('Failed fetching investasi data:', err);
@@ -252,8 +264,8 @@ export default function InvestasiPage() {
   let totalCurrentValue = 0;
 
   portfolio.forEach((item) => {
-    const quote = liveQuoteMap[item.ticker];
-    const currentPrice = quote ? quote.price : item.buy_price;
+    const quote = livePortfolioQuotes[item.ticker.toUpperCase()] || liveQuoteMap[item.ticker.toUpperCase()];
+    const currentPrice = quote && quote.price > 0 ? quote.price : item.buy_price;
     const totalShares = item.lots * 100;
 
     totalInvestedModal += item.buy_price * totalShares;
@@ -528,8 +540,8 @@ export default function InvestasiPage() {
         ) : (
           <div className="space-y-2.5">
             {portfolio.map((item) => {
-              const quote = liveQuoteMap[item.ticker];
-              const currentPrice = quote ? quote.price : item.buy_price;
+              const quote = livePortfolioQuotes[item.ticker.toUpperCase()] || liveQuoteMap[item.ticker.toUpperCase()];
+              const currentPrice = quote && quote.price > 0 ? quote.price : item.buy_price;
               const totalShares = item.lots * 100;
               const totalInvested = item.buy_price * totalShares;
               const totalVal = currentPrice * totalShares;
@@ -540,7 +552,25 @@ export default function InvestasiPage() {
               return (
                 <div
                   key={item.id}
-                  onClick={() => quote && handleOpenStockDetail(quote)}
+                  onClick={() => {
+                    if (quote) {
+                      const fullQuote = quote as any;
+                      if (!fullQuote.fundamental) {
+                        handleOpenStockDetail({
+                          ...fullQuote,
+                          ticker: item.ticker,
+                          name: item.ticker,
+                          category: 'Other',
+                          fundamental: {
+                            per: 0, pbv: 0, roe: 0, eps: 0, marketCap: '-', divYield: '-', high52w: 0, low52w: 0, sentiment: 'Hold', description: 'Data fundamental tidak tersedia untuk saham ini.'
+                          },
+                          miniChart: []
+                        } as unknown as LQ45StockItem);
+                      } else {
+                        handleOpenStockDetail(fullQuote);
+                      }
+                    }
+                  }}
                   className="p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 flex flex-wrap items-center justify-between gap-3 transition-all cursor-pointer group"
                 >
                   {/* Left: Icon Ticker + Emiten Info */}
