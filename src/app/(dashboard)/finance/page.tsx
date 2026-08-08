@@ -188,12 +188,18 @@ export default function FinancePage() {
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<'all' | FinanceType>('all');
   const [tagFilter, setTagFilter] = useState<'all' | FinanceTag>('all');
+  const [monthFilter, setMonthFilter] = useState<string>(new Date().toISOString().substring(0, 7));
   const [accountFilter, setAccountFilter] = useState<string>('all');
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [editingTx, setEditingTx] = useState<FinanceTransaction | null>(null);
   const [saving, setSaving] = useState(false);
+  const [collapsedDates, setCollapsedDates] = useState<Record<string, boolean>>({});
+
+  const toggleDate = (date: string) => {
+    setCollapsedDates(prev => ({ ...prev, [date]: !prev[date] }));
+  };
 
   // Dynamic Bank Accounts state
   const [accounts, setAccounts] = useState<BankAccount[]>(DEFAULT_BANK_ACCOUNTS);
@@ -283,7 +289,7 @@ export default function FinancePage() {
     if (!user) return;
     const { data: allTx } = await supabase
       .from('finance_transactions')
-      .select('amount, type, description')
+      .select('amount, type, description, transaction_date')
       .eq('user_id', user.id);
 
     setAllSummaryTx(allTx || []);
@@ -300,6 +306,13 @@ export default function FinancePage() {
       .eq('user_id', user.id)
       .order('transaction_date', { ascending: false });
 
+    if (monthFilter !== 'all') {
+      const startOfMonth = `${monthFilter}-01`;
+      const endOfMonthDate = new Date(new Date(startOfMonth).getFullYear(), new Date(startOfMonth).getMonth() + 1, 0);
+      const endOfMonth = endOfMonthDate.toISOString().split('T')[0];
+      query = query.gte('transaction_date', startOfMonth).lte('transaction_date', endOfMonth);
+    }
+
     if (typeFilter === 'transfer') {
       query = query.ilike('description', '%___TRANSFER___%');
     } else if (typeFilter !== 'all') {
@@ -311,7 +324,7 @@ export default function FinancePage() {
     setTransactions(data || []);
     setTotalCount(count || 0);
     setLoading(false);
-  }, [typeFilter, tagFilter, page]);
+  }, [typeFilter, tagFilter, monthFilter, page]);
 
   useEffect(() => { fetchCategories(); fetchSummary(); }, [fetchCategories, fetchSummary]);
   useEffect(() => {
@@ -548,35 +561,36 @@ export default function FinancePage() {
     allSummaryTx.forEach(t => {
       const parsed = parseAccountFromDesc(t.description || '');
       const amt = Number(t.amount) || 0;
+      const isInMonth = monthFilter === 'all' || (t.transaction_date && t.transaction_date.startsWith(monthFilter));
 
       if (accountFilter === 'all') {
         if (!parsed.isTransfer) {
           if (t.type === 'income') {
-            inc += amt;
             saldo += amt;
+            if (isInMonth) inc += amt;
           } else if (t.type === 'expense') {
-            exp += amt;
             saldo -= amt;
+            if (isInMonth) exp += amt;
           }
         }
       } else {
         if (parsed.isTransfer) {
           if (matchAccount(parsed.account, accountFilter, accounts)) {
             saldo -= amt;
-            exp += amt;
+            if (isInMonth) exp += amt;
           }
           if (matchAccount(parsed.targetAccount, accountFilter, accounts)) {
             saldo += amt;
-            inc += amt;
+            if (isInMonth) inc += amt;
           }
         } else {
           if (matchAccount(parsed.account, accountFilter, accounts)) {
             if (t.type === 'income') {
-              inc += amt;
               saldo += amt;
+              if (isInMonth) inc += amt;
             } else if (t.type === 'expense') {
-              exp += amt;
               saldo -= amt;
+              if (isInMonth) exp += amt;
             }
           }
         }
@@ -584,7 +598,7 @@ export default function FinancePage() {
     });
 
     return { filteredSaldo: saldo, filteredIncome: inc, filteredExpenses: exp };
-  }, [allSummaryTx, accountFilter, accounts]);
+  }, [allSummaryTx, accountFilter, accounts, monthFilter]);
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const filteredCategories = categories.filter(c => c.type === formType);
@@ -693,7 +707,17 @@ export default function FinancePage() {
       </div>
 
       {/* Clean Dropdown Filters Bar (No overflow on mobile) */}
-      <div className="grid grid-cols-2 gap-2 p-2 rounded-2xl bg-white/[0.03] border border-white/10">
+      <div className="grid grid-cols-3 gap-2 p-2 rounded-2xl bg-white/[0.03] border border-white/10">
+        <div>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Month</label>
+          <input
+            type="month"
+            value={monthFilter === 'all' ? '' : monthFilter}
+            onChange={(e) => { setMonthFilter(e.target.value || 'all'); setPage(0); }}
+            className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
+          />
+        </div>
+
         <div>
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Type</label>
           <select
@@ -734,74 +758,130 @@ export default function FinancePage() {
           onAction={openCreate}
         />
       ) : (
-        <div className="space-y-2">
-          {filteredTransactions.map((tx) => {
-            const parsed = parseAccountFromDesc(tx.description || '');
-            return (
-              <div
-                key={tx.id}
-                onClick={() => openEdit(tx)}
-                className="group p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-white/20 transition-all cursor-pointer flex items-center justify-between gap-3"
-              >
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  {/* Category Tile */}
-                  <div
-                    className="w-10 h-10 rounded-2xl flex items-center justify-center text-lg flex-shrink-0 border border-white/10 shadow-inner"
-                    style={{ backgroundColor: parsed.isTransfer ? '#06b6d418' : `${tx.finance_categories?.color || '#3b82f6'}18` }}
-                  >
-                    {parsed.isTransfer ? '🔄' : (tx.finance_categories?.icon || (tx.type === 'income' ? '💰' : '💸'))}
-                  </div>
+        <div className="space-y-4">
+          {(() => {
+            const groups: Record<string, typeof filteredTransactions> = {};
+            filteredTransactions.forEach(tx => {
+              const date = tx.transaction_date;
+              if (!groups[date]) groups[date] = [];
+              groups[date].push(tx);
+            });
 
-                  {/* Text & Meta */}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-white truncate group-hover:text-blue-300 transition-colors">
-                      {parsed.cleanDesc || (parsed.isTransfer ? 'Transfer Antar Bank' : tx.finance_categories?.name || (tx.type === 'income' ? 'Income' : 'Expense'))}
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-400 flex-wrap">
-                      <span>{new Date(tx.transaction_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                      <span>•</span>
-                      {parsed.isTransfer ? (
-                        <span className="font-semibold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-md border border-cyan-500/30">
-                          {parsed.account} → {parsed.targetAccount || 'Bank Lain'}
-                        </span>
-                      ) : (
-                        <span className="font-semibold text-slate-300">{parsed.account}</span>
-                      )}
-                      {!parsed.isTransfer && (
-                        <>
-                          <span>•</span>
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                            tx.tag === 'professional' ? 'bg-cyan-500/15 text-cyan-300' : 'bg-slate-500/15 text-slate-300'
-                          }`}>
-                            {tx.tag === 'professional' ? 'Pro' : 'Personal'}
-                          </span>
-                        </>
-                      )}
+            return Object.entries(groups).map(([date, txs]) => {
+              const isCollapsed = collapsedDates[date];
+              const dateObj = new Date(date);
+              const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+              
+              let dailyTotal = 0;
+              txs.forEach(tx => {
+                const parsed = parseAccountFromDesc(tx.description || '');
+                const amt = Number(tx.amount) || 0;
+                if (parsed.isTransfer) {
+                  if (accountFilter !== 'all') {
+                    if (matchAccount(parsed.targetAccount, accountFilter, accounts)) dailyTotal += amt;
+                    if (matchAccount(parsed.account, accountFilter, accounts)) dailyTotal -= amt;
+                  }
+                } else {
+                  if (tx.type === 'income') dailyTotal += amt;
+                  else dailyTotal -= amt;
+                }
+              });
+
+              return (
+                <div key={date} className="space-y-2">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer py-1 px-1 text-slate-300 hover:text-white transition-colors"
+                    onClick={() => toggleDate(date)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-extrabold uppercase tracking-widest">{dateStr}</span>
+                      <span className="px-2 py-0.5 rounded-full bg-white/10 text-[10px] font-bold">{txs.length} tx</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs font-bold ${dailyTotal > 0 ? 'text-emerald-400' : dailyTotal < 0 ? 'text-red-400' : 'text-slate-400'}`}>
+                        {dailyTotal > 0 ? '+' : ''}{dailyTotal !== 0 ? formatCurrency(Math.abs(dailyTotal)) : ''}
+                      </span>
+                      <svg
+                        className={`w-4 h-4 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                     </div>
                   </div>
-                </div>
 
-                {/* Amount & Actions */}
-                <div className="flex items-center gap-2.5 flex-shrink-0">
-                  <p className={`text-xs sm:text-sm font-extrabold font-mono tracking-tight ${
-                    parsed.isTransfer
-                      ? (accountFilter !== 'all' && matchAccount(parsed.targetAccount, accountFilter, accounts) ? 'text-emerald-400' : accountFilter !== 'all' && matchAccount(parsed.account, accountFilter, accounts) ? 'text-red-400' : 'text-cyan-400')
-                      : tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'
-                  }`}>
-                    {parsed.isTransfer
-                      ? (accountFilter !== 'all' && matchAccount(parsed.targetAccount, accountFilter, accounts) ? '+' : accountFilter !== 'all' && matchAccount(parsed.account, accountFilter, accounts) ? '-' : '🔄 ')
-                      : (tx.type === 'income' ? '+' : '-')}{formatCurrency(tx.amount)}
-                  </p>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); deleteTx(tx.id); }}
-                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/15 transition-colors opacity-80 group-hover:opacity-100"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {!isCollapsed && (
+                    <div className="space-y-2">
+                      {txs.map((tx) => {
+                        const parsed = parseAccountFromDesc(tx.description || '');
+                        return (
+                          <div
+                            key={tx.id}
+                            onClick={() => openEdit(tx)}
+                            className="group p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-white/20 transition-all cursor-pointer flex items-center justify-between gap-3"
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div
+                                className="w-10 h-10 rounded-2xl flex items-center justify-center text-lg flex-shrink-0 border border-white/10 shadow-inner"
+                                style={{ backgroundColor: parsed.isTransfer ? '#06b6d418' : `${tx.finance_categories?.color || '#3b82f6'}18` }}
+                              >
+                                {parsed.isTransfer ? '🔄' : (tx.finance_categories?.icon || (tx.type === 'income' ? '💰' : '💸'))}
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold text-white truncate group-hover:text-blue-300 transition-colors">
+                                  {parsed.cleanDesc || (parsed.isTransfer ? 'Transfer Antar Bank' : tx.finance_categories?.name || (tx.type === 'income' ? 'Income' : 'Expense'))}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-400 flex-wrap">
+                                  {parsed.isTransfer ? (
+                                    <span className="font-semibold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-md border border-cyan-500/30">
+                                      {parsed.account} → {parsed.targetAccount || 'Bank Lain'}
+                                    </span>
+                                  ) : (
+                                    <span className="font-semibold text-slate-300">{parsed.account}</span>
+                                  )}
+                                  {!parsed.isTransfer && (
+                                    <>
+                                      <span>•</span>
+                                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                        tx.tag === 'professional' ? 'bg-cyan-500/15 text-cyan-300' : 'bg-slate-500/15 text-slate-300'
+                                      }`}>
+                                        {tx.tag === 'professional' ? 'Pro' : 'Personal'}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2.5 flex-shrink-0">
+                              <p className={`text-xs sm:text-sm font-extrabold font-mono tracking-tight ${
+                                parsed.isTransfer
+                                  ? (accountFilter !== 'all' && matchAccount(parsed.targetAccount, accountFilter, accounts) ? 'text-emerald-400' : accountFilter !== 'all' && matchAccount(parsed.account, accountFilter, accounts) ? 'text-red-400' : 'text-cyan-400')
+                                  : tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'
+                              }`}>
+                                {parsed.isTransfer
+                                  ? (accountFilter !== 'all' && matchAccount(parsed.targetAccount, accountFilter, accounts) ? '+' : accountFilter !== 'all' && matchAccount(parsed.account, accountFilter, accounts) ? '-' : '🔄 ')
+                                  : (tx.type === 'income' ? '+' : '-')}{formatCurrency(tx.amount)}
+                              </p>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); deleteTx(tx.id); }}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/15 transition-colors opacity-80 group-hover:opacity-100"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
         </div>
       )}
 
