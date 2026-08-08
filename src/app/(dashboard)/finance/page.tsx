@@ -195,10 +195,10 @@ export default function FinancePage() {
   const [showModal, setShowModal] = useState(false);
   const [editingTx, setEditingTx] = useState<FinanceTransaction | null>(null);
   const [saving, setSaving] = useState(false);
-  const [collapsedDates, setCollapsedDates] = useState<Record<string, boolean>>({});
+  const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
 
   const toggleDate = (date: string) => {
-    setCollapsedDates(prev => ({ ...prev, [date]: !prev[date] }));
+    setExpandedDates(prev => ({ ...prev, [date]: !prev[date] }));
   };
 
   // Dynamic Bank Accounts state
@@ -768,7 +768,7 @@ export default function FinancePage() {
             });
 
             return Object.entries(groups).map(([date, txs]) => {
-              const isCollapsed = collapsedDates[date];
+              const isExpanded = expandedDates[date];
               const dateObj = new Date(date);
               const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
               
@@ -802,17 +802,17 @@ export default function FinancePage() {
                         {dailyTotal > 0 ? '+' : ''}{dailyTotal !== 0 ? formatCurrency(Math.abs(dailyTotal)) : ''}
                       </span>
                       <svg
-                        className={`w-4 h-4 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+                        className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
                   </div>
 
-                  {!isCollapsed && (
+                  {isExpanded && (
                     <div className="space-y-2">
                       {txs.map((tx) => {
                         const parsed = parseAccountFromDesc(tx.description || '');
