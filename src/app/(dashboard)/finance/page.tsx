@@ -196,6 +196,7 @@ export default function FinancePage() {
   const [editingTx, setEditingTx] = useState<FinanceTransaction | null>(null);
   const [saving, setSaving] = useState(false);
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState<'transactions' | 'dashboard'>('transactions');
 
   const toggleDate = (date: string) => {
     setExpandedDates(prev => ({ ...prev, [date]: !prev[date] }));
@@ -289,7 +290,7 @@ export default function FinancePage() {
     if (!user) return;
     const { data: allTx } = await supabase
       .from('finance_transactions')
-      .select('amount, type, description, transaction_date')
+      .select('amount, type, description, transaction_date, finance_categories(name, color, icon)')
       .eq('user_id', user.id);
 
     setAllSummaryTx(allTx || []);
@@ -553,10 +554,11 @@ export default function FinancePage() {
     return `Rp ${formatted}`;
   };
 
-  const { filteredSaldo, filteredIncome, filteredExpenses } = useMemo(() => {
+  const { filteredSaldo, filteredIncome, filteredExpenses, topExpenses } = useMemo(() => {
     let inc = 0;
     let exp = 0;
     let saldo = 0;
+    const categoryTotals: Record<string, { total: number, name: string, color: string, icon: string }> = {};
 
     allSummaryTx.forEach(t => {
       const parsed = parseAccountFromDesc(t.description || '');
@@ -571,6 +573,14 @@ export default function FinancePage() {
           } else if (t.type === 'expense') {
             saldo -= amt;
             if (isInMonth) exp += amt;
+            
+            if (isInMonth && t.finance_categories) {
+              const catName = t.finance_categories.name;
+              if (!categoryTotals[catName]) {
+                categoryTotals[catName] = { total: 0, name: catName, color: t.finance_categories.color, icon: t.finance_categories.icon };
+              }
+              categoryTotals[catName].total += amt;
+            }
           }
         }
       } else {
@@ -591,13 +601,23 @@ export default function FinancePage() {
             } else if (t.type === 'expense') {
               saldo -= amt;
               if (isInMonth) exp += amt;
+              
+              if (isInMonth && t.finance_categories) {
+                const catName = t.finance_categories.name;
+                if (!categoryTotals[catName]) {
+                  categoryTotals[catName] = { total: 0, name: catName, color: t.finance_categories.color, icon: t.finance_categories.icon };
+                }
+                categoryTotals[catName].total += amt;
+              }
             }
           }
         }
       }
     });
 
-    return { filteredSaldo: saldo, filteredIncome: inc, filteredExpenses: exp };
+    const sortedExpenses = Object.values(categoryTotals).sort((a, b) => b.total - a.total).slice(0, 5);
+
+    return { filteredSaldo: saldo, filteredIncome: inc, filteredExpenses: exp, topExpenses: sortedExpenses };
   }, [allSummaryTx, accountFilter, accounts, monthFilter]);
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -636,7 +656,34 @@ export default function FinancePage() {
         </div>
       </div>
 
-      {/* Hero Financial Balance Card */}
+      {/* Tabs */}
+      <div className="flex bg-white/[0.04] p-1 rounded-xl border border-white/10 mb-2">
+        <button
+          onClick={() => setActiveTab('transactions')}
+          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+            activeTab === 'transactions'
+              ? 'bg-blue-600/30 text-blue-300 shadow-sm border border-blue-400/30'
+              : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
+          }`}
+        >
+          Transactions
+        </button>
+        <button
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+            activeTab === 'dashboard'
+              ? 'bg-blue-600/30 text-blue-300 shadow-sm border border-blue-400/30'
+              : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
+          }`}
+        >
+          Dashboard
+        </button>
+      </div>
+
+      {/* Dashboard Tab Content */}
+      {activeTab === 'dashboard' && (
+        <div className="space-y-4">
+          {/* Hero Financial Balance Card */}
       <div className="p-4 rounded-3xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 shadow-xl space-y-3.5">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -676,7 +723,73 @@ export default function FinancePage() {
         </div>
       </div>
 
-      {/* Account / Wallet Selector Pills */}
+          {/* Top Expenses */}
+          <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/10 space-y-3">
+             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Top Expenses (This Month)</h3>
+             <div className="space-y-3">
+               {topExpenses.length > 0 ? topExpenses.map(exp => (
+                 <div key={exp.name} className="space-y-1.5">
+                   <div className="flex justify-between text-xs font-semibold text-white">
+                     <span className="flex items-center gap-1.5"><span>{exp.icon}</span> {exp.name}</span>
+                     <span className="font-mono text-red-400">{formatCurrency(exp.total)}</span>
+                   </div>
+                   <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden border border-white/5">
+                     <div 
+                       className="h-full rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]"
+                       style={{ 
+                         width: `${Math.min(100, (exp.total / Math.max(1, filteredExpenses)) * 100)}%`,
+                         backgroundColor: exp.color || '#f87171'
+                       }}
+                     />
+                   </div>
+                 </div>
+               )) : (
+                 <p className="text-xs text-slate-500 italic px-1">No expenses recorded for this month.</p>
+               )}
+             </div>
+          </div>
+
+          {/* Recent 5 Transactions */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1 pt-1">Recent Activity</h3>
+            <div className="space-y-2">
+              {allSummaryTx.slice(0, 5).map(tx => {
+                const parsed = parseAccountFromDesc(tx.description || '');
+                return (
+                  <div key={tx.id || Math.random()} className="p-3 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 bg-white/5"
+                      >
+                        {parsed.isTransfer ? '🔄' : (tx.finance_categories?.icon || (tx.type === 'income' ? '💰' : '💸'))}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-white truncate">
+                          {parsed.cleanDesc || (parsed.isTransfer ? 'Transfer Antar Bank' : tx.finance_categories?.name || (tx.type === 'income' ? 'Income' : 'Expense'))}
+                        </p>
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5">{parsed.isTransfer ? `${parsed.account} → ${parsed.targetAccount}` : parsed.account}</p>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <p className={`text-xs font-bold font-mono ${tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              {allSummaryTx.length === 0 && (
+                <p className="text-xs text-slate-500 italic px-1">No recent activity.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transactions Tab Content */}
+      {activeTab === 'transactions' && (
+        <div className="space-y-4">
+          {/* Account / Wallet Selector Pills */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between px-1">
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Accounts & Wallets</p>
@@ -885,7 +998,9 @@ export default function FinancePage() {
         </div>
       )}
 
-      <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+        </div>
+      )}
 
       {/* ── ADD / EDIT TRANSACTION MODAL ────────────────────────────────────── */}
       <Modal
