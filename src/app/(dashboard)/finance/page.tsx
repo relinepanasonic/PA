@@ -172,8 +172,8 @@ const parseReceiptText = (text: string): ParsedReceipt => {
     detectedCategory = 'Transport';
   } else if (/cinema|xxi|cgv|netflix|spotify|entertainment|nonton/i.test(text)) {
     detectedCategory = 'Entertainment';
-  } else if (/apple|samsung|ibox|gadget|tokopedia|shopee|electronic/i.test(text)) {
-    detectedCategory = 'Gadget';
+  } else if (/apple|samsung|ibox|gadget|tokopedia|shopee|electronic|hobby|game|toy/i.test(text)) {
+    detectedCategory = 'Hobby';
   }
 
   return {
@@ -1309,7 +1309,7 @@ export default function FinancePage() {
                 <div className={`grid gap-1.5 ${formType === 'income' ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 sm:grid-cols-4'}`}>
                   {(formType === 'income'
                     ? ['Salary', 'Project', 'Transfer from other', 'Others']
-                    : ['Makan', 'Transport', 'Entertainment', 'Work', 'Gadget', 'Personal', 'Other']
+                    : ['Makan', 'Transport', 'Entertainment', 'Work', 'Hobby', 'Personal', 'Other']
                   )
                     .map(name => filteredCategories.find(c => c.name.toLowerCase() === name.toLowerCase()))
                     .filter(Boolean)
