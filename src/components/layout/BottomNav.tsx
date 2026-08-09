@@ -21,7 +21,7 @@ export default function BottomNav() {
   }, [pathname]);
 
   return (
-    <nav className="fixed bottom-4 left-4 right-4 z-50 max-w-lg mx-auto">
+    <nav className="fixed bottom-4 left-4 right-4 z-50 max-w-lg mx-auto md:hidden">
       <div className="glass-card rounded-full border border-white/15 shadow-[0_15px_35px_rgba(0,0,0,0.6)] px-2 py-1.5 flex items-center justify-around backdrop-blur-2xl">
         {navItems.map((item) => {
           const isActive =

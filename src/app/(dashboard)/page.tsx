@@ -413,7 +413,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-4 space-y-6 animate-fade-in pb-24">
+    <div className="p-4 animate-fade-in pb-24 md:pb-6">
+      
       {/* Top Welcome Hero Glass Pill with Voice Brief */}
       <div className="glass-card rounded-[28px] p-5 border border-white/15 bg-gradient-to-br from-blue-900/30 via-slate-900/40 to-cyan-900/20 shadow-xl flex items-center justify-between">
         <div>
@@ -435,7 +436,11 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* 1. TODAY'S SCHEDULE */}
+      <div className="mt-6 lg:grid lg:grid-cols-12 lg:gap-8 xl:gap-10 space-y-6 lg:space-y-0">
+        
+        {/* Left / Main Column */}
+        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+          {/* 1. TODAY'S SCHEDULE */}
       <section>
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
@@ -559,7 +564,79 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* 3. IDX WATCHLIST */}
+      {/* 4. HOT NEWS HEADLINES */}
+      <section>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center gap-2">
+            <Newspaper size={16} className="text-amber-400" />
+            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Hot News</h2>
+          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-400 font-medium">Indonesia</span>
+        </div>
+        {newsLoading ? (
+          <div className="glow-card rounded-2xl p-4 border border-white/10 animate-pulse space-y-3">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="h-3.5 bg-white/10 rounded w-full" style={{ width: `${85 - i * 10}%` }} />
+            ))}
+          </div>
+        ) : news.length === 0 ? (
+          <div className="glow-card rounded-2xl p-5 text-center border border-white/10">
+            <p className="text-xs text-slate-400">No news available right now.</p>
+          </div>
+        ) : (
+          <div className="glow-card rounded-2xl p-4 border border-white/10 space-y-2.5">
+            {news.map((item, idx) => (
+              <div key={idx} className="flex items-start gap-2.5">
+                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/15 border border-amber-400/30 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  {idx + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-white leading-snug">{item.title}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">{item.source}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+        </div>
+
+        {/* Right / Side Column */}
+        <div className="lg:col-span-5 xl:col-span-4 space-y-6">
+          {/* 5. FINANCE BENTO CARDS */}
+          <section>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">This Month Finance</h2>
+              <Link href="/finance" className="text-xs text-blue-400 font-semibold flex items-center gap-0.5 hover:underline">
+                Ledger <ChevronRight size={14} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-3.5">
+              <div className="glow-card rounded-[28px] p-4.5 bg-gradient-to-br from-emerald-950/30 to-slate-900/50">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-9 h-9 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                    <TrendingUp size={16} className="text-emerald-400" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-300">Income</span>
+                </div>
+                <p className="text-base sm:text-lg font-extrabold font-mono text-emerald-400 tracking-tight truncate">{formatCurrency(financeSummary.total_income)}</p>
+                <p className="text-[10px] text-slate-400 mt-1 font-medium truncate">Pro Agency: {formatCurrency(financeSummary.professional_income)}</p>
+              </div>
+              <div className="glow-card rounded-[28px] p-4.5 bg-gradient-to-br from-red-950/30 to-slate-900/50 min-w-0">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-9 h-9 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center">
+                    <TrendingDown size={16} className="text-red-400" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-300">Expenses</span>
+                </div>
+                <p className="text-base sm:text-lg font-extrabold font-mono text-red-400 tracking-tight truncate">{formatCurrency(financeSummary.total_expenses)}</p>
+                <p className="text-[10px] text-slate-400 mt-1 font-medium truncate">Personal: {formatCurrency(financeSummary.personal_expenses)}</p>
+              </div>
+            </div>
+          </section>
+
+          {/* 3. IDX WATCHLIST */}
       <section>
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
@@ -675,73 +752,8 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* 4. HOT NEWS HEADLINES */}
-      <section>
-        <div className="flex items-center justify-between mb-3 px-1">
-          <div className="flex items-center gap-2">
-            <Newspaper size={16} className="text-amber-400" />
-            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Hot News</h2>
-          </div>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-400 font-medium">Indonesia</span>
         </div>
-        {newsLoading ? (
-          <div className="glow-card rounded-2xl p-4 border border-white/10 animate-pulse space-y-3">
-            {[0, 1, 2].map(i => (
-              <div key={i} className="h-3.5 bg-white/10 rounded w-full" style={{ width: `${85 - i * 10}%` }} />
-            ))}
-          </div>
-        ) : news.length === 0 ? (
-          <div className="glow-card rounded-2xl p-5 text-center border border-white/10">
-            <p className="text-xs text-slate-400">No news available right now.</p>
-          </div>
-        ) : (
-          <div className="glow-card rounded-2xl p-4 border border-white/10 space-y-2.5">
-            {news.map((item, idx) => (
-              <div key={idx} className="flex items-start gap-2.5">
-                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/15 border border-amber-400/30 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  {idx + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-white leading-snug">{item.title}</p>
-                  <p className="text-[10px] text-slate-500 mt-0.5">{item.source}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* 5. FINANCE BENTO CARDS */}
-      <section>
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">This Month Finance</h2>
-          <Link href="/finance" className="text-xs text-blue-400 font-semibold flex items-center gap-0.5 hover:underline">
-            Ledger <ChevronRight size={14} />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 gap-3.5">
-          <div className="glow-card rounded-[28px] p-4.5 bg-gradient-to-br from-emerald-950/30 to-slate-900/50">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-9 h-9 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
-                <TrendingUp size={16} className="text-emerald-400" />
-              </div>
-              <span className="text-xs font-semibold text-slate-300">Income</span>
-            </div>
-            <p className="text-base sm:text-lg font-extrabold font-mono text-emerald-400 tracking-tight truncate">{formatCurrency(financeSummary.total_income)}</p>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium truncate">Pro Agency: {formatCurrency(financeSummary.professional_income)}</p>
-          </div>
-          <div className="glow-card rounded-[28px] p-4.5 bg-gradient-to-br from-red-950/30 to-slate-900/50 min-w-0">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-9 h-9 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center">
-                <TrendingDown size={16} className="text-red-400" />
-              </div>
-              <span className="text-xs font-semibold text-slate-300">Expenses</span>
-            </div>
-            <p className="text-base sm:text-lg font-extrabold font-mono text-red-400 tracking-tight truncate">{formatCurrency(financeSummary.total_expenses)}</p>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium truncate">Personal: {formatCurrency(financeSummary.personal_expenses)}</p>
-          </div>
-        </div>
-      </section>
+      </div>
 
       {/* ── EDIT MODAL ──────────────────────────────────────────────────────── */}
       <Modal

@@ -220,7 +220,7 @@ export default function ActivitiesPage() {
   const sportPages = Math.ceil(sportTotal / PAGE_SIZE);
 
   return (
-    <div className="p-4 space-y-4 animate-fade-in">
+    <div className="p-4 space-y-4 animate-fade-in pb-24 md:pb-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-text-primary">Activities</h1>
@@ -265,9 +265,11 @@ export default function ActivitiesPage() {
               actionLabel="Add Activity"
               onAction={openCreateWork}
             />
+            />
           ) : (
-            workActivities.map((w) => (
-              <div key={w.id} className="glass-card p-3 flex items-start gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {workActivities.map((w) => (
+              <div key={w.id} className="glass-card p-3 flex items-start gap-3 flex-col sm:flex-row h-full">
                 <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Zap size={18} className="text-accent-light" />
                 </div>
@@ -304,7 +306,8 @@ export default function ActivitiesPage() {
                   </button>
                 </div>
               </div>
-            ))
+            ))}
+            </div>
           )}
           <Pagination currentPage={workPage} totalPages={workPages} onPageChange={setWorkPage} />
         </div>
@@ -344,8 +347,9 @@ export default function ActivitiesPage() {
               onAction={openCreateSport}
             />
           ) : (
-            sportActivities.map((s) => (
-              <div key={s.id} className="glass-card p-3 flex items-start gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {sportActivities.map((s) => (
+              <div key={s.id} className="glass-card p-4 space-y-3 h-full flex items-start gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${
                   s.is_win === true ? 'bg-success/10' : s.is_win === false ? 'bg-danger/10' : 'bg-surface-lighter'
                 }`}>
@@ -387,7 +391,8 @@ export default function ActivitiesPage() {
                   <Trash2 size={14} />
                 </button>
               </div>
-            ))
+            ))}
+            </div>
           )}
           <Pagination currentPage={sportPage} totalPages={sportPages} onPageChange={setSportPage} />
         </div>

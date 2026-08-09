@@ -24,7 +24,7 @@ interface HeaderProps {
 export default function Header({ displayName = 'User' }: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 bg-background/70 backdrop-blur-2xl border-b border-white/10">
-      <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
+      <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-3">
           {/* Sapphire 3D Logo Badge */}
           <div className="relative w-10 h-10 rounded-2xl overflow-hidden glass-card p-0.5 border border-white/20 shadow-[0_0_20px_rgba(59,130,246,0.35)] flex items-center justify-center">

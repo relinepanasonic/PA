@@ -630,7 +630,7 @@ export default function FinancePage() {
   });
 
   return (
-    <div className="p-4 space-y-4 animate-fade-in pb-28 max-w-2xl mx-auto">
+    <div className="p-4 space-y-4 animate-fade-in pb-28 max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
@@ -682,9 +682,10 @@ export default function FinancePage() {
 
       {/* Dashboard Tab Content */}
       {activeTab === 'dashboard' && (
-        <div className="space-y-4">
-          {/* Hero Financial Balance Card */}
-      <div className="p-4 rounded-3xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 shadow-xl space-y-3.5">
+        <div className="space-y-4 lg:space-y-6">
+          <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-4 lg:space-y-0">
+            {/* Hero Financial Balance Card */}
+            <div className="p-4 rounded-3xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 shadow-xl space-y-3.5 flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             {accountFilter === 'all' ? 'Total Saldo (All Accounts)' : `Saldo — ${accountFilter}`}
@@ -748,9 +749,10 @@ export default function FinancePage() {
                )}
              </div>
           </div>
+        </div>
 
           {/* Recent 5 Transactions */}
-          <div className="space-y-2">
+          <div className="space-y-2 lg:col-span-2">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1 pt-1">Recent Activity</h3>
             <div className="space-y-2">
               {allSummaryTx.slice(0, 5).map(tx => {
