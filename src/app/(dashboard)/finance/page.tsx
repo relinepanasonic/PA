@@ -619,8 +619,8 @@ export default function FinancePage() {
     const sortedExpenses = Object.values(categoryTotals).sort((a, b) => b.total - a.total).slice(0, 5);
     const allExpenses = Object.values(categoryTotals).sort((a, b) => b.total - a.total);
 
-    // Group cashflow historically by Month-Year for the Bar Chart
-    const cashflowByMonth: Record<string, { month: string, income: number, expense: number }> = {};
+    // Group cashflow historically by Day for the Line Chart
+    const cashflowByDay: Record<string, { date: string, income: number, expense: number }> = {};
     
     // Create a chronological sorted copy for historical tracking
     const chronoTx = [...allSummaryTx].sort((a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime());
@@ -650,11 +650,17 @@ export default function FinancePage() {
         balanceHistory.push({ date: dateStr, balance: cumulativeBalance });
       }
 
-      // Bar Chart: Inflow vs Outflow
+      // Line Chart: Inflow vs Outflow (Daily)
       if (!parsed.isTransfer) {
-        if (!cashflowByMonth[monthStr]) cashflowByMonth[monthStr] = { month: monthStr, income: 0, expense: 0 };
-        if (t.type === 'income') cashflowByMonth[monthStr].income += amt;
-        else if (t.type === 'expense') cashflowByMonth[monthStr].expense += amt;
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const txMonthStr = `${yyyy}-${mm}`;
+        
+        if (monthFilter === 'all' || monthFilter === txMonthStr) {
+          if (!cashflowByDay[dateStr]) cashflowByDay[dateStr] = { date: dateStr, income: 0, expense: 0 };
+          if (t.type === 'income') cashflowByDay[dateStr].income += amt;
+          else if (t.type === 'expense') cashflowByDay[dateStr].expense += amt;
+        }
       }
     });
 
@@ -665,7 +671,7 @@ export default function FinancePage() {
       topExpenses: sortedExpenses,
       allExpenses: allExpenses, // For Donut Chart
       balanceHistory: balanceHistory.slice(-30), // Last 30 days
-      cashflowHistory: Object.values(cashflowByMonth).slice(-6) // Last 6 months
+      cashflowHistory: monthFilter === 'all' ? Object.values(cashflowByDay).slice(-30) : Object.values(cashflowByDay) // Last 30 days or selected month
     };
   }, [allSummaryTx, accountFilter, accounts, monthFilter]);
 
@@ -909,7 +915,7 @@ export default function FinancePage() {
             <div className="flex-1 -ml-4">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={cashflowHistory} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} dy={10} />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} dy={10} />
                   <Tooltip 
                     cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }}
                     contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
