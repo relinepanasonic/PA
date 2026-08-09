@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { FinanceTransaction, FinanceCategory, FinanceType, FinanceTag } from '@/lib/types/database';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { Plus, Wallet, TrendingUp, TrendingDown, DollarSign, Tag, Trash2, Edit3, Calendar, Camera, UploadCloud, CheckCircle2, FileSpreadsheet, Sparkles, Building2, Settings } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -554,7 +555,7 @@ export default function FinancePage() {
     return `Rp ${formatted}`;
   };
 
-  const { filteredSaldo, filteredIncome, filteredExpenses, topExpenses } = useMemo(() => {
+  const { filteredSaldo, filteredIncome, filteredExpenses, topExpenses, balanceHistory, allExpenses, cashflowHistory } = useMemo(() => {
     let inc = 0;
     let exp = 0;
     let saldo = 0;
@@ -616,8 +617,56 @@ export default function FinancePage() {
     });
 
     const sortedExpenses = Object.values(categoryTotals).sort((a, b) => b.total - a.total).slice(0, 5);
+    const allExpenses = Object.values(categoryTotals).sort((a, b) => b.total - a.total);
 
-    return { filteredSaldo: saldo, filteredIncome: inc, filteredExpenses: exp, topExpenses: sortedExpenses };
+    // Group cashflow historically by Month-Year for the Bar Chart
+    const cashflowByMonth: Record<string, { month: string, income: number, expense: number }> = {};
+    
+    // Create a chronological sorted copy for historical tracking
+    const chronoTx = [...allSummaryTx].sort((a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime());
+    let cumulativeBalance = 0;
+    const balanceHistory: { date: string, balance: number }[] = [];
+
+    chronoTx.forEach(t => {
+      const parsed = parseAccountFromDesc(t.description || '');
+      let amt = t.amount;
+      
+      // Calculate cumulative balance (simplified without tracking exact starting point, tracks relative change)
+      if (!parsed.isTransfer) {
+        if (t.type === 'income') cumulativeBalance += amt;
+        else if (t.type === 'expense') cumulativeBalance -= amt;
+      }
+      
+      const dateObj = new Date(t.transaction_date);
+      const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const monthStr = dateObj.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      
+      // We push the final balance of each day
+      // Overwrite previous balance for same day to get end-of-day balance
+      const last = balanceHistory[balanceHistory.length - 1];
+      if (last && last.date === dateStr) {
+        last.balance = cumulativeBalance;
+      } else {
+        balanceHistory.push({ date: dateStr, balance: cumulativeBalance });
+      }
+
+      // Bar Chart: Inflow vs Outflow
+      if (!parsed.isTransfer) {
+        if (!cashflowByMonth[monthStr]) cashflowByMonth[monthStr] = { month: monthStr, income: 0, expense: 0 };
+        if (t.type === 'income') cashflowByMonth[monthStr].income += amt;
+        else if (t.type === 'expense') cashflowByMonth[monthStr].expense += amt;
+      }
+    });
+
+    return { 
+      filteredSaldo: saldo, 
+      filteredIncome: inc, 
+      filteredExpenses: exp, 
+      topExpenses: sortedExpenses,
+      allExpenses: allExpenses, // For Donut Chart
+      balanceHistory: balanceHistory.slice(-30), // Last 30 days
+      cashflowHistory: Object.values(cashflowByMonth).slice(-6) // Last 6 months
+    };
   }, [allSummaryTx, accountFilter, accounts, monthFilter]);
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -685,19 +734,48 @@ export default function FinancePage() {
         <div className="space-y-4 lg:space-y-6">
           <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-4 lg:space-y-0">
             {/* Hero Financial Balance Card */}
-            <div className="p-4 rounded-3xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/10 shadow-xl space-y-3.5 flex flex-col justify-between">
-        <div className="flex items-center justify-between">
+            <div className="p-4 rounded-3xl bg-gradient-to-b from-blue-900/20 to-slate-900/40 border border-white/10 shadow-xl space-y-3.5 flex flex-col justify-between overflow-hidden relative">
+        <div className="flex items-center justify-between z-10 relative">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            {accountFilter === 'all' ? 'Total Saldo (All Accounts)' : `Saldo — ${accountFilter}`}
+            {accountFilter === 'all' ? 'Total Saldo' : `Saldo — ${accountFilter}`}
           </span>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-medium">
             {accountFilter === 'all' ? 'All Banks' : accountFilter}
           </span>
         </div>
-        <div className="flex items-baseline justify-between">
-          <h2 className={`text-xl sm:text-2xl font-extrabold font-mono tracking-tight ${filteredSaldo >= 0 ? 'text-white' : 'text-red-400'}`}>
+        <div className="flex items-baseline justify-between z-10 relative">
+          <h2 className={`text-2xl sm:text-3xl font-extrabold font-mono tracking-tight ${filteredSaldo >= 0 ? 'text-white' : 'text-red-400'}`}>
             {formatCurrency(filteredSaldo)}
           </h2>
+        </div>
+
+        {/* Cashflow Trend Area Chart */}
+        <div className="h-32 -mx-4 -mb-4 mt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={balanceHistory} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <Tooltip 
+                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
+                itemStyle={{ color: '#fff', fontWeight: 'bold' }}
+                formatter={(val: any) => [`Rp ${Number(val).toLocaleString('id-ID')}`, 'Balance']}
+                labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="balance" 
+                stroke="#3b82f6" 
+                strokeWidth={3}
+                fillOpacity={1} 
+                fill="url(#colorBalance)" 
+                animationDuration={1500}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Income / Expense Split Divider */}
@@ -724,31 +802,65 @@ export default function FinancePage() {
         </div>
       </div>
 
-          {/* Top Expenses */}
-          <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/10 space-y-3">
-             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Top Expenses (This Month)</h3>
-             <div className="space-y-3">
-               {topExpenses.length > 0 ? topExpenses.map(exp => (
-                 <div key={exp.name} className="space-y-1.5">
-                   <div className="flex justify-between text-xs font-semibold text-white">
-                     <span className="flex items-center gap-1.5"><span>{exp.icon}</span> {exp.name}</span>
-                     <span className="font-mono text-red-400">{formatCurrency(exp.total)}</span>
-                   </div>
-                   <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden border border-white/5">
-                     <div 
-                       className="h-full rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]"
-                       style={{ 
-                         width: `${Math.min(100, (exp.total / Math.max(1, filteredExpenses)) * 100)}%`,
-                         backgroundColor: exp.color || '#f87171'
-                       }}
+          {/* Top Expenses Donut Chart */}
+          <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/10 flex flex-col min-h-[300px]">
+             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Expense Structure</h3>
+             {allExpenses.length > 0 ? (
+               <div className="flex-1 flex items-center justify-center relative min-h-[220px]">
+                 <ResponsiveContainer width="100%" height="100%">
+                   <PieChart>
+                     <Tooltip 
+                       contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
+                       formatter={(val: any) => [`Rp ${Number(val).toLocaleString('id-ID')}`, 'Total']}
                      />
-                   </div>
+                     <Pie
+                       data={allExpenses}
+                       dataKey="total"
+                       nameKey="name"
+                       cx="50%"
+                       cy="50%"
+                       innerRadius={60}
+                       outerRadius={85}
+                       paddingAngle={5}
+                       stroke="rgba(0,0,0,0)"
+                       animationDuration={1500}
+                     >
+                       {allExpenses.map((entry, index) => (
+                         <Cell key={`cell-${index}`} fill={entry.color || '#3b82f6'} />
+                       ))}
+                     </Pie>
+                   </PieChart>
+                 </ResponsiveContainer>
+                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Total Out</span>
+                    <span className="text-base font-mono font-extrabold text-red-400">{formatCurrency(filteredExpenses)}</span>
                  </div>
-               )) : (
-                 <p className="text-xs text-slate-500 italic px-1">No expenses recorded for this month.</p>
-               )}
-             </div>
+               </div>
+             ) : (
+               <div className="flex-1 flex items-center justify-center">
+                 <p className="text-xs text-slate-500 italic">No expenses to chart.</p>
+               </div>
+             )}
           </div>
+        </div>
+
+        {/* Inflow vs Outflow Bar Chart */}
+        <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/10 h-64 flex flex-col">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Cashflow In/Out</h3>
+            <div className="flex-1 -ml-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={cashflowHistory} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} dy={10} />
+                  <Tooltip 
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
+                    formatter={(val: any) => [`Rp ${Number(val).toLocaleString('id-ID')}`]}
+                  />
+                  <Bar dataKey="income" name="Inflow" fill="#10b981" radius={[4, 4, 0, 0]} barSize={12} animationDuration={1500} />
+                  <Bar dataKey="expense" name="Outflow" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={12} animationDuration={1500} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
         </div>
 
           {/* Recent 5 Transactions */}
