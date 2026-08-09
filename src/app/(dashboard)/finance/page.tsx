@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { FinanceTransaction, FinanceCategory, FinanceType, FinanceTag } from '@/lib/types/database';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { Plus, Wallet, TrendingUp, TrendingDown, DollarSign, Tag, Trash2, Edit3, Calendar, Camera, UploadCloud, CheckCircle2, FileSpreadsheet, Sparkles, Building2, Settings } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -808,33 +808,17 @@ export default function FinancePage() {
              {allExpenses.length > 0 ? (
                <div className="flex-1 flex items-center justify-center relative min-h-[220px]">
                  <ResponsiveContainer width="100%" height="100%">
-                   <PieChart>
+                   <RadarChart cx="50%" cy="50%" outerRadius="70%" data={allExpenses}>
+                     <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                     <PolarAngleAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                     <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
+                     <Radar name="Expenses" dataKey="total" stroke="#0ea5e9" fill="#0ea5e9" fillOpacity={0.4} animationDuration={1500} />
                      <Tooltip 
                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
                        formatter={(val: any) => [`Rp ${Number(val).toLocaleString('id-ID')}`, 'Total']}
                      />
-                     <Pie
-                       data={allExpenses}
-                       dataKey="total"
-                       nameKey="name"
-                       cx="50%"
-                       cy="50%"
-                       innerRadius={60}
-                       outerRadius={85}
-                       paddingAngle={5}
-                       stroke="rgba(0,0,0,0)"
-                       animationDuration={1500}
-                     >
-                       {allExpenses.map((entry, index) => (
-                         <Cell key={`cell-${index}`} fill={entry.color || '#3b82f6'} />
-                       ))}
-                     </Pie>
-                   </PieChart>
+                   </RadarChart>
                  </ResponsiveContainer>
-                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Total Out</span>
-                    <span className="text-base font-mono font-extrabold text-red-400">{formatCurrency(filteredExpenses)}</span>
-                 </div>
                </div>
              ) : (
                <div className="flex-1 flex items-center justify-center">
