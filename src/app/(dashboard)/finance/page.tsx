@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { FinanceTransaction, FinanceCategory, FinanceType, FinanceTag } from '@/lib/types/database';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line } from 'recharts';
 import { Plus, Wallet, TrendingUp, TrendingDown, DollarSign, Tag, Trash2, Edit3, Calendar, Camera, UploadCloud, CheckCircle2, FileSpreadsheet, Sparkles, Building2, Settings } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -705,6 +705,81 @@ export default function FinancePage() {
         </div>
       </div>
 
+      {/* Global Filters (Accounts & Month) */}
+      <div className="space-y-3 mb-4">
+        {/* Account / Wallet Selector Pills */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Accounts & Wallets</p>
+            <button
+              onClick={() => setShowAccountModal(true)}
+              className="flex items-center gap-1 text-[11px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              <Settings size={12} />
+              <span>Manage Accounts</span>
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar">
+            {accounts.map((acc) => (
+              <button
+                key={acc.id}
+                onClick={() => { setAccountFilter(acc.id); setPage(0); }}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                  accountFilter === acc.id
+                    ? 'bg-blue-600 text-white border-blue-400 shadow-md scale-[1.02]'
+                    : 'bg-white/[0.04] text-slate-400 border-white/10 hover:text-white hover:bg-white/[0.08]'
+                }`}
+              >
+                <span>{acc.icon}</span>
+                <span>{acc.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Clean Dropdown Filters Bar (No overflow on mobile) */}
+        <div className="grid grid-cols-3 gap-2 p-2 rounded-2xl bg-white/[0.03] border border-white/10">
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Month</label>
+            <input
+              type="month"
+              value={monthFilter === 'all' ? '' : monthFilter}
+              onChange={(e) => { setMonthFilter(e.target.value || 'all'); setPage(0); }}
+              className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Type</label>
+            <select
+              value={typeFilter}
+              onChange={(e) => { setTypeFilter(e.target.value as any); setPage(0); }}
+              className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
+              disabled={activeTab === 'dashboard'}
+            >
+              <option value="all">All Types</option>
+              <option value="income">Income Only (+)</option>
+              <option value="expense">Expenses Only (-)</option>
+              <option value="transfer">Transfers Only (🔄)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tag</label>
+            <select
+              value={tagFilter}
+              onChange={(e) => { setTagFilter(e.target.value as any); setPage(0); }}
+              className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
+              disabled={activeTab === 'dashboard'}
+            >
+              <option value="all">All Tags</option>
+              <option value="personal">Personal</option>
+              <option value="professional">Professional</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       {/* Tabs */}
       <div className="flex bg-white/[0.04] p-1 rounded-xl border border-white/10 mb-2">
         <button
@@ -828,21 +903,21 @@ export default function FinancePage() {
           </div>
         </div>
 
-        {/* Inflow vs Outflow Bar Chart */}
+        {/* Inflow vs Outflow Line Chart */}
         <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/10 h-64 flex flex-col">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Cashflow In/Out</h3>
             <div className="flex-1 -ml-4">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={cashflowHistory} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                <LineChart data={cashflowHistory} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} dy={10} />
                   <Tooltip 
-                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }}
                     contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
                     formatter={(val: any) => [`Rp ${Number(val).toLocaleString('id-ID')}`]}
                   />
-                  <Bar dataKey="income" name="Inflow" fill="#10b981" radius={[4, 4, 0, 0]} barSize={12} animationDuration={1500} />
-                  <Bar dataKey="expense" name="Outflow" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={12} animationDuration={1500} />
-                </BarChart>
+                  <Line type="monotone" dataKey="income" name="Inflow" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 0 }} activeDot={{ r: 6 }} animationDuration={1500} />
+                  <Line type="monotone" dataKey="expense" name="Outflow" stroke="#ef4444" strokeWidth={3} dot={{ r: 4, fill: '#ef4444', strokeWidth: 0 }} activeDot={{ r: 6 }} animationDuration={1500} />
+                </LineChart>
               </ResponsiveContainer>
             </div>
         </div>
@@ -887,77 +962,7 @@ export default function FinancePage() {
       {/* Transactions Tab Content */}
       {activeTab === 'transactions' && (
         <div className="space-y-4">
-          {/* Account / Wallet Selector Pills */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between px-1">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Accounts & Wallets</p>
-          <button
-            onClick={() => setShowAccountModal(true)}
-            className="flex items-center gap-1 text-[11px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            <Settings size={12} />
-            <span>Manage Accounts</span>
-          </button>
-        </div>
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar">
-          {accounts.map((acc) => (
-            <button
-              key={acc.id}
-              onClick={() => { setAccountFilter(acc.id); setPage(0); }}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
-                accountFilter === acc.id
-                  ? 'bg-blue-600 text-white border-blue-400 shadow-md scale-[1.02]'
-                  : 'bg-white/[0.04] text-slate-400 border-white/10 hover:text-white hover:bg-white/[0.08]'
-              }`}
-            >
-              <span>{acc.icon}</span>
-              <span>{acc.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Clean Dropdown Filters Bar (No overflow on mobile) */}
-      <div className="grid grid-cols-3 gap-2 p-2 rounded-2xl bg-white/[0.03] border border-white/10">
-        <div>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Month</label>
-          <input
-            type="month"
-            value={monthFilter === 'all' ? '' : monthFilter}
-            onChange={(e) => { setMonthFilter(e.target.value || 'all'); setPage(0); }}
-            className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
-          />
-        </div>
-
-        <div>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Type</label>
-          <select
-            value={typeFilter}
-            onChange={(e) => { setTypeFilter(e.target.value as any); setPage(0); }}
-            className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
-          >
-            <option value="all">All Types</option>
-            <option value="income">Income Only (+)</option>
-            <option value="expense">Expenses Only (-)</option>
-            <option value="transfer">Transfers Only (🔄)</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tag</label>
-          <select
-            value={tagFilter}
-            onChange={(e) => { setTagFilter(e.target.value as any); setPage(0); }}
-            className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
-          >
-            <option value="all">All Tags</option>
-            <option value="personal">Personal</option>
-            <option value="professional">Professional</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Transaction List */}
+          {/* Transaction List */}
       {loading ? (
         <SkeletonList count={5} />
       ) : filteredTransactions.length === 0 ? (
