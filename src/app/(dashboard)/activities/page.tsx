@@ -265,7 +265,6 @@ export default function ActivitiesPage() {
               actionLabel="Add Activity"
               onAction={openCreateWork}
             />
-            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {workActivities.map((w) => (
