@@ -692,6 +692,11 @@ export default function SportsPage() {
                 <div className="p-3 space-y-2">
                   <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
+                      {ex.imageUrl && (
+                        <div className="w-full h-32 mb-3 bg-white/5 rounded-lg overflow-hidden flex items-center justify-center">
+                          <img src={ex.imageUrl} alt={ex.name} className="max-w-full max-h-full object-contain mix-blend-screen" loading="lazy" />
+                        </div>
+                      )}
                       <p className="text-sm font-bold text-white">{ex.name}</p>
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         <Badge variant="accent" size="sm">{ex.muscleGroup}</Badge>
@@ -799,9 +804,15 @@ export default function SportsPage() {
                     onClick={() => setSelectedExercise(ex)}
                     className="w-full p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-emerald-400/20 text-left flex items-center gap-3 transition-all"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                      <Dumbbell size={14} className="text-emerald-400" />
-                    </div>
+                    {ex.imageUrl ? (
+                      <div className="w-10 h-10 rounded-lg bg-white/5 overflow-hidden flex items-center justify-center flex-shrink-0 p-1">
+                        <img src={ex.imageUrl} alt="" className="max-w-full max-h-full object-contain mix-blend-screen" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                        <Dumbbell size={16} className="text-emerald-400" />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-white truncate">{ex.name}</p>
                       <p className="text-[10px] text-slate-400">{ex.muscleGroup} · {ex.equipment}</p>
