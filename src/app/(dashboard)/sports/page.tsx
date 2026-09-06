@@ -709,27 +709,61 @@ export default function SportsPage() {
                     {expandedExerciseId === ex.id ? <ChevronUp size={16} className="text-slate-400 flex-shrink-0 mt-1" /> : <ChevronDown size={16} className="text-slate-400 flex-shrink-0 mt-1" />}
                   </div>
 
-                  <div className="flex flex-wrap gap-1">
-                    {ex.targetMuscles.map(m => (
-                      <span key={m} className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 font-semibold">{m}</span>
-                    ))}
-                    {ex.secondaryMuscles.map(m => (
-                      <span key={m} className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/5 text-slate-400 font-semibold">{m}</span>
-                    ))}
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    <div className="flex items-start gap-2">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider w-20">Focus Area</span>
+                      <span className="text-[11px] text-slate-300">
+                        {ex.muscleGroup}
+                        {(ex.targetMuscles.length > 0 || ex.secondaryMuscles.length > 0) && ' · '}
+                        {[...ex.targetMuscles, ...ex.secondaryMuscles].join(', ')}
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider w-20">Equipment</span>
+                      <span className="text-[11px] text-slate-300">{ex.equipment}</span>
+                    </div>
                   </div>
                 </div>
 
                 {expandedExerciseId === ex.id && (
-                  <div className="px-3 pb-3 pt-1 border-t border-white/5 space-y-2">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instructions</p>
-                    <ol className="space-y-1.5">
-                      {ex.instructions.map((step, i) => (
-                        <li key={i} className="flex gap-2 text-xs text-slate-300">
-                          <span className="text-emerald-400 font-bold flex-shrink-0">{i + 1}.</span>
-                          <span>{step}</span>
-                        </li>
-                      ))}
-                    </ol>
+                  <div className="px-3 pb-3 pt-1 border-t border-white/5 space-y-4 bg-slate-900/50">
+                    <div className="space-y-1.5">
+                      <p className="text-[11px] font-bold text-white uppercase tracking-wider">Preparation</p>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        {ex.instructions.length > 0 ? ex.instructions[0] : 'Get into starting position.'}
+                      </p>
+                    </div>
+
+                    {ex.instructions.length > 1 && (
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-bold text-white uppercase tracking-wider">Execution</p>
+                        <ol className="space-y-2">
+                          {ex.instructions.slice(1).map((step, i) => {
+                            if (step.toLowerCase().startsWith('tip:')) return null;
+                            return (
+                              <li key={i} className="flex gap-2.5 text-xs text-slate-300 leading-relaxed">
+                                <span className="font-bold text-slate-500 flex-shrink-0 w-3">{i + 1}</span>
+                                <span>{step}</span>
+                              </li>
+                            );
+                          })}
+                        </ol>
+                      </div>
+                    )}
+
+                    {ex.instructions.some(step => step.toLowerCase().startsWith('tip:')) && (
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-bold text-white uppercase tracking-wider">Key Tips</p>
+                        <ul className="space-y-1.5">
+                          {ex.instructions.filter(step => step.toLowerCase().startsWith('tip:')).map((step, i) => (
+                            <li key={i} className="flex gap-2 text-xs text-slate-300 leading-relaxed">
+                              <span className="text-emerald-400 font-bold flex-shrink-0">•</span>
+                              <span>{step.replace(/^tip:\s*/i, '')}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
