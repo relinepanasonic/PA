@@ -84,6 +84,30 @@ export interface SportActivity {
   updated_at: string;
 }
 
+export interface GymSession {
+  id: string;
+  user_id: string;
+  started_at: string;
+  ended_at: string | null;
+  duration_minutes: number | null;
+  notes: string;
+  created_at: string;
+}
+
+export interface GymSessionExercise {
+  id: string;
+  session_id: string;
+  user_id: string;
+  exercise_id: string;
+  exercise_name: string;
+  sets: number;
+  reps: number;
+  weight_kg: number;
+  order_index: number;
+  notes: string;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -121,6 +145,16 @@ export interface Database {
         Row: PortfolioStock;
         Insert: Omit<PortfolioStock, 'id' | 'created_at'> & { id?: string };
         Update: Partial<Omit<PortfolioStock, 'id' | 'user_id' | 'created_at'>>;
+      };
+      gym_sessions: {
+        Row: GymSession;
+        Insert: Omit<GymSession, 'id' | 'created_at'> & { id?: string };
+        Update: Partial<Omit<GymSession, 'id' | 'user_id' | 'created_at'>>;
+      };
+      gym_session_exercises: {
+        Row: GymSessionExercise;
+        Insert: Omit<GymSessionExercise, 'id' | 'created_at'> & { id?: string };
+        Update: Partial<Omit<GymSessionExercise, 'id' | 'user_id' | 'created_at'>>;
       };
     };
   };

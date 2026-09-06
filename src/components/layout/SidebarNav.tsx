@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Calendar, Wallet, Activity, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Calendar, Wallet, Dumbbell, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
 
 const navItems = [
@@ -10,7 +10,7 @@ const navItems = [
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/finance', label: 'Finance', icon: Wallet },
   { href: '/investasi', label: 'Investasi', icon: TrendingUp },
-  { href: '/activities', label: 'Activities', icon: Activity },
+  { href: '/sports', label: 'Sports', icon: Dumbbell },
 ];
 
 export default function SidebarNav() {
