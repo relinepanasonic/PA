@@ -709,6 +709,13 @@ export default function SportsPage() {
                     {expandedExerciseId === ex.id ? <ChevronUp size={16} className="text-slate-400 flex-shrink-0 mt-1" /> : <ChevronDown size={16} className="text-slate-400 flex-shrink-0 mt-1" />}
                   </div>
 
+                  <div className="flex flex-wrap gap-1">
+                    {ex.targetMuscles.map(m => (
+                      <span key={m} className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 font-semibold">{m}</span>
+                    ))}
+                    {ex.secondaryMuscles.map(m => (
+                      <span key={m} className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/5 text-slate-400 font-semibold">{m}</span>
+                    ))}
                   <div className="flex flex-col gap-1.5 mt-2">
                     <div className="flex items-start gap-2">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider w-20">Focus Area</span>
@@ -726,6 +733,16 @@ export default function SportsPage() {
                 </div>
 
                 {expandedExerciseId === ex.id && (
+                  <div className="px-3 pb-3 pt-1 border-t border-white/5 space-y-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instructions</p>
+                    <ol className="space-y-1.5">
+                      {ex.instructions.map((step, i) => (
+                        <li key={i} className="flex gap-2 text-xs text-slate-300">
+                          <span className="text-emerald-400 font-bold flex-shrink-0">{i + 1}.</span>
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ol>
                   <div className="px-3 pb-3 pt-1 border-t border-white/5 space-y-4 bg-slate-900/50">
                     <div className="space-y-1.5">
                       <p className="text-[11px] font-bold text-white uppercase tracking-wider">Preparation</p>
