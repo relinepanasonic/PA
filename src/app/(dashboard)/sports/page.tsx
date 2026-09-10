@@ -456,6 +456,29 @@ export default function SportsPage() {
     fetchBodyMeasurements();
   };
 
+  const importBaseline = async () => {
+    setBodySaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    const payload = {
+      user_id: user.id,
+      measured_at: '2026-09-07T18:23:49+07:00',
+      weight_kg: 87.2,
+      skeletal_muscle_kg: 33.1,
+      fat_mass_kg: 26.4,
+      body_water_kg: 45.1,
+      lean_body_mass_kg: 60.8,
+      bmi: 29.1,
+      fat_percentage: 30.2,
+      health_score: 67,
+    };
+    
+    await supabase.from('body_measurements').insert(payload);
+    setBodySaving(false);
+    fetchBodyMeasurements();
+  };
+
   const deleteBodyMeasurement = async (id: string) => {
     await supabase.from('body_measurements').delete().eq('id', id);
     fetchBodyMeasurements();
@@ -558,7 +581,13 @@ export default function SportsPage() {
           {bodyLoading ? (
             <SkeletonList count={2} />
           ) : bodyMeasurements.length === 0 ? (
-            <EmptyState icon={Scale} title="No data yet" description="Add your first InBody scan result to start tracking!" />
+            <EmptyState 
+              icon={Scale} 
+              title="No data yet" 
+              description="Add your first InBody scan result to start tracking!" 
+              actionLabel={bodySaving ? "Importing..." : "Import FTL GYM Baseline (Sep 7)"}
+              onAction={importBaseline}
+            />
           ) : (
             <div className="space-y-4">
               {/* Highlight Cards based on latest measurement */}
