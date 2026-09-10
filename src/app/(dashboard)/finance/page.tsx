@@ -213,6 +213,7 @@ export default function FinancePage() {
   const [showStatementModal, setShowStatementModal] = useState(false);
   const [statementAccount, setStatementAccount] = useState('Blu by BCA');
   const [importingStatement, setImportingStatement] = useState(false);
+  const [statementRows, setStatementRows] = useState<any[]>([]);
   const [scanningReceipt, setScanningReceipt] = useState(false);
   const [ocrStatus, setOcrStatus] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -518,31 +519,126 @@ export default function FinancePage() {
     fetchSummary();
   };
 
-  const sampleStatementRows = [
-    { desc: 'Client Retainer Payment - Agensi', amount: 8500000, type: 'income' as FinanceType, tag: 'professional' as FinanceTag },
-    { desc: 'Spotify Premium Family Subscription', amount: 89000, type: 'expense' as FinanceType, tag: 'personal' as FinanceTag },
-    { desc: 'AWS Cloud Server Hosting Monthly', amount: 450000, type: 'expense' as FinanceType, tag: 'professional' as FinanceTag },
-    { desc: 'Groceries & Household Supplies', amount: 620000, type: 'expense' as FinanceType, tag: 'personal' as FinanceTag },
-  ];
+  const parseCsvLine = (text: string) => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (c === '"') {
+        inQuotes = !inQuotes;
+      } else if (c === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += c;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const lines = text.split(/\r?\n/);
+      const parsedRows = [];
+      let isData = false;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.startsWith('Tanggal / Date')) {
+          isData = true;
+          continue;
+        }
+        if (line.startsWith('Saldo Awal') || line === ',,,,') {
+          isData = false;
+          continue;
+        }
+
+        if (isData && line.trim()) {
+          const parts = parseCsvLine(line);
+          if (parts.length >= 4) {
+            const [DD, MM, YYYY] = parts[0].split('/');
+            const isoDate = `${YYYY}-${MM}-${DD}`;
+
+            const desc = parts[1];
+            const amount = Math.abs(parseFloat(parts[2]));
+            const typeStr = parts[3];
+            const txType: FinanceType = typeStr.toLowerCase() === 'pemasukan' ? 'income' : 'expense';
+
+            let catName = 'Other';
+            let tag: FinanceTag = 'personal';
+
+            const dLower = desc.toLowerCase();
+            if (dLower.includes('qris') || dLower.includes('food') || dLower.includes('makan') || dLower.includes('cafe') || dLower.includes('kopi') || dLower.includes('resto') || dLower.includes('burger')) {
+              catName = 'Makan';
+            } else if (dLower.includes('transport') || dLower.includes('gojek') || dLower.includes('grab') || dLower.includes('kcic')) {
+              catName = 'Transport';
+            } else if (dLower.includes('gaji') || dLower.includes('salary')) {
+              catName = 'Salary';
+            } else if (dLower.includes('tiket') || dLower.includes('tix')) {
+              catName = 'Entertainment';
+            }
+
+            parsedRows.push({
+              date: isoDate,
+              desc: desc,
+              amount: amount,
+              type: txType,
+              tag: tag,
+              catName: catName,
+            });
+          }
+        }
+      }
+      setStatementRows(parsedRows);
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // Reset input
+  };
 
   const handleImportStatement = async () => {
+    if (statementRows.length === 0) return;
     setImportingStatement(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const today = new Date().toISOString().split('T')[0];
 
-    const inserts = sampleStatementRows.map(row => ({
-      user_id: user.id,
-      amount: row.amount,
-      type: row.type,
-      tag: row.tag,
-      description: `[${statementAccount}] ${row.desc}`,
-      transaction_date: today,
-    }));
+    const inserts = [];
+    for (const row of statementRows) {
+      const fullDesc = `[${statementAccount}] ${row.desc}`;
+      
+      // Check for exact duplicates in current transactions
+      const isDuplicate = allSummaryTx.some(tx => 
+        tx.transaction_date === row.date && 
+        tx.description === fullDesc && 
+        Math.abs(Number(tx.amount)) === row.amount
+      );
 
-    await supabase.from('finance_transactions').insert(inserts);
+      if (!isDuplicate) {
+        const matchedCat = categories.find(c => c.name.toLowerCase() === row.catName.toLowerCase());
+        inserts.push({
+          user_id: user.id,
+          amount: row.amount,
+          type: row.type,
+          tag: row.tag,
+          category_id: matchedCat?.id || null,
+          description: fullDesc,
+          transaction_date: row.date,
+        });
+      }
+    }
+
+    if (inserts.length > 0) {
+      await supabase.from('finance_transactions').insert(inserts);
+    }
     setImportingStatement(false);
     setShowStatementModal(false);
+    setStatementRows([]);
     fetchTransactions();
     fetchSummary();
   };
@@ -1423,18 +1519,28 @@ export default function FinancePage() {
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl border border-dashed border-white/20 bg-white/[0.02] text-center space-y-2">
+          <div className="relative p-4 rounded-2xl border border-dashed border-white/20 bg-white/[0.02] text-center space-y-2 hover:bg-white/[0.04] transition-colors cursor-pointer">
+            <input 
+              type="file" 
+              accept=".csv"
+              onChange={handleCsvUpload}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
             <UploadCloud size={28} className="text-emerald-400 mx-auto" />
-            <p className="text-sm font-bold text-white">Upload Bank PDF or CSV Statement</p>
-            <p className="text-xs text-slate-400">Previewing auto-classified batch items below</p>
+            <p className="text-sm font-bold text-white">Upload Bank CSV Statement</p>
+            <p className="text-xs text-slate-400">Supported: blu by BCA CSV</p>
           </div>
 
           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-            {sampleStatementRows.map((row, idx) => (
+            {statementRows.length === 0 ? (
+              <p className="text-xs text-center text-slate-500 py-4">No CSV uploaded yet.</p>
+            ) : statementRows.map((row, idx) => (
               <div key={idx} className="p-2.5 rounded-xl bg-slate-900/80 border border-white/10 flex items-center justify-between text-xs">
                 <div className="min-w-0 pr-2">
                   <p className="font-bold text-white truncate">{row.desc}</p>
-                  <p className="text-[10px] text-slate-400">Tag: {row.tag}</p>
+                  <p className="text-[10px] text-slate-400">
+                    {row.date} • Tag: {row.tag} • Cat: {row.catName}
+                  </p>
                 </div>
                 <span className={`font-mono font-bold ${row.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
                   {row.type === 'income' ? '+' : '-'}{formatCurrency(row.amount)}
@@ -1450,8 +1556,9 @@ export default function FinancePage() {
             <Button
               isLoading={importingStatement}
               onClick={handleImportStatement}
+              disabled={statementRows.length === 0}
             >
-              Import 4 Transactions to {statementAccount}
+              Import {statementRows.length} Transactions to {statementAccount}
             </Button>
           </div>
         </div>

@@ -156,6 +156,11 @@ export interface Database {
         Insert: Omit<GymSessionExercise, 'id' | 'created_at'> & { id?: string };
         Update: Partial<Omit<GymSessionExercise, 'id' | 'user_id' | 'created_at'>>;
       };
+      body_measurements: {
+        Row: BodyMeasurement;
+        Insert: Omit<BodyMeasurement, 'id' | 'created_at'> & { id?: string };
+        Update: Partial<Omit<BodyMeasurement, 'id' | 'user_id' | 'created_at'>>;
+      };
     };
   };
 }
@@ -166,5 +171,24 @@ export interface PortfolioStock {
   ticker: string;
   buy_price: number;
   lots: number;
+  created_at: string;
+}
+
+export interface BodyMeasurement {
+  id: string;
+  user_id: string;
+  measured_at: string;
+  weight_kg: number;
+  skeletal_muscle_kg: number;
+  fat_mass_kg: number;
+  body_water_kg: number;
+  lean_body_mass_kg: number;
+  bmi: number;
+  fat_percentage: number;
+  whr: number;
+  visceral_fat_grade: number;
+  basal_metabolism_kcal: number;
+  health_score: number;
+  physical_age: number;
   created_at: string;
 }

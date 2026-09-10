@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { SportActivity, GymSession, GymSessionExercise } from '@/lib/types/database';
-import { Plus, Trophy, Calendar, Clock, MapPin, Users, Trash2, Target, Zap, Dumbbell, Play, Square, Search, Filter, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import type { SportActivity, GymSession, GymSessionExercise, BodyMeasurement } from '@/lib/types/database';
+import { Plus, Trophy, Calendar, Clock, MapPin, Users, Trash2, Target, Zap, Dumbbell, Play, Square, Search, Filter, ChevronDown, ChevronUp, BookOpen, Activity, Scale } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
@@ -25,7 +26,24 @@ const formatDuration = (seconds: number) => {
 };
 
 export default function SportsPage() {
-  const [activeTab, setActiveTab] = useState<'matches' | 'gym' | 'library'>('gym');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'matches' | 'gym' | 'library'>('dashboard');
+
+  // === DASHBOARD / BODY MEASUREMENTS STATE ===
+  const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurement[]>([]);
+  const [bodyLoading, setBodyLoading] = useState(true);
+  const [showBodyModal, setShowBodyModal] = useState(false);
+  const [bodySaving, setBodySaving] = useState(false);
+
+  // Body form
+  const [bDate, setBDate] = useState(new Date().toISOString().split('T')[0]);
+  const [bWeight, setBWeight] = useState('');
+  const [bSkeletalMuscle, setBSkeletalMuscle] = useState('');
+  const [bFatMass, setBFatMass] = useState('');
+  const [bBodyWater, setBBodyWater] = useState('');
+  const [bLeanBodyMass, setBLeanBodyMass] = useState('');
+  const [bBmi, setBBmi] = useState('');
+  const [bFatPercentage, setBFatPercentage] = useState('');
+  const [bHealthScore, setBHealthScore] = useState('');
 
   // === SPORT / MATCHES STATE ===
   const [sportActivities, setSportActivities] = useState<SportActivity[]>([]);
@@ -82,6 +100,8 @@ export default function SportsPage() {
 
   // Gym stats
   const [gymStats, setGymStats] = useState({ totalSessions: 0, totalVolume: 0, thisWeek: 0 });
+  const [gymError, setGymError] = useState<string | null>(null);
+  const [sessionStarting, setSessionStarting] = useState(false);
 
   const supabase = createClient();
 
@@ -119,16 +139,24 @@ export default function SportsPage() {
   // === GYM FETCHING ===
   const fetchGymSessions = useCallback(async () => {
     setGymLoading(true);
+    setGymError(null);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    if (!user) { setGymLoading(false); return; }
 
     // Fetch sessions
-    const { data: sessions } = await supabase
+    const { data: sessions, error } = await supabase
       .from('gym_sessions')
       .select('*')
       .eq('user_id', user.id)
       .order('started_at', { ascending: false })
       .limit(20);
+
+    if (error) {
+      setGymError(error.message);
+      setGymLoading(false);
+      return;
+    }
 
     setGymSessions(sessions || []);
 
@@ -172,8 +200,29 @@ export default function SportsPage() {
     setGymLoading(false);
   }, []);
 
+  const fetchBodyMeasurements = useCallback(async () => {
+    setBodyLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('body_measurements')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('measured_at', { ascending: true }); // ASC for charts
+
+    if (!error && data) {
+      setBodyMeasurements(data);
+    }
+    setBodyLoading(false);
+  }, []);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchSports(); }, [fetchSports]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchGymSessions(); }, [fetchGymSessions]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { fetchBodyMeasurements(); }, [fetchBodyMeasurements]);
 
   // Timer for active session
   useEffect(() => {
@@ -186,6 +235,7 @@ export default function SportsPage() {
       timerRef.current = setInterval(tick, 1000);
       return () => { if (timerRef.current) clearInterval(timerRef.current); };
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setElapsedSeconds(0);
       if (timerRef.current) clearInterval(timerRef.current);
     }
@@ -193,8 +243,17 @@ export default function SportsPage() {
 
   // === GYM SESSION ACTIONS ===
   const startSession = async () => {
+    if (sessionStarting) return;
+    setSessionStarting(true);
+    setGymError(null);
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    if (!user) {
+      setGymError('You are not signed in. Please log in again.');
+      setSessionStarting(false);
+      return;
+    }
 
     const { data, error } = await supabase
       .from('gym_sessions')
@@ -202,11 +261,14 @@ export default function SportsPage() {
       .select()
       .single();
 
-    if (data && !error) {
+    if (error || !data) {
+      setGymError(error?.message ?? 'Could not start the session.');
+    } else {
       setActiveSession(data);
       setSessionExercises([]);
       setSessionNotes('');
     }
+    setSessionStarting(false);
   };
 
   const finishSession = async () => {
@@ -215,7 +277,7 @@ export default function SportsPage() {
     const startedAt = new Date(activeSession.started_at);
     const durationMinutes = Math.round((now.getTime() - startedAt.getTime()) / 60000);
 
-    await supabase
+    const { error } = await supabase
       .from('gym_sessions')
       .update({
         ended_at: now.toISOString(),
@@ -223,6 +285,11 @@ export default function SportsPage() {
         notes: sessionNotes,
       })
       .eq('id', activeSession.id);
+
+    if (error) {
+      setGymError(error.message);
+      return;
+    }
 
     setActiveSession(null);
     setSessionExercises([]);
@@ -233,8 +300,10 @@ export default function SportsPage() {
   const addExerciseToSession = async () => {
     if (!activeSession || !selectedExercise) return;
     setExerciseSaving(true);
+    setGymError(null);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    if (!user) { setExerciseSaving(false); return; }
 
     const { data, error } = await supabase
       .from('gym_session_exercises')
@@ -252,9 +321,13 @@ export default function SportsPage() {
       .select()
       .single();
 
-    if (data && !error) {
-      setSessionExercises(prev => [...prev, data]);
+    if (error || !data) {
+      setGymError(error?.message ?? 'Could not add the exercise.');
+      setExerciseSaving(false);
+      return;
     }
+
+    setSessionExercises(prev => [...prev, data]);
 
     setExerciseSaving(false);
     setShowExerciseModal(false);
@@ -288,6 +361,30 @@ export default function SportsPage() {
     setExpandedSession(sessionId);
   };
 
+  const startExerciseFromLibrary = async (ex: Exercise) => {
+    setActiveTab('gym');
+    
+    // If no active session, start one
+    if (!activeSession) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from('gym_sessions')
+          .insert({ user_id: user.id, started_at: new Date().toISOString(), notes: '' })
+          .select()
+          .single();
+        if (data && !error) {
+          setActiveSession(data);
+          setSessionExercises([]);
+          setSessionNotes('');
+        }
+      }
+    }
+
+    setSelectedExercise(ex);
+    setShowExerciseModal(true);
+  };
+
   // === SPORT CRUD ===
   const openCreateSport = () => {
     setEditingSport(null);
@@ -312,6 +409,7 @@ export default function SportsPage() {
     setSportSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const payload: Record<string, any> = {
       title: sTitle, sport_type: sSportType, activity_date: sDate,
       start_time: sStartTime || null, end_time: sEndTime || null,
@@ -332,6 +430,36 @@ export default function SportsPage() {
   };
 
   const sportPages = Math.ceil(sportTotal / PAGE_SIZE);
+
+  // === BODY MEASUREMENT CRUD ===
+  const saveBodyMeasurement = async () => {
+    setBodySaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    const payload = {
+      user_id: user.id,
+      measured_at: new Date(bDate).toISOString(),
+      weight_kg: parseFloat(bWeight) || null,
+      skeletal_muscle_kg: parseFloat(bSkeletalMuscle) || null,
+      fat_mass_kg: parseFloat(bFatMass) || null,
+      body_water_kg: parseFloat(bBodyWater) || null,
+      lean_body_mass_kg: parseFloat(bLeanBodyMass) || null,
+      bmi: parseFloat(bBmi) || null,
+      fat_percentage: parseFloat(bFatPercentage) || null,
+      health_score: parseInt(bHealthScore) || null,
+    };
+    
+    await supabase.from('body_measurements').insert(payload);
+    setBodySaving(false);
+    setShowBodyModal(false);
+    fetchBodyMeasurements();
+  };
+
+  const deleteBodyMeasurement = async (id: string) => {
+    await supabase.from('body_measurements').delete().eq('id', id);
+    fetchBodyMeasurements();
+  };
 
   // === LIBRARY FILTERING ===
   const filteredLibrary = EXERCISES.filter(ex => {
@@ -368,11 +496,21 @@ export default function SportsPage() {
         )}
       </div>
 
-      {/* Tab Switcher — 3 tabs */}
-      <div className="flex bg-white/[0.04] p-1 rounded-xl border border-white/10">
+      {/* Tab Switcher — 4 tabs */}
+      <div className="flex bg-white/[0.04] p-1 rounded-xl border border-white/10 overflow-x-auto no-scrollbar">
+        <button
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${
+            activeTab === 'dashboard'
+              ? 'bg-indigo-600/30 text-indigo-300 shadow-sm border border-indigo-400/30'
+              : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
+          }`}
+        >
+          <Activity size={14} /> Report
+        </button>
         <button
           onClick={() => setActiveTab('gym')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${
             activeTab === 'gym'
               ? 'bg-emerald-600/30 text-emerald-300 shadow-sm border border-emerald-400/30'
               : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
@@ -382,7 +520,7 @@ export default function SportsPage() {
         </button>
         <button
           onClick={() => setActiveTab('matches')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${
             activeTab === 'matches'
               ? 'bg-blue-600/30 text-blue-300 shadow-sm border border-blue-400/30'
               : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
@@ -392,7 +530,7 @@ export default function SportsPage() {
         </button>
         <button
           onClick={() => setActiveTab('library')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${
             activeTab === 'library'
               ? 'bg-purple-600/30 text-purple-300 shadow-sm border border-purple-400/30'
               : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
@@ -401,6 +539,118 @@ export default function SportsPage() {
           <BookOpen size={14} /> Library
         </button>
       </div>
+
+      {/* ============ DASHBOARD TAB ============ */}
+      {activeTab === 'dashboard' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2"><Scale size={16} className="text-indigo-400"/> Body Composition</h2>
+            <Button size="sm" onClick={() => {
+              setBDate(new Date().toISOString().split('T')[0]);
+              setBWeight(''); setBSkeletalMuscle(''); setBFatMass(''); setBBodyWater('');
+              setBLeanBodyMass(''); setBBmi(''); setBFatPercentage(''); setBHealthScore('');
+              setShowBodyModal(true);
+            }}>
+              <Plus size={14} /> Log Data
+            </Button>
+          </div>
+
+          {bodyLoading ? (
+            <SkeletonList count={2} />
+          ) : bodyMeasurements.length === 0 ? (
+            <EmptyState icon={Scale} title="No data yet" description="Add your first InBody scan result to start tracking!" />
+          ) : (
+            <div className="space-y-4">
+              {/* Highlight Cards based on latest measurement */}
+              {(() => {
+                const latest = bodyMeasurements[bodyMeasurements.length - 1];
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="glow-card p-3 flex flex-col items-center">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Weight</span>
+                      <span className="text-lg font-bold text-white">{latest.weight_kg} <span className="text-xs text-slate-500">kg</span></span>
+                    </div>
+                    <div className="glow-card p-3 flex flex-col items-center">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Muscle</span>
+                      <span className="text-lg font-bold text-emerald-400">{latest.skeletal_muscle_kg} <span className="text-xs text-slate-500">kg</span></span>
+                    </div>
+                    <div className="glow-card p-3 flex flex-col items-center">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Fat %</span>
+                      <span className="text-lg font-bold text-red-400">{latest.fat_percentage} <span className="text-xs text-slate-500">%</span></span>
+                    </div>
+                    <div className="glow-card p-3 flex flex-col items-center">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Score</span>
+                      <span className="text-lg font-bold text-indigo-400">{latest.health_score}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Chart */}
+              <div className="glow-card p-4">
+                <h3 className="text-xs font-bold text-slate-300 mb-4 uppercase tracking-wider">Progress Trend</h3>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={bodyMeasurements} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                      <XAxis 
+                        dataKey="measured_at" 
+                        tickFormatter={(val) => new Date(val).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        stroke="#64748b" 
+                        fontSize={10} 
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#0f1f3d', borderColor: 'rgba(59,130,246,0.2)', borderRadius: '12px', fontSize: '12px' }}
+                        itemStyle={{ color: '#f1f5f9' }}
+                        labelFormatter={(val) => new Date(val).toLocaleDateString()}
+                      />
+                      <Line type="monotone" name="Weight (kg)" dataKey="weight_kg" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#0f1f3d', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                      <Line type="monotone" name="Muscle (kg)" dataKey="skeletal_muscle_kg" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#0f1f3d', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                      <Line type="monotone" name="Fat Mass (kg)" dataKey="fat_mass_kg" stroke="#ef4444" strokeWidth={3} dot={{ r: 4, fill: '#0f1f3d', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* History Table */}
+              <div className="glow-card overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-300">
+                    <thead className="bg-white/[0.02] border-b border-white/10 uppercase font-bold text-[10px] text-slate-400">
+                      <tr>
+                        <th className="px-3 py-2">Date</th>
+                        <th className="px-3 py-2">Weight</th>
+                        <th className="px-3 py-2">Muscle</th>
+                        <th className="px-3 py-2">Fat%</th>
+                        <th className="px-3 py-2 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {[...bodyMeasurements].reverse().map(bm => (
+                        <tr key={bm.id} className="hover:bg-white/[0.02]">
+                          <td className="px-3 py-2 whitespace-nowrap">{new Date(bm.measured_at).toLocaleDateString()}</td>
+                          <td className="px-3 py-2 font-mono">{bm.weight_kg}kg</td>
+                          <td className="px-3 py-2 font-mono text-emerald-400">{bm.skeletal_muscle_kg}kg</td>
+                          <td className="px-3 py-2 font-mono text-red-400">{bm.fat_percentage}%</td>
+                          <td className="px-3 py-2 text-right">
+                            <button onClick={() => deleteBodyMeasurement(bm.id)} className="text-slate-500 hover:text-red-400 p-1">
+                              <Trash2 size={12} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ============ GYM TAB ============ */}
       {activeTab === 'gym' && (
@@ -423,6 +673,19 @@ export default function SportsPage() {
               <p className="text-lg font-bold text-cyan-400">{gymStats.totalVolume > 1000 ? `${(gymStats.totalVolume / 1000).toFixed(1)}t` : `${gymStats.totalVolume}kg`}</p>
             </div>
           </div>
+
+          {/* Error banner */}
+          {gymError && (
+            <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-start justify-between gap-3">
+              <p className="text-xs text-red-300 leading-relaxed">{gymError}</p>
+              <button
+                onClick={() => setGymError(null)}
+                className="text-red-400/70 hover:text-red-300 text-xs font-bold flex-shrink-0"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
 
           {/* Active Session or Start Button */}
           {activeSession ? (
@@ -492,10 +755,11 @@ export default function SportsPage() {
           ) : (
             <button
               onClick={startSession}
-              className="w-full py-5 rounded-3xl bg-gradient-to-r from-emerald-600/40 to-cyan-600/30 hover:from-emerald-600/50 hover:to-cyan-600/40 border border-emerald-400/40 hover:border-emerald-400/60 shadow-[0_0_30px_rgba(16,185,129,0.15)] hover:shadow-[0_0_40px_rgba(16,185,129,0.25)] text-white text-base font-extrabold flex items-center justify-center gap-3 transition-all duration-300 active:scale-[0.98]"
+              disabled={sessionStarting}
+              className="w-full py-5 rounded-3xl bg-gradient-to-r from-emerald-600/40 to-cyan-600/30 hover:from-emerald-600/50 hover:to-cyan-600/40 border border-emerald-400/40 hover:border-emerald-400/60 shadow-[0_0_30px_rgba(16,185,129,0.15)] hover:shadow-[0_0_40px_rgba(16,185,129,0.25)] text-white text-base font-extrabold flex items-center justify-center gap-3 transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Play size={22} className="text-emerald-400" />
-              Start Gym Session
+              {sessionStarting ? 'Starting…' : 'Start Gym Session'}
             </button>
           )}
 
@@ -505,7 +769,7 @@ export default function SportsPage() {
             {gymLoading ? (
               <SkeletonList count={3} />
             ) : gymSessions.filter(s => s.ended_at).length === 0 ? (
-              <p className="text-xs text-slate-500 italic px-1 py-4">No completed sessions yet. Hit "Start" to begin! 💪</p>
+              <p className="text-xs text-slate-500 italic px-1 py-4">No completed sessions yet. Hit &quot;Start&quot; to begin! 💪</p>
             ) : (
               gymSessions.filter(s => s.ended_at).map(session => (
                 <div key={session.id} className="glass-card overflow-hidden">
@@ -716,6 +980,8 @@ export default function SportsPage() {
                     {ex.secondaryMuscles.map(m => (
                       <span key={m} className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/5 text-slate-400 font-semibold">{m}</span>
                     ))}
+                  </div>
+
                   <div className="flex flex-col gap-1.5 mt-2">
                     <div className="flex items-start gap-2">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider w-20">Focus Area</span>
@@ -733,16 +999,6 @@ export default function SportsPage() {
                 </div>
 
                 {expandedExerciseId === ex.id && (
-                  <div className="px-3 pb-3 pt-1 border-t border-white/5 space-y-2">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instructions</p>
-                    <ol className="space-y-1.5">
-                      {ex.instructions.map((step, i) => (
-                        <li key={i} className="flex gap-2 text-xs text-slate-300">
-                          <span className="text-emerald-400 font-bold flex-shrink-0">{i + 1}.</span>
-                          <span>{step}</span>
-                        </li>
-                      ))}
-                    </ol>
                   <div className="px-3 pb-3 pt-1 border-t border-white/5 space-y-4 bg-slate-900/50">
                     <div className="space-y-1.5">
                       <p className="text-[11px] font-bold text-white uppercase tracking-wider">Preparation</p>
@@ -781,6 +1037,20 @@ export default function SportsPage() {
                         </ul>
                       </div>
                     )}
+
+                    <Button 
+                      fullWidth 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startExerciseFromLibrary(ex);
+                      }}
+                      className="mt-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Dumbbell size={16} />
+                        Start Exercise
+                      </div>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -850,25 +1120,72 @@ export default function SportsPage() {
               {/* Exercise List */}
               <div className="max-h-[300px] overflow-y-auto space-y-1 -mx-1 px-1">
                 {filteredExercisePicker.map(ex => (
-                  <button
+                  <div
                     key={ex.id}
-                    onClick={() => setSelectedExercise(ex)}
-                    className="w-full p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-emerald-400/20 text-left flex items-center gap-3 transition-all"
+                    className="glass-card overflow-hidden transition-all hover:border-emerald-400/30"
                   >
-                    {ex.imageUrl ? (
-                      <div className="w-10 h-10 rounded-lg bg-white/5 overflow-hidden flex items-center justify-center flex-shrink-0 p-1">
-                        <img src={ex.imageUrl} alt="" className="max-w-full max-h-full object-contain mix-blend-screen" />
+                    <div 
+                      className="p-3 flex items-center gap-4 cursor-pointer"
+                      onClick={() => setExpandedExerciseId(expandedExerciseId === ex.id ? null : ex.id)}
+                    >
+                      {ex.imageUrl ? (
+                        <div className="w-14 h-14 rounded-xl bg-white/5 overflow-hidden flex items-center justify-center flex-shrink-0 p-1">
+                          <img src={ex.imageUrl} alt="" className="max-w-full max-h-full object-contain mix-blend-screen" />
+                        </div>
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                          <Dumbbell size={20} className="text-emerald-400" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-white truncate">{ex.name}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{ex.muscleGroup} · {ex.equipment}</p>
                       </div>
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                        <Dumbbell size={16} className="text-emerald-400" />
+                      <div className="flex-shrink-0 text-slate-400">
+                        {expandedExerciseId === ex.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                      </div>
+                    </div>
+
+                    {expandedExerciseId === ex.id && (
+                      <div className="px-3 pb-3 pt-1 border-t border-white/5 space-y-4 bg-slate-900/50">
+                        {/* Description content */}
+                        <div className="space-y-1.5">
+                          <p className="text-[11px] font-bold text-white uppercase tracking-wider">Preparation</p>
+                          <p className="text-xs text-slate-300 leading-relaxed">
+                            {ex.instructions.length > 0 ? ex.instructions[0] : 'Get into starting position.'}
+                          </p>
+                        </div>
+
+                        {ex.instructions.length > 1 && (
+                          <div className="space-y-2">
+                            <p className="text-[11px] font-bold text-white uppercase tracking-wider">Execution</p>
+                            <ol className="space-y-2">
+                              {ex.instructions.slice(1).map((step, i) => {
+                                if (step.toLowerCase().startsWith('tip:')) return null;
+                                return (
+                                  <li key={i} className="flex gap-2.5 text-xs text-slate-300 leading-relaxed">
+                                    <span className="font-bold text-slate-500 flex-shrink-0 w-3">{i + 1}</span>
+                                    <span>{step}</span>
+                                  </li>
+                                );
+                              })}
+                            </ol>
+                          </div>
+                        )}
+
+                        <Button 
+                          fullWidth 
+                          onClick={() => {
+                            setSelectedExercise(ex);
+                            setExpandedExerciseId(null);
+                          }}
+                          className="mt-2"
+                        >
+                          Select this Exercise
+                        </Button>
                       </div>
                     )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-white truncate">{ex.name}</p>
-                      <p className="text-[10px] text-slate-400">{ex.muscleGroup} · {ex.equipment}</p>
-                    </div>
-                  </button>
+                  </div>
                 ))}
                 {filteredExercisePicker.length === 0 && (
                   <p className="text-center text-xs text-slate-500 py-4">No exercises found.</p>
@@ -938,6 +1255,32 @@ export default function SportsPage() {
           )}
         </div>
       </Modal>
+
+      {/* ── BODY COMPOSITION MODAL ────────────────────────────────────────── */}
+      <Modal
+        isOpen={showBodyModal}
+        onClose={() => setShowBodyModal(false)}
+        title="Log Body Composition"
+      >
+        <div className="space-y-4">
+          <Input id="bDate" type="date" label="Date" value={bDate} onChange={(e) => setBDate(e.target.value)} icon={<Calendar size={16}/>} />
+          
+          <div className="grid grid-cols-2 gap-3">
+            <Input id="bWeight" type="number" label="Weight (kg)" placeholder="87.2" value={bWeight} onChange={(e) => setBWeight(e.target.value)} />
+            <Input id="bSkeletalMuscle" type="number" label="Skeletal Muscle (kg)" placeholder="33.1" value={bSkeletalMuscle} onChange={(e) => setBSkeletalMuscle(e.target.value)} />
+            <Input id="bFatMass" type="number" label="Fat Mass (kg)" placeholder="26.4" value={bFatMass} onChange={(e) => setBFatMass(e.target.value)} />
+            <Input id="bFatPercentage" type="number" label="Fat Percentage (%)" placeholder="30.2" value={bFatPercentage} onChange={(e) => setBFatPercentage(e.target.value)} />
+            <Input id="bBmi" type="number" label="BMI" placeholder="29.1" value={bBmi} onChange={(e) => setBBmi(e.target.value)} />
+            <Input id="bHealthScore" type="number" label="Health Score" placeholder="67" value={bHealthScore} onChange={(e) => setBHealthScore(e.target.value)} />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setShowBodyModal(false)}>Cancel</Button>
+            <Button isLoading={bodySaving} onClick={saveBodyMeasurement}>Save Data</Button>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 }
