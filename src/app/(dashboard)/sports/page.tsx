@@ -464,15 +464,30 @@ export default function SportsPage() {
     
     const payload = {
       user_id: user.id,
-      measured_at: '2026-09-07T18:23:49+07:00',
-      weight_kg: 87.2,
-      skeletal_muscle_kg: 33.1,
-      fat_mass_kg: 26.4,
-      body_water_kg: 45.1,
-      lean_body_mass_kg: 60.8,
-      bmi: 29.1,
-      fat_percentage: 30.2,
-      health_score: 67,
+      measured_at: '2026-09-11T12:00:00+07:00',
+      weight_kg: 87.4,
+      skeletal_muscle_kg: null,
+      fat_mass_kg: 27.0,
+      body_water_kg: null,
+      lean_body_mass_kg: null,
+      bmi: 29.2,
+      fat_percentage: 31.0,
+      health_score: null,
+      score_bcm: 5410,
+      whr: 0.91,
+      visceral_fat_grade: 11,
+      basal_metabolism_kcal: 1671,
+      physical_age: 50,
+      right_arm_muscle: 3.3,
+      right_arm_fat: 2.0,
+      left_arm_muscle: 3.3,
+      left_arm_fat: 2.0,
+      torso_muscle: 26.3,
+      torso_fat: 14.7,
+      right_leg_muscle: 9.2,
+      right_leg_fat: 4.0,
+      left_leg_muscle: 9.3,
+      left_leg_fat: 3.9,
     };
     
     await supabase.from('body_measurements').insert(payload);
@@ -606,127 +621,187 @@ export default function SportsPage() {
             />
           ) : dashboardTab === 'body' ? (
             // SCI-FI BODY COMPOSITION UI
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-6 mt-4">
+            <div className="mt-4 space-y-6">
               
-              {/* LEFT COLUMN */}
-              <div className="md:col-span-3 space-y-4 flex flex-col justify-between">
+              {/* TOP SECTION: Segmental Anatomy */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-6">
                 
-                {/* Muscle Box */}
-                <div className="p-4 rounded-xl border border-cyan-500/20 bg-cyan-950/10 backdrop-blur-md relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
-                  <h3 className="text-[9px] font-bold text-cyan-400 tracking-widest uppercase mb-1">Total Skeletal Muscle</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-light text-white font-mono tracking-tight">{bodyMeasurements[bodyMeasurements.length-1].skeletal_muscle_kg}</span>
-                    <span className="text-xs text-cyan-500 font-bold">KG</span>
+                {/* LEFT COLUMN: Right Side Body Parts */}
+                <div className="md:col-span-3 space-y-4 flex flex-col justify-center">
+                  <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-950/20 backdrop-blur-md relative overflow-hidden group">
+                    <h3 className="text-xs font-bold text-indigo-300 mb-2">Right Arm</h3>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={12}/> {bodyMeasurements[bodyMeasurements.length-1].right_arm_muscle}kg</span>
+                      <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={12}/> {bodyMeasurements[bodyMeasurements.length-1].right_arm_fat}kg</span>
+                    </div>
                   </div>
-                  <div className="w-full h-1 bg-white/5 rounded-full mt-3 overflow-hidden">
-                    <div className="h-full bg-cyan-400 w-[60%] shadow-[0_0_8px_rgba(34,211,238,0.5)]"></div>
+                  
+                  <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-950/20 backdrop-blur-md relative overflow-hidden group">
+                    <h3 className="text-xs font-bold text-indigo-300 mb-2">Torso</h3>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={12}/> {bodyMeasurements[bodyMeasurements.length-1].torso_muscle}kg</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-950/20 backdrop-blur-md relative overflow-hidden group">
+                    <h3 className="text-xs font-bold text-indigo-300 mb-2">Right Leg</h3>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={12}/> {bodyMeasurements[bodyMeasurements.length-1].right_leg_muscle}kg</span>
+                      <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={12}/> {bodyMeasurements[bodyMeasurements.length-1].right_leg_fat}kg</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Body Water Box */}
-                <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-950/10 backdrop-blur-md relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.8)]"></div>
-                  <h3 className="text-[9px] font-bold text-blue-400 tracking-widest uppercase mb-1">Body Water</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-light text-white font-mono tracking-tight">{bodyMeasurements[bodyMeasurements.length-1].body_water_kg}</span>
-                    <span className="text-xs text-blue-500 font-bold">KG</span>
+                {/* CENTER COLUMN: Human Anatomy Diagram */}
+                <div className="md:col-span-6 relative flex flex-col items-center justify-center min-h-[400px] rounded-2xl border border-blue-500/10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-slate-900/40 to-slate-900/80 p-6 overflow-hidden">
+                  <div className="absolute top-4 text-center">
+                    <h2 className="text-[10px] text-blue-300 tracking-widest uppercase">Body Composition Metric Score</h2>
+                    <div className="text-4xl font-bold text-white tracking-tighter mt-1">{bodyMeasurements[bodyMeasurements.length-1].score_bcm} <span className="text-sm text-blue-400 font-normal italic">BCM</span></div>
                   </div>
-                  <div className="w-full h-1 bg-white/5 rounded-full mt-3 overflow-hidden">
-                    <div className="h-full bg-blue-400 w-[55%] shadow-[0_0_8px_rgba(96,165,250,0.5)]"></div>
+                  
+                  {/* Glowing Silhouette */}
+                  <div className="relative w-full h-[300px] mt-16 flex items-center justify-center opacity-80 mix-blend-screen drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                    <svg viewBox="0 0 100 250" className="h-full text-blue-500/40 fill-current stroke-blue-300/30 stroke-1">
+                      <path d="M50 5 C45 5 40 10 40 17 C40 23 45 28 50 28 C55 28 60 23 60 17 C60 10 55 5 50 5 Z M35 32 C25 32 15 38 12 48 L5 110 L15 110 L25 60 L30 110 L30 240 L45 240 L45 130 L55 130 L55 240 L70 240 L70 110 L75 60 L85 110 L95 110 L88 48 C85 38 75 32 65 32 Z" />
+                    </svg>
+                    
+                    {/* Connection Lines & Nodes */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: 'visible' }}>
+                      <line x1="20%" y1="25%" x2="0" y2="15%" stroke="rgba(99,102,241,0.5)" strokeWidth="1" strokeDasharray="2 2" />
+                      <line x1="80%" y1="25%" x2="100%" y2="15%" stroke="rgba(99,102,241,0.5)" strokeWidth="1" strokeDasharray="2 2" />
+                      <line x1="30%" y1="45%" x2="0" y2="50%" stroke="rgba(99,102,241,0.5)" strokeWidth="1" strokeDasharray="2 2" />
+                      <line x1="70%" y1="45%" x2="100%" y2="50%" stroke="rgba(99,102,241,0.5)" strokeWidth="1" strokeDasharray="2 2" />
+                      <line x1="35%" y1="70%" x2="0" y2="85%" stroke="rgba(99,102,241,0.5)" strokeWidth="1" strokeDasharray="2 2" />
+                      <line x1="65%" y1="70%" x2="100%" y2="85%" stroke="rgba(99,102,241,0.5)" strokeWidth="1" strokeDasharray="2 2" />
+                    </svg>
                   </div>
                 </div>
 
-                {/* Lean Mass Box */}
-                <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-950/10 backdrop-blur-md relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.8)]"></div>
-                  <h3 className="text-[9px] font-bold text-indigo-400 tracking-widest uppercase mb-1">Lean Body Mass</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-light text-white font-mono tracking-tight">{bodyMeasurements[bodyMeasurements.length-1].lean_body_mass_kg}</span>
-                    <span className="text-xs text-indigo-500 font-bold">KG</span>
+                {/* RIGHT COLUMN: Left Side Body Parts */}
+                <div className="md:col-span-3 space-y-4 flex flex-col justify-center">
+                  <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-950/20 backdrop-blur-md relative overflow-hidden group">
+                    <h3 className="text-xs font-bold text-indigo-300 mb-2">Left Arm</h3>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={12}/> {bodyMeasurements[bodyMeasurements.length-1].left_arm_muscle}kg</span>
+                      <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={12}/> {bodyMeasurements[bodyMeasurements.length-1].left_arm_fat}kg</span>
+                    </div>
                   </div>
-                  <div className="w-full h-1 bg-white/5 rounded-full mt-3 overflow-hidden">
-                    <div className="h-full bg-indigo-400 w-[70%] shadow-[0_0_8px_rgba(129,140,248,0.5)]"></div>
+                  
+                  <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-950/20 backdrop-blur-md relative overflow-hidden group">
+                    <h3 className="text-xs font-bold text-indigo-300 mb-2">Torso</h3>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={12}/> {bodyMeasurements[bodyMeasurements.length-1].torso_fat}kg</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-950/20 backdrop-blur-md relative overflow-hidden group">
+                    <h3 className="text-xs font-bold text-indigo-300 mb-2">Left Leg</h3>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={12}/> {bodyMeasurements[bodyMeasurements.length-1].left_leg_muscle}kg</span>
+                      <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={12}/> {bodyMeasurements[bodyMeasurements.length-1].left_leg_fat}kg</span>
+                    </div>
                   </div>
                 </div>
 
               </div>
 
-              {/* CENTER COLUMN (Human Anatomy Diagram) */}
-              <div className="md:col-span-6 relative flex flex-col items-center justify-center min-h-[400px] rounded-2xl border border-cyan-500/10 bg-gradient-to-b from-slate-900/40 via-cyan-950/20 to-slate-900/40 p-6 overflow-hidden">
-                {/* Background scanning line effect */}
-                <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(34,211,238,0.05)_50%,transparent_100%)] bg-[length:100%_4px] animate-[scan_4s_linear_infinite] pointer-events-none"></div>
+              {/* BOTTOM SECTION: Progress Bars & Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
-                {/* SVG Silhouette placeholder for Human Body */}
-                <div className="relative w-full h-full flex items-center justify-center opacity-80 mix-blend-screen drop-shadow-[0_0_15px_rgba(34,211,238,0.3)]">
-                  <svg viewBox="0 0 100 250" className="h-[350px] text-cyan-500/40 fill-current stroke-cyan-300/30 stroke-1">
-                    <path d="M50 5 C45 5 40 10 40 17 C40 23 45 28 50 28 C55 28 60 23 60 17 C60 10 55 5 50 5 Z M35 32 C25 32 15 38 12 48 L5 110 L15 110 L25 60 L30 110 L30 240 L45 240 L45 130 L55 130 L55 240 L70 240 L70 110 L75 60 L85 110 L95 110 L88 48 C85 38 75 32 65 32 Z" />
-                  </svg>
+                {/* BOTTOM LEFT: Progress Bars */}
+                <div className="space-y-5 p-5 rounded-2xl border border-white/5 bg-white/[0.02]">
+                  
+                  {/* BMI */}
+                  <div>
+                    <div className="flex justify-between items-end mb-1">
+                      <span className="text-xs font-bold text-slate-300 uppercase">BMI</span>
+                      <span className="text-lg font-bold text-white">{bodyMeasurements[bodyMeasurements.length-1].bmi}</span>
+                    </div>
+                    <div className="relative h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-emerald-400 to-amber-500" style={{ width: '60%' }}></div>
+                    </div>
+                    <div className="flex justify-between text-[9px] text-slate-500 mt-1 uppercase font-bold px-1">
+                      <span>Under</span><span>Healthy</span><span>Over</span><span>Obese</span>
+                    </div>
+                  </div>
 
-                  {/* Nodes for segmental data mapping */}
-                  <div className="absolute top-[25%] left-[20%] flex flex-col items-end gap-0.5">
-                    <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_8px_#67e8f9] animate-pulse"></span>
-                    <span className="text-[8px] text-cyan-200 font-mono">R ARM: 3.4kg</span>
+                  {/* Fat Mass */}
+                  <div>
+                    <div className="flex justify-between items-end mb-1">
+                      <span className="text-xs font-bold text-slate-300 uppercase">Fat Mass</span>
+                      <span className="text-lg font-bold text-white">{bodyMeasurements[bodyMeasurements.length-1].fat_mass_kg} <span className="text-xs text-slate-500">kg</span></span>
+                    </div>
+                    <div className="relative h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-400 via-amber-500 to-red-500" style={{ width: '75%' }}></div>
+                    </div>
+                    <div className="flex justify-between text-[9px] text-slate-500 mt-1 uppercase font-bold px-1">
+                      <span>Good</span><span>Normal</span><span>Bad</span>
+                    </div>
                   </div>
-                  <div className="absolute top-[25%] right-[20%] flex flex-col items-start gap-0.5">
-                    <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_8px_#67e8f9] animate-pulse"></span>
-                    <span className="text-[8px] text-cyan-200 font-mono">L ARM: 3.4kg</span>
+
+                  {/* Visceral Fat */}
+                  <div>
+                    <div className="flex justify-between items-end mb-1">
+                      <span className="text-xs font-bold text-slate-300 uppercase">Visceral Fat</span>
+                      <span className="text-lg font-bold text-white">{bodyMeasurements[bodyMeasurements.length-1].visceral_fat_grade}</span>
+                    </div>
+                    <div className="relative h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-400 via-amber-500 to-red-500" style={{ width: '85%' }}></div>
+                    </div>
+                    <div className="flex justify-between text-[9px] text-slate-500 mt-1 uppercase font-bold px-1">
+                      <span>Good</span><span>Normal</span><span>Bad</span>
+                    </div>
                   </div>
-                  <div className="absolute top-[40%] left-[50%] -translate-x-1/2 flex flex-col items-center gap-0.5">
-                    <span className="w-3 h-3 rounded-full bg-blue-400 shadow-[0_0_12px_#60a5fa] animate-pulse"></span>
-                    <span className="text-[8px] text-blue-200 font-mono">TORSO: 27.0kg</span>
+
+                  {/* WHR */}
+                  <div>
+                    <div className="flex justify-between items-end mb-1">
+                      <span className="text-xs font-bold text-slate-300 uppercase">WHR</span>
+                      <span className="text-lg font-bold text-white">{bodyMeasurements[bodyMeasurements.length-1].whr}</span>
+                    </div>
+                    <div className="relative h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-400 via-amber-500 to-red-500" style={{ width: '80%' }}></div>
+                    </div>
+                    <div className="flex justify-between text-[9px] text-slate-500 mt-1 uppercase font-bold px-1">
+                      <span>Good</span><span>Normal</span><span>Bad</span>
+                    </div>
                   </div>
-                  <div className="absolute top-[70%] left-[30%] flex flex-col items-end gap-0.5">
-                    <span className="w-2 h-2 rounded-full bg-indigo-300 shadow-[0_0_8px_#a5b4fc] animate-pulse"></span>
-                    <span className="text-[8px] text-indigo-200 font-mono">R LEG: 8.9kg</span>
+
+                </div>
+
+                {/* BOTTOM RIGHT: High level stats & Pie Chart */}
+                <div className="p-5 rounded-2xl border border-white/5 bg-white/[0.02] grid grid-cols-2 gap-4 items-center">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-[10px] text-slate-400 uppercase font-bold">Body Weight</h4>
+                      <p className="text-xl font-bold text-white">{bodyMeasurements[bodyMeasurements.length-1].weight_kg} <span className="text-sm font-normal text-slate-500">kg</span></p>
+                    </div>
+                    <div>
+                      <h4 className="text-[10px] text-slate-400 uppercase font-bold">BMR</h4>
+                      <p className="text-xl font-bold text-white">{bodyMeasurements[bodyMeasurements.length-1].basal_metabolism_kcal} <span className="text-sm font-normal text-slate-500">Kcal</span></p>
+                    </div>
+                    <div>
+                      <h4 className="text-[10px] text-slate-400 uppercase font-bold">Body Age</h4>
+                      <p className="text-xl font-bold text-white">{bodyMeasurements[bodyMeasurements.length-1].physical_age} <span className="text-sm font-normal text-slate-500">Years</span></p>
+                      <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[9px] font-bold">Older than Actual</span>
+                    </div>
                   </div>
-                  <div className="absolute top-[70%] right-[30%] flex flex-col items-start gap-0.5">
-                    <span className="w-2 h-2 rounded-full bg-indigo-300 shadow-[0_0_8px_#a5b4fc] animate-pulse"></span>
-                    <span className="text-[8px] text-indigo-200 font-mono">L LEG: 9.1kg</span>
+
+                  {/* Manual CSS Donut Chart */}
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="relative w-32 h-32 rounded-full flex items-center justify-center" style={{ background: 'conic-gradient(#3b82f6 0% 65.3%, #f59e0b 65.3% 96.3%, #f43f5e 96.3% 100%)' }}>
+                      <div className="w-20 h-20 bg-[#0a1628] rounded-full"></div>
+                    </div>
+                    <div className="mt-4 space-y-1 w-full pl-4">
+                      <div className="flex items-center gap-2 text-xs text-slate-300"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Muscle Mass <span className="ml-auto font-bold text-white">65.3%</span></div>
+                      <div className="flex items-center gap-2 text-xs text-slate-300"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Fat <span className="ml-auto font-bold text-white">31%</span></div>
+                      <div className="flex items-center gap-2 text-xs text-slate-300"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Other <span className="ml-auto font-bold text-white">3.7%</span></div>
+                    </div>
                   </div>
                 </div>
+
               </div>
 
-              {/* RIGHT COLUMN */}
-              <div className="md:col-span-3 space-y-4 flex flex-col justify-between">
-                
-                {/* Fat Box */}
-                <div className="p-4 rounded-xl border border-red-500/20 bg-red-950/10 backdrop-blur-md relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-1 h-full bg-red-400 shadow-[0_0_10px_rgba(248,113,113,0.8)]"></div>
-                  <h3 className="text-[9px] font-bold text-red-400 tracking-widest uppercase mb-1 text-right">Fat Mass</h3>
-                  <div className="flex items-baseline gap-1 justify-end">
-                    <span className="text-3xl font-light text-white font-mono tracking-tight">{bodyMeasurements[bodyMeasurements.length-1].fat_mass_kg}</span>
-                    <span className="text-xs text-red-500 font-bold">KG</span>
-                  </div>
-                  <p className="text-[10px] text-red-300/60 text-right mt-1 font-mono">{bodyMeasurements[bodyMeasurements.length-1].fat_percentage}% BODY FAT</p>
-                </div>
-
-                {/* BMI Box */}
-                <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-950/10 backdrop-blur-md relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-1 h-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.8)]"></div>
-                  <h3 className="text-[9px] font-bold text-amber-400 tracking-widest uppercase mb-1 text-right">BMI</h3>
-                  <div className="flex items-baseline gap-1 justify-end">
-                    <span className="text-3xl font-light text-white font-mono tracking-tight">{bodyMeasurements[bodyMeasurements.length-1].bmi}</span>
-                  </div>
-                  <div className="w-full h-1 bg-white/5 rounded-full mt-3 overflow-hidden transform rotate-180">
-                    <div className="h-full bg-amber-400 w-[65%] shadow-[0_0_8px_rgba(251,191,36,0.5)]"></div>
-                  </div>
-                </div>
-
-                {/* Health Score Box */}
-                <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-950/10 backdrop-blur-md relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-1 h-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]"></div>
-                  <h3 className="text-[9px] font-bold text-emerald-400 tracking-widest uppercase mb-1 text-right">Health Score</h3>
-                  <div className="flex items-baseline gap-1 justify-end">
-                    <span className="text-3xl font-light text-white font-mono tracking-tight">{bodyMeasurements[bodyMeasurements.length-1].health_score}</span>
-                    <span className="text-xs text-emerald-500 font-bold">/100</span>
-                  </div>
-                  <div className="w-full h-1 bg-white/5 rounded-full mt-3 overflow-hidden transform rotate-180">
-                    <div className="h-full bg-emerald-400 w-[67%] shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
-                  </div>
-                </div>
-
-              </div>
             </div>
           ) : (
             // TABLE PERFORMANCE UI
