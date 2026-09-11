@@ -26,7 +26,7 @@ const formatDuration = (seconds: number) => {
 };
 
 export default function SportsPage() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'matches' | 'gym' | 'library'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'workout' | 'library'>('dashboard');
   const [dashboardTab, setDashboardTab] = useState<'body' | 'performance' | 'strength'>('body');
 
   // === DASHBOARD / BODY MEASUREMENTS STATE ===
@@ -564,7 +564,7 @@ export default function SportsPage() {
         )}
       </div>
 
-      {/* Tab Switcher — 4 tabs */}
+      {/* Tab Switcher — 3 tabs */}
       <div className="flex bg-white/[0.04] p-1 rounded-xl border border-white/10 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('dashboard')}
@@ -577,24 +577,14 @@ export default function SportsPage() {
           <Activity size={14} /> Report
         </button>
         <button
-          onClick={() => setActiveTab('gym')}
+          onClick={() => setActiveTab('workout')}
           className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${
-            activeTab === 'gym'
+            activeTab === 'workout'
               ? 'bg-emerald-600/30 text-emerald-300 shadow-sm border border-emerald-400/30'
               : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
           }`}
         >
-          <Dumbbell size={14} /> Gym
-        </button>
-        <button
-          onClick={() => setActiveTab('matches')}
-          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all ${
-            activeTab === 'matches'
-              ? 'bg-blue-600/30 text-blue-300 shadow-sm border border-blue-400/30'
-              : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
-          }`}
-        >
-          <Trophy size={14} /> Matches
+          <Dumbbell size={14} /> Workout
         </button>
         <button
           onClick={() => setActiveTab('library')}
@@ -1092,44 +1082,13 @@ export default function SportsPage() {
         </div>
       )}
 
-      {/* ============ GYM TAB ============ */}
-      {activeTab === 'gym' && (
-        <div className="space-y-4">
-          {/* Stats Row */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="glow-card p-3 text-center">
-              <Dumbbell size={16} className="text-emerald-400 mx-auto mb-1" />
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Sessions</p>
-              <p className="text-lg font-bold text-white">{gymStats.totalSessions}</p>
-            </div>
-            <div className="glow-card p-3 text-center">
-              <Zap size={16} className="text-amber-400 mx-auto mb-1" />
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">This Week</p>
-              <p className="text-lg font-bold text-amber-400">{gymStats.thisWeek}</p>
-            </div>
-            <div className="glow-card p-3 text-center">
-              <Target size={16} className="text-cyan-400 mx-auto mb-1" />
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Total Vol</p>
-              <p className="text-lg font-bold text-cyan-400">{gymStats.totalVolume > 1000 ? `${(gymStats.totalVolume / 1000).toFixed(1)}t` : `${gymStats.totalVolume}kg`}</p>
-            </div>
-          </div>
-
-          {/* Error banner */}
-          {gymError && (
-            <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-start justify-between gap-3">
-              <p className="text-xs text-red-300 leading-relaxed">{gymError}</p>
-              <button
-                onClick={() => setGymError(null)}
-                className="text-red-400/70 hover:text-red-300 text-xs font-bold flex-shrink-0"
-              >
-                Dismiss
-              </button>
-            </div>
-          )}
-
-          {/* Active Session or Start Button */}
+      {/* ============ WORKOUT TAB (Combined Gym & Matches) ============ */}
+      {activeTab === 'workout' && (
+        <div className="space-y-6">
+          
+          {/* Active Gym Session (if any) */}
           {activeSession ? (
-            <div className="p-4 rounded-3xl bg-gradient-to-br from-emerald-900/30 to-slate-900/50 border border-emerald-500/30 space-y-4 shadow-xl">
+            <div className="p-4 rounded-3xl bg-gradient-to-br from-emerald-900/30 to-slate-900/50 border border-emerald-500/30 space-y-4 shadow-xl mb-4">
               {/* Session Header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1192,145 +1151,234 @@ export default function SportsPage() {
                 </button>
               </div>
             </div>
-          ) : (
-            <button
-              onClick={startSession}
-              disabled={sessionStarting}
-              className="w-full py-5 rounded-3xl bg-gradient-to-r from-emerald-600/40 to-cyan-600/30 hover:from-emerald-600/50 hover:to-cyan-600/40 border border-emerald-400/40 hover:border-emerald-400/60 shadow-[0_0_30px_rgba(16,185,129,0.15)] hover:shadow-[0_0_40px_rgba(16,185,129,0.25)] text-white text-base font-extrabold flex items-center justify-center gap-3 transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Play size={22} className="text-emerald-400" />
-              {sessionStarting ? 'Starting…' : 'Start Gym Session'}
-            </button>
+          ) : null}
+
+          {/* Monthly Calendar View */}
+          <div className="glow-card p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Activity Calendar</h3>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Gym</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Sport</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-7 gap-1">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-wider py-1">
+                  {day}
+                </div>
+              ))}
+              {(() => {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = today.getMonth();
+                const firstDay = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                
+                // Track activity dates for the current month
+                const gymDates = new Set(
+                  gymSessions
+                    .filter(s => s.ended_at && new Date(s.started_at).getMonth() === month && new Date(s.started_at).getFullYear() === year)
+                    .map(s => new Date(s.started_at).getDate())
+                );
+                const sportDates = new Set(
+                  sportActivities
+                    .filter(s => new Date(s.activity_date).getMonth() === month && new Date(s.activity_date).getFullYear() === year)
+                    .map(s => new Date(s.activity_date).getDate())
+                );
+
+                const days = [];
+                // Padding for previous month
+                for (let i = 0; i < firstDay; i++) {
+                  days.push(<div key={`empty-${i}`} className="aspect-square opacity-20 bg-slate-900/50 rounded-lg"></div>);
+                }
+                
+                for (let d = 1; d <= daysInMonth; d++) {
+                  const hasGym = gymDates.has(d);
+                  const hasSport = sportDates.has(d);
+                  const isToday = today.getDate() === d;
+                  
+                  let bgClass = "bg-white/[0.02] border-white/5 text-slate-400";
+                  let dotClass = "";
+                  
+                  if (hasGym && hasSport) {
+                    bgClass = "bg-gradient-to-br from-blue-500/20 to-emerald-500/20 border-blue-500/30 text-white font-bold ring-1 ring-blue-500/50";
+                    dotClass = "bg-gradient-to-r from-blue-400 to-emerald-400";
+                  } else if (hasGym) {
+                    bgClass = "bg-blue-500/20 border border-blue-500/30 text-blue-100 font-bold shadow-[inset_0_0_10px_rgba(59,130,246,0.1)]";
+                    dotClass = "bg-blue-400 shadow-[0_0_5px_rgba(59,130,246,0.6)]";
+                  } else if (hasSport) {
+                    bgClass = "bg-emerald-500/20 border border-emerald-500/30 text-emerald-100 font-bold shadow-[inset_0_0_10px_rgba(16,185,129,0.1)]";
+                    dotClass = "bg-emerald-400 shadow-[0_0_5px_rgba(16,185,129,0.6)]";
+                  }
+
+                  days.push(
+                    <div key={`day-${d}`} className={`aspect-square rounded-lg flex flex-col items-center justify-center relative transition-all ${bgClass} ${isToday ? 'ring-2 ring-cyan-500/50' : ''}`}>
+                      <span className="text-xs">{d}</span>
+                      {(hasGym || hasSport) && (
+                        <div className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${dotClass}`}></div>
+                      )}
+                    </div>
+                  );
+                }
+                return days;
+              })()}
+            </div>
+          </div>
+
+          {/* Start Sport Actions */}
+          {!activeSession && (
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={startSession}
+                disabled={sessionStarting}
+                className="py-4 rounded-3xl bg-gradient-to-br from-blue-600/40 to-blue-900/30 hover:from-blue-500/50 hover:to-blue-800/40 border border-blue-400/40 shadow-[0_0_20px_rgba(59,130,246,0.1)] text-white font-bold flex flex-col items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              >
+                <Dumbbell size={24} className="text-blue-400" />
+                <span className="text-sm">Start Gym</span>
+              </button>
+              <button
+                onClick={openCreateSport}
+                className="py-4 rounded-3xl bg-gradient-to-br from-emerald-600/40 to-emerald-900/30 hover:from-emerald-500/50 hover:to-emerald-800/40 border border-emerald-400/40 shadow-[0_0_20px_rgba(16,185,129,0.1)] text-white font-bold flex flex-col items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              >
+                <Trophy size={24} className="text-emerald-400" />
+                <span className="text-sm">Log Match</span>
+              </button>
+            </div>
           )}
 
-          {/* Session History */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">Session History</h3>
-            {gymLoading ? (
-              <SkeletonList count={3} />
-            ) : gymSessions.filter(s => s.ended_at).length === 0 ? (
-              <p className="text-xs text-slate-500 italic px-1 py-4">No completed sessions yet. Hit &quot;Start&quot; to begin! 💪</p>
-            ) : (
-              gymSessions.filter(s => s.ended_at).map(session => (
-                <div key={session.id} className="glass-card overflow-hidden">
-                  <div
-                    className="p-3 flex items-center justify-between cursor-pointer"
-                    onClick={() => toggleExpandSession(session.id)}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                        <Dumbbell size={18} className="text-emerald-400" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-white">
-                          {new Date(session.started_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                            <Clock size={10} /> {session.duration_minutes}m
-                          </span>
-                          {session.notes && (
-                            <span className="text-[10px] text-slate-500 truncate max-w-[120px]">{session.notes}</span>
-                          )}
+          {/* Unified Activity Log */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">Recent Activity</h3>
+            {(() => {
+              // Combine and sort
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const combined: any[] = [];
+              gymSessions.filter(s => s.ended_at).forEach(s => {
+                combined.push({
+                  type: 'gym',
+                  date: new Date(s.started_at),
+                  data: s
+                });
+              });
+              sportActivities.forEach(s => {
+                combined.push({
+                  type: 'sport',
+                  date: new Date(s.activity_date),
+                  data: s
+                });
+              });
+              combined.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+              if (combined.length === 0 && !gymLoading && !sportLoading) {
+                return (
+                  <EmptyState
+                    icon={Activity}
+                    title="No workouts yet"
+                    description="Start a gym session or log a sport match."
+                  />
+                );
+              }
+
+              if (gymLoading || sportLoading) {
+                return <SkeletonList count={3} />;
+              }
+
+              return combined.map(item => {
+                if (item.type === 'gym') {
+                  const session = item.data;
+                  return (
+                    <div key={`gym-${session.id}`} className="glass-card overflow-hidden">
+                      <div
+                        className="p-3 flex items-center justify-between cursor-pointer"
+                        onClick={() => toggleExpandSession(session.id)}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                            <Dumbbell size={18} className="text-blue-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-white">
+                              Gym Session
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                <Calendar size={10} /> {new Date(session.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                              <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                <Clock size={10} /> {session.duration_minutes}m
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {expandedSession === session.id ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deleteSession(session.id); }}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </div>
+                      {expandedSession === session.id && (
+                        <div className="px-3 pb-3 pt-1 border-t border-white/5 space-y-1.5 bg-white/[0.01]">
+                          {expandedExercises.length === 0 ? (
+                            <p className="text-xs text-slate-500 italic">No exercises logged.</p>
+                          ) : expandedExercises.map((ex, i) => (
+                            <div key={ex.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-white/[0.02]">
+                              <span className="text-[10px] font-bold text-slate-500 w-4">{i + 1}</span>
+                              <span className="text-xs font-semibold text-white flex-1 truncate">{ex.exercise_name}</span>
+                              <span className="text-[11px] font-mono text-blue-400">{ex.sets}×{ex.reps} @ {ex.weight_kg}kg</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {expandedSession === session.id ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                  );
+                } else {
+                  const s = item.data;
+                  return (
+                    <div key={`sport-${s.id}`} className="glass-card p-3 flex items-start gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        s.is_win === true ? 'bg-emerald-500/10' : s.is_win === false ? 'bg-red-500/10' : 'bg-white/5'
+                      }`}>
+                        {s.is_win === true ? <Trophy size={18} className="text-emerald-400" /> : s.is_win === false ? <Target size={18} className="text-red-400" /> : <Trophy size={18} className="text-slate-500" />}
+                      </div>
+                      <div className="flex-1 min-w-0" onClick={() => openEditSport(s)}>
+                        <p className="text-sm font-bold text-white truncate cursor-pointer hover:text-emerald-400 transition-colors">{s.title}</p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <Badge variant="accent" size="sm">{s.sport_type}</Badge>
+                          {s.result && <Badge variant={s.is_win ? 'success' : 'danger'} size="sm">{s.result}</Badge>}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1.5 text-[10px] text-slate-400">
+                          <span className="flex items-center gap-1"><Calendar size={10} /> {new Date(s.activity_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                          {s.venue && <span className="flex items-center gap-1"><MapPin size={10} /> {s.venue}</span>}
+                          {s.opponent && <span className="flex items-center gap-1"><Users size={10} /> {s.opponent}</span>}
+                        </div>
+                      </div>
                       <button
-                        onClick={(e) => { e.stopPropagation(); deleteSession(session.id); }}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        onClick={() => deleteSport(s.id)}
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0"
                       >
                         <Trash2 size={14} />
                       </button>
                     </div>
-                  </div>
-                  {expandedSession === session.id && (
-                    <div className="px-3 pb-3 pt-1 border-t border-white/5 space-y-1.5">
-                      {expandedExercises.length === 0 ? (
-                        <p className="text-xs text-slate-500 italic">No exercises logged.</p>
-                      ) : expandedExercises.map((ex, i) => (
-                        <div key={ex.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-white/[0.02]">
-                          <span className="text-[10px] font-bold text-slate-500 w-4">{i + 1}</span>
-                          <span className="text-xs font-semibold text-white flex-1 truncate">{ex.exercise_name}</span>
-                          <span className="text-[11px] font-mono text-emerald-400">{ex.sets}×{ex.reps} @ {ex.weight_kg}kg</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
+                  );
+                }
+              });
+            })()}
           </div>
         </div>
       )}
 
-      {/* ============ MATCHES TAB ============ */}
-      {activeTab === 'matches' && (
-        <div className="space-y-3">
-          {/* Stats Row */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="glow-card p-3 text-center">
-              <Target size={16} className="text-blue-400 mx-auto mb-1" />
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Matches</p>
-              <p className="text-lg font-bold text-white">{sportStats.total}</p>
-            </div>
-            <div className="glow-card p-3 text-center">
-              <Trophy size={16} className="text-emerald-400 mx-auto mb-1" />
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Wins</p>
-              <p className="text-lg font-bold text-emerald-400">{sportStats.wins}</p>
-            </div>
-            <div className="glow-card p-3 text-center">
-              <Zap size={16} className="text-amber-400 mx-auto mb-1" />
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Win Rate</p>
-              <p className="text-lg font-bold text-amber-400">{sportStats.winRate}%</p>
-            </div>
-          </div>
-
-          {sportLoading ? (
-            <SkeletonList count={4} />
-          ) : sportActivities.length === 0 ? (
-            <EmptyState
-              icon={Trophy}
-              title="No sport activities"
-              description="Log your matches, scores, and court bookings."
-              actionLabel="Add Match"
-              onAction={openCreateSport}
-            />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {sportActivities.map((s) => (
-                <div key={s.id} className="glass-card p-4 flex items-start gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    s.is_win === true ? 'bg-emerald-500/10' : s.is_win === false ? 'bg-red-500/10' : 'bg-white/5'
-                  }`}>
-                    {s.is_win === true ? <Trophy size={18} className="text-emerald-400" /> : s.is_win === false ? <Target size={18} className="text-red-400" /> : <Trophy size={18} className="text-slate-500" />}
-                  </div>
-                  <div className="flex-1 min-w-0" onClick={() => openEditSport(s)}>
-                    <p className="text-sm font-bold text-white truncate">{s.title}</p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <Badge variant="accent" size="sm">{s.sport_type}</Badge>
-                      {s.result && <Badge variant={s.is_win ? 'success' : 'danger'} size="sm">{s.result}</Badge>}
-                    </div>
-                    <div className="flex items-center gap-3 mt-1 text-[10px] text-slate-400">
-                      <span className="flex items-center gap-1"><Calendar size={10} /> {new Date(s.activity_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                      {s.venue && <span className="flex items-center gap-1"><MapPin size={10} /> {s.venue}</span>}
-                      {s.opponent && <span className="flex items-center gap-1"><Users size={10} /> {s.opponent}</span>}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => deleteSport(s.id)}
-                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <Pagination currentPage={sportPage} totalPages={sportPages} onPageChange={setSportPage} />
-        </div>
-      )}
 
       {/* ============ LIBRARY TAB ============ */}
       {activeTab === 'library' && (
