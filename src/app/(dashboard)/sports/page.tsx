@@ -27,7 +27,7 @@ const formatDuration = (seconds: number) => {
 
 export default function SportsPage() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'matches' | 'gym' | 'library'>('dashboard');
-  const [dashboardTab, setDashboardTab] = useState<'body' | 'performance'>('body');
+  const [dashboardTab, setDashboardTab] = useState<'body' | 'performance' | 'strength'>('body');
 
   // === DASHBOARD / BODY MEASUREMENTS STATE ===
   const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurement[]>([]);
@@ -602,6 +602,12 @@ export default function SportsPage() {
               Body Composition
             </button>
             <button 
+              onClick={() => setDashboardTab('strength')} 
+              className={`text-sm font-bold pb-2 border-b-2 transition-colors ${dashboardTab === 'strength' ? 'border-cyan-400 text-cyan-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+            >
+              Muscle Strength
+            </button>
+            <button 
               onClick={() => setDashboardTab('performance')} 
               className={`text-sm font-bold pb-2 border-b-2 transition-colors ${dashboardTab === 'performance' ? 'border-indigo-400 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
             >
@@ -805,6 +811,123 @@ export default function SportsPage() {
                   </div>
                 </div>
 
+              </div>
+
+            </div>
+          ) : dashboardTab === 'strength' ? (
+            // MUSCLE STRENGTH UI
+            <div className="mt-4 space-y-6 animate-fade-in">
+              <div className="relative w-full rounded-3xl bg-gradient-to-b from-[#061022] to-[#040a15] overflow-hidden border border-cyan-500/20 shadow-[0_0_30px_rgba(34,211,238,0.15)]">
+                
+                {/* Score Header */}
+                <div className="relative z-20 text-center pt-8 pb-4">
+                  <h2 className="text-[10px] text-cyan-300 tracking-widest uppercase">Overall Strength Indicator</h2>
+                  <div className="text-4xl font-bold text-white tracking-tighter mt-1 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">82 <span className="text-sm text-cyan-400 font-normal italic">%</span></div>
+                </div>
+
+                {/* Central Diagram Area */}
+                <div className="relative w-full min-h-[600px] flex justify-between items-center px-4 pb-8">
+                  
+                  {/* Glowing Anatomy Background */}
+                  <div className="absolute inset-0 flex justify-center items-center z-0">
+                    <div className="relative w-full h-full flex justify-center items-center">
+                      <div className="absolute inset-0 bg-cyan-500/10 mix-blend-overlay"></div>
+                      <img src="/anatomy-bg.jpg" alt="Sci-Fi Anatomy" className="h-[650px] object-cover opacity-80 mix-blend-screen filter contrast-125 drop-shadow-[0_0_20px_rgba(34,211,238,0.4)]" style={{ filter: 'hue-rotate(-15deg) contrast(1.2)' }} />
+                    </div>
+                  </div>
+
+                  {/* Connection Lines (SVG) overlay */}
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" style={{ overflow: 'visible' }}>
+                    {/* Left lines */}
+                    <line x1="28%" y1="18%" x2="48%" y2="22%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
+                    <line x1="28%" y1="38%" x2="40%" y2="40%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
+                    <line x1="28%" y1="58%" x2="48%" y2="48%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
+                    <line x1="28%" y1="78%" x2="45%" y2="65%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
+                    {/* Right lines */}
+                    <line x1="72%" y1="18%" x2="52%" y2="22%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
+                    <line x1="72%" y1="38%" x2="55%" y2="25%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
+                    <line x1="72%" y1="58%" x2="60%" y2="40%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
+                    <line x1="72%" y1="78%" x2="55%" y2="85%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
+                  </svg>
+
+                  {/* LEFT COLUMN: Muscle Groups */}
+                  <div className="w-[110px] sm:w-[130px] flex flex-col gap-10 z-20">
+                    <div className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Pectoralis Major</h4>
+                      <div className="space-y-1.5">
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[85%]"></div></div>
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-600 w-[60%]"></div></div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Biceps Brachii</h4>
+                      <div className="space-y-1.5">
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[70%]"></div></div>
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-600 w-[55%]"></div></div>
+                      </div>
+                    </div>
+
+                    <div className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Rectus Abdominis</h4>
+                      <div className="space-y-1.5">
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[45%]"></div></div>
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-600 w-[30%]"></div></div>
+                      </div>
+                    </div>
+
+                    <div className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Quadriceps Femoris</h4>
+                      <div className="space-y-1.5">
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[90%]"></div></div>
+                        <div className="h-1 bg-cyan-900 rounded-full overflow-hidden"><div className="h-full bg-cyan-600 w-[75%]"></div></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RIGHT COLUMN: Muscle Groups */}
+                  <div className="w-[110px] sm:w-[130px] flex flex-col gap-10 z-20">
+                    <div className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Latissimus Dorsi</h4>
+                      <div className="space-y-1.5">
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[80%]"></div></div>
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-600 w-[65%]"></div></div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Deltoids</h4>
+                      <div className="space-y-1.5">
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[75%]"></div></div>
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-600 w-[60%]"></div></div>
+                      </div>
+                    </div>
+
+                    <div className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Triceps Brachii</h4>
+                      <div className="space-y-1.5">
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[85%]"></div></div>
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-600 w-[70%]"></div></div>
+                      </div>
+                    </div>
+
+                    <div className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Gastrocnemius</h4>
+                      <div className="space-y-1.5">
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[60%]"></div></div>
+                        <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-600 w-[45%]"></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
             </div>
