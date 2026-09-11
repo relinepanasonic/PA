@@ -623,86 +623,91 @@ export default function SportsPage() {
             // SCI-FI BODY COMPOSITION UI
             <div className="mt-4 space-y-6">
               
-              {/* TOP SECTION: Segmental Anatomy */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-6">
+              {/* TOP SECTION: Segmental Anatomy Diagram (Unified Mobile-first layout) */}
+              <div className="relative w-full rounded-3xl bg-gradient-to-b from-[#061022] to-[#040a15] overflow-hidden border border-blue-500/20 shadow-[0_0_30px_rgba(37,99,235,0.15)]">
                 
-                {/* LEFT COLUMN: Right Side Body Parts */}
-                <div className="md:col-span-3 space-y-4 flex flex-col justify-center">
-                  <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-950/20 backdrop-blur-md relative overflow-hidden group">
-                    <h3 className="text-xs font-bold text-indigo-300 mb-2">Right Arm</h3>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={12}/> {bodyMeasurements[bodyMeasurements.length-1].right_arm_muscle}kg</span>
-                      <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={12}/> {bodyMeasurements[bodyMeasurements.length-1].right_arm_fat}kg</span>
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-950/20 backdrop-blur-md relative overflow-hidden group">
-                    <h3 className="text-xs font-bold text-indigo-300 mb-2">Torso</h3>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={12}/> {bodyMeasurements[bodyMeasurements.length-1].torso_muscle}kg</span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-950/20 backdrop-blur-md relative overflow-hidden group">
-                    <h3 className="text-xs font-bold text-indigo-300 mb-2">Right Leg</h3>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={12}/> {bodyMeasurements[bodyMeasurements.length-1].right_leg_muscle}kg</span>
-                      <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={12}/> {bodyMeasurements[bodyMeasurements.length-1].right_leg_fat}kg</span>
-                    </div>
-                  </div>
+                {/* Score Header */}
+                <div className="relative z-20 text-center pt-8 pb-4">
+                  <h2 className="text-[10px] text-blue-300 tracking-widest uppercase">Body Composition Metric Score</h2>
+                  <div className="text-4xl font-bold text-white tracking-tighter mt-1 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">{bodyMeasurements[bodyMeasurements.length-1].score_bcm} <span className="text-sm text-blue-400 font-normal italic">BCM</span></div>
                 </div>
 
-                {/* CENTER COLUMN: Human Anatomy Diagram */}
-                <div className="md:col-span-6 relative flex flex-col items-center justify-center min-h-[400px] rounded-2xl border border-blue-500/10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-slate-900/40 to-slate-900/80 p-6 overflow-hidden">
-                  <div className="absolute top-4 text-center">
-                    <h2 className="text-[10px] text-blue-300 tracking-widest uppercase">Body Composition Metric Score</h2>
-                    <div className="text-4xl font-bold text-white tracking-tighter mt-1">{bodyMeasurements[bodyMeasurements.length-1].score_bcm} <span className="text-sm text-blue-400 font-normal italic">BCM</span></div>
-                  </div>
+                {/* Central Diagram Area */}
+                <div className="relative w-full h-[450px] flex justify-between items-center px-4 pb-8">
                   
-                  {/* Glowing Silhouette */}
-                  <div className="relative w-full h-[300px] mt-16 flex items-center justify-center opacity-80 mix-blend-screen drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-                    <svg viewBox="0 0 100 250" className="h-full text-blue-500/40 fill-current stroke-blue-300/30 stroke-1">
-                      <path d="M50 5 C45 5 40 10 40 17 C40 23 45 28 50 28 C55 28 60 23 60 17 C60 10 55 5 50 5 Z M35 32 C25 32 15 38 12 48 L5 110 L15 110 L25 60 L30 110 L30 240 L45 240 L45 130 L55 130 L55 240 L70 240 L70 110 L75 60 L85 110 L95 110 L88 48 C85 38 75 32 65 32 Z" />
-                    </svg>
+                  {/* Glowing Anatomy Background */}
+                  <div className="absolute inset-0 flex justify-center items-center z-0">
+                    <div className="relative w-full h-full flex justify-center items-center">
+                      <div className="absolute inset-0 bg-blue-500/10 mix-blend-overlay"></div>
+                      <img src="/anatomy-bg.jpg" alt="Sci-Fi Anatomy" className="h-[480px] object-cover opacity-80 mix-blend-screen filter contrast-125 drop-shadow-[0_0_20px_rgba(59,130,246,0.4)]" />
+                    </div>
+                  </div>
+
+                  {/* Connection Lines (SVG) overlay */}
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" style={{ overflow: 'visible' }}>
+                    {/* Left lines */}
+                    <line x1="28%" y1="20%" x2="42%" y2="28%" stroke="rgba(99,102,241,0.6)" strokeWidth="1.5" />
+                    <line x1="28%" y1="50%" x2="48%" y2="50%" stroke="rgba(99,102,241,0.6)" strokeWidth="1.5" />
+                    <line x1="28%" y1="80%" x2="45%" y2="65%" stroke="rgba(99,102,241,0.6)" strokeWidth="1.5" />
+                    {/* Right lines */}
+                    <line x1="72%" y1="20%" x2="58%" y2="28%" stroke="rgba(99,102,241,0.6)" strokeWidth="1.5" />
+                    <line x1="72%" y1="50%" x2="52%" y2="50%" stroke="rgba(99,102,241,0.6)" strokeWidth="1.5" />
+                    <line x1="72%" y1="80%" x2="55%" y2="65%" stroke="rgba(99,102,241,0.6)" strokeWidth="1.5" />
+                  </svg>
+
+                  {/* LEFT COLUMN: Right Side Body Parts */}
+                  <div className="w-[110px] sm:w-[130px] flex flex-col gap-12 z-20">
+                    <div className="p-2 sm:p-3 rounded-xl border border-indigo-500/40 bg-[#0a1526]/80 backdrop-blur-md shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                      <h3 className="text-[10px] sm:text-xs font-bold text-indigo-300 mb-1">Right Arm</h3>
+                      <div className="flex flex-col gap-1 text-xs">
+                        <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={10}/> {bodyMeasurements[bodyMeasurements.length-1].right_arm_muscle}kg</span>
+                        <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={10}/> {bodyMeasurements[bodyMeasurements.length-1].right_arm_fat}kg</span>
+                      </div>
+                    </div>
                     
-                    {/* Connection Lines & Nodes */}
-                    <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: 'visible' }}>
-                      <line x1="20%" y1="25%" x2="0" y2="15%" stroke="rgba(99,102,241,0.5)" strokeWidth="1" strokeDasharray="2 2" />
-                      <line x1="80%" y1="25%" x2="100%" y2="15%" stroke="rgba(99,102,241,0.5)" strokeWidth="1" strokeDasharray="2 2" />
-                      <line x1="30%" y1="45%" x2="0" y2="50%" stroke="rgba(99,102,241,0.5)" strokeWidth="1" strokeDasharray="2 2" />
-                      <line x1="70%" y1="45%" x2="100%" y2="50%" stroke="rgba(99,102,241,0.5)" strokeWidth="1" strokeDasharray="2 2" />
-                      <line x1="35%" y1="70%" x2="0" y2="85%" stroke="rgba(99,102,241,0.5)" strokeWidth="1" strokeDasharray="2 2" />
-                      <line x1="65%" y1="70%" x2="100%" y2="85%" stroke="rgba(99,102,241,0.5)" strokeWidth="1" strokeDasharray="2 2" />
-                    </svg>
+                    <div className="p-2 sm:p-3 rounded-xl border border-indigo-500/40 bg-[#0a1526]/80 backdrop-blur-md shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                      <h3 className="text-[10px] sm:text-xs font-bold text-indigo-300 mb-1">Torso</h3>
+                      <div className="flex flex-col gap-1 text-xs">
+                        <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={10}/> {bodyMeasurements[bodyMeasurements.length-1].torso_muscle}kg</span>
+                      </div>
+                    </div>
+
+                    <div className="p-2 sm:p-3 rounded-xl border border-indigo-500/40 bg-[#0a1526]/80 backdrop-blur-md shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                      <h3 className="text-[10px] sm:text-xs font-bold text-indigo-300 mb-1">Right Leg</h3>
+                      <div className="flex flex-col gap-1 text-xs">
+                        <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={10}/> {bodyMeasurements[bodyMeasurements.length-1].right_leg_muscle}kg</span>
+                        <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={10}/> {bodyMeasurements[bodyMeasurements.length-1].right_leg_fat}kg</span>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* RIGHT COLUMN: Left Side Body Parts */}
+                  <div className="w-[110px] sm:w-[130px] flex flex-col gap-12 z-20">
+                    <div className="p-2 sm:p-3 rounded-xl border border-indigo-500/40 bg-[#0a1526]/80 backdrop-blur-md shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                      <h3 className="text-[10px] sm:text-xs font-bold text-indigo-300 mb-1">Left Arm</h3>
+                      <div className="flex flex-col gap-1 text-xs">
+                        <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={10}/> {bodyMeasurements[bodyMeasurements.length-1].left_arm_muscle}kg</span>
+                        <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={10}/> {bodyMeasurements[bodyMeasurements.length-1].left_arm_fat}kg</span>
+                      </div>
+                    </div>
+                    
+                    <div className="p-2 sm:p-3 rounded-xl border border-indigo-500/40 bg-[#0a1526]/80 backdrop-blur-md shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                      <h3 className="text-[10px] sm:text-xs font-bold text-indigo-300 mb-1">Torso</h3>
+                      <div className="flex flex-col gap-1 text-xs">
+                        <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={10}/> {bodyMeasurements[bodyMeasurements.length-1].torso_fat}kg</span>
+                      </div>
+                    </div>
+
+                    <div className="p-2 sm:p-3 rounded-xl border border-indigo-500/40 bg-[#0a1526]/80 backdrop-blur-md shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                      <h3 className="text-[10px] sm:text-xs font-bold text-indigo-300 mb-1">Left Leg</h3>
+                      <div className="flex flex-col gap-1 text-xs">
+                        <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={10}/> {bodyMeasurements[bodyMeasurements.length-1].left_leg_muscle}kg</span>
+                        <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={10}/> {bodyMeasurements[bodyMeasurements.length-1].left_leg_fat}kg</span>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
-
-                {/* RIGHT COLUMN: Left Side Body Parts */}
-                <div className="md:col-span-3 space-y-4 flex flex-col justify-center">
-                  <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-950/20 backdrop-blur-md relative overflow-hidden group">
-                    <h3 className="text-xs font-bold text-indigo-300 mb-2">Left Arm</h3>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={12}/> {bodyMeasurements[bodyMeasurements.length-1].left_arm_muscle}kg</span>
-                      <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={12}/> {bodyMeasurements[bodyMeasurements.length-1].left_arm_fat}kg</span>
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-950/20 backdrop-blur-md relative overflow-hidden group">
-                    <h3 className="text-xs font-bold text-indigo-300 mb-2">Torso</h3>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={12}/> {bodyMeasurements[bodyMeasurements.length-1].torso_fat}kg</span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-950/20 backdrop-blur-md relative overflow-hidden group">
-                    <h3 className="text-xs font-bold text-indigo-300 mb-2">Left Leg</h3>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1 text-blue-400 font-bold"><Dumbbell size={12}/> {bodyMeasurements[bodyMeasurements.length-1].left_leg_muscle}kg</span>
-                      <span className="flex items-center gap-1 text-amber-500 font-bold"><Zap size={12}/> {bodyMeasurements[bodyMeasurements.length-1].left_leg_fat}kg</span>
-                    </div>
-                  </div>
-                </div>
-
               </div>
 
               {/* BOTTOM SECTION: Progress Bars & Stats */}
