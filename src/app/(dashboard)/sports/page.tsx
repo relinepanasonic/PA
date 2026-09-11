@@ -27,6 +27,7 @@ const formatDuration = (seconds: number) => {
 
 export default function SportsPage() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'matches' | 'gym' | 'library'>('dashboard');
+  const [dashboardTab, setDashboardTab] = useState<'body' | 'performance'>('body');
 
   // === DASHBOARD / BODY MEASUREMENTS STATE ===
   const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurement[]>([]);
@@ -567,7 +568,7 @@ export default function SportsPage() {
       {activeTab === 'dashboard' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2"><Scale size={16} className="text-indigo-400"/> Body Composition</h2>
+            <h2 className="text-sm font-bold text-white flex items-center gap-2"><Scale size={16} className="text-indigo-400"/> Dashboard</h2>
             <Button size="sm" onClick={() => {
               setBDate(new Date().toISOString().split('T')[0]);
               setBWeight(''); setBSkeletalMuscle(''); setBFatMass(''); setBBodyWater('');
@@ -576,6 +577,21 @@ export default function SportsPage() {
             }}>
               <Plus size={14} /> Log Data
             </Button>
+          </div>
+
+          <div className="flex gap-4 border-b border-white/10 pb-0">
+            <button 
+              onClick={() => setDashboardTab('body')} 
+              className={`text-sm font-bold pb-2 border-b-2 transition-colors ${dashboardTab === 'body' ? 'border-cyan-400 text-cyan-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+            >
+              Body Composition
+            </button>
+            <button 
+              onClick={() => setDashboardTab('performance')} 
+              className={`text-sm font-bold pb-2 border-b-2 transition-colors ${dashboardTab === 'performance' ? 'border-indigo-400 text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+            >
+              Table Performance
+            </button>
           </div>
 
           {bodyLoading ? (
@@ -588,8 +604,133 @@ export default function SportsPage() {
               actionLabel={bodySaving ? "Importing..." : "Import FTL GYM Baseline (Sep 7)"}
               onAction={importBaseline}
             />
+          ) : dashboardTab === 'body' ? (
+            // SCI-FI BODY COMPOSITION UI
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-6 mt-4">
+              
+              {/* LEFT COLUMN */}
+              <div className="md:col-span-3 space-y-4 flex flex-col justify-between">
+                
+                {/* Muscle Box */}
+                <div className="p-4 rounded-xl border border-cyan-500/20 bg-cyan-950/10 backdrop-blur-md relative overflow-hidden group">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+                  <h3 className="text-[9px] font-bold text-cyan-400 tracking-widest uppercase mb-1">Total Skeletal Muscle</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-light text-white font-mono tracking-tight">{bodyMeasurements[bodyMeasurements.length-1].skeletal_muscle_kg}</span>
+                    <span className="text-xs text-cyan-500 font-bold">KG</span>
+                  </div>
+                  <div className="w-full h-1 bg-white/5 rounded-full mt-3 overflow-hidden">
+                    <div className="h-full bg-cyan-400 w-[60%] shadow-[0_0_8px_rgba(34,211,238,0.5)]"></div>
+                  </div>
+                </div>
+
+                {/* Body Water Box */}
+                <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-950/10 backdrop-blur-md relative overflow-hidden group">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.8)]"></div>
+                  <h3 className="text-[9px] font-bold text-blue-400 tracking-widest uppercase mb-1">Body Water</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-light text-white font-mono tracking-tight">{bodyMeasurements[bodyMeasurements.length-1].body_water_kg}</span>
+                    <span className="text-xs text-blue-500 font-bold">KG</span>
+                  </div>
+                  <div className="w-full h-1 bg-white/5 rounded-full mt-3 overflow-hidden">
+                    <div className="h-full bg-blue-400 w-[55%] shadow-[0_0_8px_rgba(96,165,250,0.5)]"></div>
+                  </div>
+                </div>
+
+                {/* Lean Mass Box */}
+                <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-950/10 backdrop-blur-md relative overflow-hidden group">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.8)]"></div>
+                  <h3 className="text-[9px] font-bold text-indigo-400 tracking-widest uppercase mb-1">Lean Body Mass</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-light text-white font-mono tracking-tight">{bodyMeasurements[bodyMeasurements.length-1].lean_body_mass_kg}</span>
+                    <span className="text-xs text-indigo-500 font-bold">KG</span>
+                  </div>
+                  <div className="w-full h-1 bg-white/5 rounded-full mt-3 overflow-hidden">
+                    <div className="h-full bg-indigo-400 w-[70%] shadow-[0_0_8px_rgba(129,140,248,0.5)]"></div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* CENTER COLUMN (Human Anatomy Diagram) */}
+              <div className="md:col-span-6 relative flex flex-col items-center justify-center min-h-[400px] rounded-2xl border border-cyan-500/10 bg-gradient-to-b from-slate-900/40 via-cyan-950/20 to-slate-900/40 p-6 overflow-hidden">
+                {/* Background scanning line effect */}
+                <div className="absolute inset-0 bg-[linear-gradient(transparent_0%,rgba(34,211,238,0.05)_50%,transparent_100%)] bg-[length:100%_4px] animate-[scan_4s_linear_infinite] pointer-events-none"></div>
+                
+                {/* SVG Silhouette placeholder for Human Body */}
+                <div className="relative w-full h-full flex items-center justify-center opacity-80 mix-blend-screen drop-shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+                  <svg viewBox="0 0 100 250" className="h-[350px] text-cyan-500/40 fill-current stroke-cyan-300/30 stroke-1">
+                    <path d="M50 5 C45 5 40 10 40 17 C40 23 45 28 50 28 C55 28 60 23 60 17 C60 10 55 5 50 5 Z M35 32 C25 32 15 38 12 48 L5 110 L15 110 L25 60 L30 110 L30 240 L45 240 L45 130 L55 130 L55 240 L70 240 L70 110 L75 60 L85 110 L95 110 L88 48 C85 38 75 32 65 32 Z" />
+                  </svg>
+
+                  {/* Nodes for segmental data mapping */}
+                  <div className="absolute top-[25%] left-[20%] flex flex-col items-end gap-0.5">
+                    <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_8px_#67e8f9] animate-pulse"></span>
+                    <span className="text-[8px] text-cyan-200 font-mono">R ARM: 3.4kg</span>
+                  </div>
+                  <div className="absolute top-[25%] right-[20%] flex flex-col items-start gap-0.5">
+                    <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_8px_#67e8f9] animate-pulse"></span>
+                    <span className="text-[8px] text-cyan-200 font-mono">L ARM: 3.4kg</span>
+                  </div>
+                  <div className="absolute top-[40%] left-[50%] -translate-x-1/2 flex flex-col items-center gap-0.5">
+                    <span className="w-3 h-3 rounded-full bg-blue-400 shadow-[0_0_12px_#60a5fa] animate-pulse"></span>
+                    <span className="text-[8px] text-blue-200 font-mono">TORSO: 27.0kg</span>
+                  </div>
+                  <div className="absolute top-[70%] left-[30%] flex flex-col items-end gap-0.5">
+                    <span className="w-2 h-2 rounded-full bg-indigo-300 shadow-[0_0_8px_#a5b4fc] animate-pulse"></span>
+                    <span className="text-[8px] text-indigo-200 font-mono">R LEG: 8.9kg</span>
+                  </div>
+                  <div className="absolute top-[70%] right-[30%] flex flex-col items-start gap-0.5">
+                    <span className="w-2 h-2 rounded-full bg-indigo-300 shadow-[0_0_8px_#a5b4fc] animate-pulse"></span>
+                    <span className="text-[8px] text-indigo-200 font-mono">L LEG: 9.1kg</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN */}
+              <div className="md:col-span-3 space-y-4 flex flex-col justify-between">
+                
+                {/* Fat Box */}
+                <div className="p-4 rounded-xl border border-red-500/20 bg-red-950/10 backdrop-blur-md relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-1 h-full bg-red-400 shadow-[0_0_10px_rgba(248,113,113,0.8)]"></div>
+                  <h3 className="text-[9px] font-bold text-red-400 tracking-widest uppercase mb-1 text-right">Fat Mass</h3>
+                  <div className="flex items-baseline gap-1 justify-end">
+                    <span className="text-3xl font-light text-white font-mono tracking-tight">{bodyMeasurements[bodyMeasurements.length-1].fat_mass_kg}</span>
+                    <span className="text-xs text-red-500 font-bold">KG</span>
+                  </div>
+                  <p className="text-[10px] text-red-300/60 text-right mt-1 font-mono">{bodyMeasurements[bodyMeasurements.length-1].fat_percentage}% BODY FAT</p>
+                </div>
+
+                {/* BMI Box */}
+                <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-950/10 backdrop-blur-md relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-1 h-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.8)]"></div>
+                  <h3 className="text-[9px] font-bold text-amber-400 tracking-widest uppercase mb-1 text-right">BMI</h3>
+                  <div className="flex items-baseline gap-1 justify-end">
+                    <span className="text-3xl font-light text-white font-mono tracking-tight">{bodyMeasurements[bodyMeasurements.length-1].bmi}</span>
+                  </div>
+                  <div className="w-full h-1 bg-white/5 rounded-full mt-3 overflow-hidden transform rotate-180">
+                    <div className="h-full bg-amber-400 w-[65%] shadow-[0_0_8px_rgba(251,191,36,0.5)]"></div>
+                  </div>
+                </div>
+
+                {/* Health Score Box */}
+                <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-950/10 backdrop-blur-md relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-1 h-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]"></div>
+                  <h3 className="text-[9px] font-bold text-emerald-400 tracking-widest uppercase mb-1 text-right">Health Score</h3>
+                  <div className="flex items-baseline gap-1 justify-end">
+                    <span className="text-3xl font-light text-white font-mono tracking-tight">{bodyMeasurements[bodyMeasurements.length-1].health_score}</span>
+                    <span className="text-xs text-emerald-500 font-bold">/100</span>
+                  </div>
+                  <div className="w-full h-1 bg-white/5 rounded-full mt-3 overflow-hidden transform rotate-180">
+                    <div className="h-full bg-emerald-400 w-[67%] shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
           ) : (
-            <div className="space-y-4">
+            // TABLE PERFORMANCE UI
+            <div className="space-y-4 mt-4 animate-fade-in">
               {/* Highlight Cards based on latest measurement */}
               {(() => {
                 const latest = bodyMeasurements[bodyMeasurements.length - 1];
@@ -617,7 +758,7 @@ export default function SportsPage() {
 
               {/* Chart */}
               <div className="glow-card p-4">
-                <h3 className="text-xs font-bold text-slate-300 mb-4 uppercase tracking-wider">Progress Trend</h3>
+                <h3 className="text-xs font-bold text-slate-300 mb-4 uppercase tracking-wider">Performance Over Time</h3>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={bodyMeasurements} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -654,6 +795,7 @@ export default function SportsPage() {
                         <th className="px-3 py-2">Weight</th>
                         <th className="px-3 py-2">Muscle</th>
                         <th className="px-3 py-2">Fat%</th>
+                        <th className="px-3 py-2">Score</th>
                         <th className="px-3 py-2 text-right">Action</th>
                       </tr>
                     </thead>
@@ -664,6 +806,7 @@ export default function SportsPage() {
                           <td className="px-3 py-2 font-mono">{bm.weight_kg}kg</td>
                           <td className="px-3 py-2 font-mono text-emerald-400">{bm.skeletal_muscle_kg}kg</td>
                           <td className="px-3 py-2 font-mono text-red-400">{bm.fat_percentage}%</td>
+                          <td className="px-3 py-2 font-mono text-indigo-400">{bm.health_score}</td>
                           <td className="px-3 py-2 text-right">
                             <button onClick={() => deleteBodyMeasurement(bm.id)} className="text-slate-500 hover:text-red-400 p-1">
                               <Trash2 size={12} />
