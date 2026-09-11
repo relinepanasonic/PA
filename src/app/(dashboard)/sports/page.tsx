@@ -868,15 +868,15 @@ export default function SportsPage() {
                   {/* Connection Lines (SVG) overlay */}
                   <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" style={{ overflow: 'visible' }}>
                     {/* Left lines */}
-                    <line x1="28%" y1="18%" x2="48%" y2="22%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
-                    <line x1="28%" y1="38%" x2="40%" y2="40%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
-                    <line x1="28%" y1="58%" x2="48%" y2="48%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
-                    <line x1="28%" y1="78%" x2="45%" y2="65%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
+                    <line x1="28%" y1="18%" x2="48%" y2="22%" stroke="rgba(239,68,68,0.7)" strokeWidth="1.5" />
+                    <line x1="28%" y1="38%" x2="40%" y2="40%" stroke="rgba(239,68,68,0.7)" strokeWidth="1.5" />
+                    <line x1="28%" y1="58%" x2="48%" y2="48%" stroke="rgba(239,68,68,0.7)" strokeWidth="1.5" />
+                    <line x1="28%" y1="78%" x2="45%" y2="65%" stroke="rgba(239,68,68,0.7)" strokeWidth="1.5" />
                     {/* Right lines */}
-                    <line x1="72%" y1="18%" x2="52%" y2="22%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
-                    <line x1="72%" y1="38%" x2="55%" y2="25%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
-                    <line x1="72%" y1="58%" x2="60%" y2="40%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
-                    <line x1="72%" y1="78%" x2="55%" y2="85%" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" />
+                    <line x1="72%" y1="18%" x2="52%" y2="22%" stroke="rgba(239,68,68,0.7)" strokeWidth="1.5" />
+                    <line x1="72%" y1="38%" x2="55%" y2="25%" stroke="rgba(239,68,68,0.7)" strokeWidth="1.5" />
+                    <line x1="72%" y1="58%" x2="60%" y2="40%" stroke="rgba(239,68,68,0.7)" strokeWidth="1.5" />
+                    <line x1="72%" y1="78%" x2="55%" y2="85%" stroke="rgba(239,68,68,0.7)" strokeWidth="1.5" />
                   </svg>
 
                   {/* LEFT COLUMN: Muscle Groups */}
@@ -885,7 +885,7 @@ export default function SportsPage() {
                       onClick={() => handleMuscleGroupClick('Pectoralis Major', 'Chest')}
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
-                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Chest</h3>
                       <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80">
                         <img src="/muscle-chest.jpg" alt="Chest Muscle" className="w-full h-full object-cover" />
                       </div>
@@ -900,7 +900,7 @@ export default function SportsPage() {
                       onClick={() => handleMuscleGroupClick('Biceps Brachii', 'Biceps')}
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
-                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Biceps</h3>
                       <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80">
                         <img src="/muscle-biceps.jpg" alt="Biceps Muscle" className="w-full h-full object-cover" />
                       </div>
@@ -915,7 +915,7 @@ export default function SportsPage() {
                       onClick={() => handleMuscleGroupClick('Rectus Abdominis', 'Core')}
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
-                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Core</h3>
                       <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center" style={{ backgroundPosition: '50% 35%' }}></div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Rectus Abdominis</h4>
                       <div className="space-y-1.5">
@@ -928,7 +928,7 @@ export default function SportsPage() {
                       onClick={() => handleMuscleGroupClick('Quadriceps Femoris', 'Quads')}
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
-                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Quads</h3>
                       <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center" style={{ backgroundPosition: '35% 65%' }}></div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Quadriceps Femoris</h4>
                       <div className="space-y-1.5">
@@ -944,7 +944,7 @@ export default function SportsPage() {
                       onClick={() => handleMuscleGroupClick('Latissimus Dorsi', 'Back')}
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
-                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Back</h3>
                       <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center" style={{ backgroundPosition: '50% 25%' }}></div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Latissimus Dorsi</h4>
                       <div className="space-y-1.5">
@@ -957,7 +957,7 @@ export default function SportsPage() {
                       onClick={() => handleMuscleGroupClick('Deltoids', 'Shoulders')}
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
-                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Shoulders</h3>
                       <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center" style={{ backgroundPosition: '20% 25%' }}></div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Deltoids</h4>
                       <div className="space-y-1.5">
@@ -970,7 +970,7 @@ export default function SportsPage() {
                       onClick={() => handleMuscleGroupClick('Triceps Brachii', 'Triceps')}
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
-                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Triceps</h3>
                       <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center" style={{ backgroundPosition: '15% 35%' }}></div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Triceps Brachii</h4>
                       <div className="space-y-1.5">
@@ -983,7 +983,7 @@ export default function SportsPage() {
                       onClick={() => handleMuscleGroupClick('Gastrocnemius', 'Calves')}
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
-                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Muscle Group</h3>
+                      <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Calves</h3>
                       <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center" style={{ backgroundPosition: '35% 85%' }}></div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Gastrocnemius</h4>
                       <div className="space-y-1.5">
