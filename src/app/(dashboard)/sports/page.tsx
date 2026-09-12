@@ -25,6 +25,66 @@ const formatDuration = (seconds: number) => {
   return `${m}m ${s.toString().padStart(2, '0')}s`;
 };
 
+
+const MUSCLE_HEADS: Record<string, {name: string, filter: string}[]> = {
+  Chest: [
+    {name: 'Clavicular Head (Upper)', filter: 'incline'},
+    {name: 'Sternal Head (Middle)', filter: 'flat'},
+    {name: 'Abdominal Head (Lower)', filter: 'decline'},
+    {name: 'Pectoralis Minor', filter: 'fly'},
+  ],
+  Back: [
+    {name: 'Latissimus Dorsi (Lats)', filter: 'pull'},
+    {name: 'Trapezius (Upper/Mid/Lower)', filter: 'shrug'},
+    {name: 'Rhomboids', filter: 'row'},
+    {name: 'Erector Spinae', filter: 'deadlift'},
+    {name: 'Teres Major/Minor', filter: 'pulldown'},
+  ],
+  Shoulders: [
+    {name: 'Anterior Delt (Front)', filter: 'front'},
+    {name: 'Lateral Delt (Side)', filter: 'lateral'},
+    {name: 'Posterior Delt (Rear)', filter: 'rear'},
+    {name: 'Rotator Cuff', filter: 'rotation'},
+  ],
+  Biceps: [
+    {name: 'Long Head (Peak)', filter: 'curl'},
+    {name: 'Short Head (Width)', filter: 'preacher'},
+    {name: 'Brachialis', filter: 'hammer'},
+  ],
+  Triceps: [
+    {name: 'Long Head', filter: 'overhead'},
+    {name: 'Lateral Head', filter: 'pushdown'},
+    {name: 'Medial Head', filter: 'extension'},
+  ],
+  Quads: [
+    {name: 'Rectus Femoris', filter: 'extension'},
+    {name: 'Vastus Lateralis', filter: 'hack'},
+    {name: 'Vastus Medialis', filter: 'press'},
+    {name: 'Vastus Intermedius', filter: 'squat'},
+  ],
+  Hamstrings: [
+    {name: 'Biceps Femoris', filter: 'curl'},
+    {name: 'Semitendinosus', filter: 'stiff'},
+    {name: 'Semimembranosus', filter: 'romanian'},
+  ],
+  Glutes: [
+    {name: 'Gluteus Maximus', filter: 'thrust'},
+    {name: 'Gluteus Medius', filter: 'abductor'},
+    {name: 'Gluteus Minimus', filter: 'kickback'},
+  ],
+  Calves: [
+    {name: 'Gastrocnemius', filter: 'standing'},
+    {name: 'Soleus', filter: 'seated'},
+    {name: 'Tibialis Anterior', filter: 'tibialis'},
+  ],
+  Core: [
+    {name: 'Rectus Abdominis', filter: 'crunch'},
+    {name: 'Obliques', filter: 'twist'},
+    {name: 'Transversus Abdominis', filter: 'plank'},
+    {name: 'Serratus Anterior', filter: 'pullover'},
+  ]
+};
+
 export default function SportsPage() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'workout' | 'library'>('dashboard');
   const [dashboardTab, setDashboardTab] = useState<'body' | 'performance' | 'strength'>('body');
@@ -71,6 +131,10 @@ export default function SportsPage() {
   const [gymSessions, setGymSessions] = useState<GymSession[]>([]);
   const [gymLoading, setGymLoading] = useState(true);
   const [activeSession, setActiveSession] = useState<GymSession | null>(null);
+  const [showTrainToday, setShowTrainToday] = useState(false);
+  const [trainTodayGroup, setTrainTodayGroup] = useState<string | null>(null);
+  const [trainTodayTab, setTrainTodayTab] = useState<'muscle' | 'library'>('muscle');
+  const [trainTodayFilter, setTrainTodayFilter] = useState('');
   const [sessionExercises, setSessionExercises] = useState<GymSessionExercise[]>([]);
   const [showGymModal, setShowGymModal] = useState(false);
   const [editingGym, setEditingGym] = useState<GymSession | null>(null);
@@ -1237,8 +1301,7 @@ export default function SportsPage() {
           {!activeSession && (
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={startSession}
-                disabled={sessionStarting}
+                onClick={() => { setTrainTodayGroup(null); setTrainTodayTab('muscle'); setTrainTodayFilter(''); setShowTrainToday(true); }}
                 className="py-4 rounded-3xl bg-gradient-to-br from-blue-600/40 to-blue-900/30 hover:from-blue-500/50 hover:to-blue-800/40 border border-blue-400/40 shadow-[0_0_20px_rgba(59,130,246,0.1)] text-white font-bold flex flex-col items-center justify-center gap-2 transition-all active:scale-[0.98]"
               >
                 <Dumbbell size={24} className="text-blue-400" />
@@ -1836,6 +1899,134 @@ export default function SportsPage() {
         )}
       </Modal>
 
-    </div>
+    
+      {/* TRAIN TODAY MODAL */}
+      <Modal
+        isOpen={showTrainToday}
+        onClose={() => setShowTrainToday(false)}
+        title={trainTodayGroup ? `${trainTodayGroup} Day` : 'Hi Nico, What do you train today?'}
+      >
+        {!trainTodayGroup ? (
+          <div className="space-y-4">
+            {/* Anatomy Map Preview */}
+            <div className="w-full h-48 bg-slate-900 rounded-2xl overflow-hidden relative border border-white/10 flex items-center justify-center">
+              <div className="absolute inset-0 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center opacity-40"></div>
+              <div className="relative z-10 flex flex-col items-center">
+                <Dumbbell size={32} className="text-blue-400 mb-2" />
+                <p className="text-sm font-bold text-white uppercase tracking-widest">Select Target</p>
+              </div>
+            </div>
+            {/* Muscle Buttons Grid */}
+            <div className="grid grid-cols-2 gap-2">
+              {Object.keys(MUSCLE_HEADS).map(m => (
+                <button
+                  key={m}
+                  onClick={() => {
+                    setTrainTodayGroup(m);
+                    setTrainTodayTab('muscle');
+                    setTrainTodayFilter('');
+                  }}
+                  className="py-3 bg-white/[0.04] border border-white/10 rounded-xl text-sm font-bold text-slate-300 hover:text-white hover:bg-blue-500/20 hover:border-blue-500/40 transition-colors"
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Tabs */}
+            <div className="flex bg-white/[0.04] p-1 rounded-2xl border border-white/10 gap-1">
+              <button
+                onClick={() => setTrainTodayTab('muscle')}
+                className={`flex-1 flex items-center justify-center py-2 text-xs font-bold rounded-xl transition-all ${
+                  trainTodayTab === 'muscle' ? 'bg-blue-600/40 text-blue-200 border border-blue-400/30' : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+                }`}
+              >
+                Detailed Muscle
+              </button>
+              <button
+                onClick={() => setTrainTodayTab('library')}
+                className={`flex-1 flex items-center justify-center py-2 text-xs font-bold rounded-xl transition-all ${
+                  trainTodayTab === 'library' ? 'bg-blue-600/40 text-blue-200 border border-blue-400/30' : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+                }`}
+              >
+                Exercise Library
+              </button>
+            </div>
+
+            {/* Content */}
+            {trainTodayTab === 'muscle' && (
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                <p className="text-xs text-slate-400 mb-3 text-center">Select a specific head to filter exercises</p>
+                {MUSCLE_HEADS[trainTodayGroup].map(head => (
+                  <button
+                    key={head.name}
+                    onClick={() => {
+                      setTrainTodayFilter(head.filter);
+                      setTrainTodayTab('library');
+                    }}
+                    className="w-full p-4 glass-card rounded-2xl border border-white/10 flex items-center justify-between group hover:bg-blue-500/10 hover:border-blue-500/30 transition-all text-left"
+                  >
+                    <div>
+                      <p className="text-sm font-bold text-white group-hover:text-blue-300">{head.name}</p>
+                      <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider">Targets: {head.filter}</p>
+                    </div>
+                    <ChevronRight size={16} className="text-slate-600 group-hover:text-blue-400" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {trainTodayTab === 'library' && (
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <p className="text-xs text-slate-400">
+                    {trainTodayFilter ? `Filtered by "${trainTodayFilter}"` : `All ${trainTodayGroup} Exercises`}
+                  </p>
+                  {trainTodayFilter && (
+                    <button onClick={() => setTrainTodayFilter('')} className="text-[10px] text-red-400 font-bold uppercase hover:underline">Clear Filter</button>
+                  )}
+                </div>
+                {EXERCISES.filter(ex => 
+                  ex.muscleGroup.toLowerCase() === trainTodayGroup.toLowerCase() && 
+                  (!trainTodayFilter || ex.name.toLowerCase().includes(trainTodayFilter.toLowerCase()))
+                ).map(ex => (
+                  <div key={ex.id} className="p-3 glass-card rounded-2xl border border-white/10 flex items-center gap-3">
+                    <img src={ex.imageUrl} alt={ex.name} className="w-12 h-12 rounded-xl object-cover bg-slate-800" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-white truncate">{ex.name}</p>
+                      <p className="text-[10px] text-slate-400 truncate">{ex.equipment}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowTrainToday(false);
+                        startExerciseFromLibrary(ex);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30 hover:bg-emerald-500/30"
+                    >
+                      Start
+                    </button>
+                  </div>
+                ))}
+                {EXERCISES.filter(ex => 
+                  ex.muscleGroup.toLowerCase() === trainTodayGroup.toLowerCase() && 
+                  (!trainTodayFilter || ex.name.toLowerCase().includes(trainTodayFilter.toLowerCase()))
+                ).length === 0 && (
+                  <p className="text-center text-slate-400 text-sm py-10">No exercises found for this filter.</p>
+                )}
+              </div>
+            )}
+
+            <div className="pt-4 border-t border-white/10 flex justify-between">
+              <button onClick={() => setTrainTodayGroup(null)} className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white transition-colors">
+                Back to Muscle Groups
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+</div>
   );
 }
