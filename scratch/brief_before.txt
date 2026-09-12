@@ -1,0 +1,414 @@
+'use client';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import type { Todo, WorkActivity } from '@/lib/types/database';
+import { AlertTriangle, TrendingUp, TrendingDown, Calendar, CheckCircle2, Clock, ChevronRight, Sparkles, Activity, Volume2, VolumeX, Newspaper, BarChart3, Brain, Heart, DollarSign } from 'lucide-react';
+import Badge from '@/components/ui/Badge';
+import { SkeletonDashboard } from '@/components/ui/LoadingSkeleton';
+import Link from 'next/link';
+
+interface FinanceSummary {
+  total_income: number;
+  total_expenses: number;
+  professional_income: number;
+  personal_expenses: number;
+}
+
+interface StockData {
+  ticker: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  currency: string;
+}
+
+interface NewsItem {
+  title: string;
+  url: string;
+  source: string;
+}
+
+import Modal from '@/components/ui/Modal';
+import Input from '@/components/ui/Input';
+import AddToGoogleCalendar from '@/components/ui/AddToGoogleCalendar';
+
+const getLocalDateString = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export default function DashboardPage() {
+  const [briefTab, setBriefTab] = useState<'productivity' | 'health' | 'money'>('productivity');
+  const [urgentTodos, setUrgentTodos] = useState<Todo[]>([]);
+  const [todaySchedule, setTodaySchedule] = useState<WorkActivity[]>([]);
+  const [financeSummary, setFinanceSummary] = useState<FinanceSummary>({
+    total_income: 0,
+    total_expenses: 0,
+    professional_income: 0,
+    personal_expenses: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Stocks & News state
+  const [stocks, setStocks] = useState<StockData[]>([]);
+  const [stocksLoading, setStocksLoading] = useState(true);
+  const [portfolioSummary, setPortfolioSummary] = useState<Record<string, { avgPrice: number; lots: number }>>({});
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+
+  // Voice Brief state
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+
+  // Edit Modal State
+  const [editingActivity, setEditingActivity] = useState<WorkActivity | null>(null);
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [formTitle, setFormTitle] = useState('');
+  const [formDate, setFormDate] = useState('');
+  const [formStartTime, setFormStartTime] = useState('08:00');
+  const [formEndTime, setFormEndTime] = useState('09:00');
+  const [formPriority, setFormPriority] = useState('medium');
+  const [saving, setSaving] = useState(false);
+
+  const supabase = createClient();
+
+  const fetchDashboard = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+      // Use LOCAL date string instead of UTC (.toISOString()) so past-midnight local time (e.g. 00:25 WIB) gets today's date correctly
+      const today = getLocalDateString();
+      const monthStart = `${today.slice(0, 8)}01`;
+
+      const todayStart = `${today}T00:00:00`;
+      const todayEnd = `${today}T23:59:59`;
+
+      const [
+        { data: rawTodos },
+        { data: schedule },
+        { data: transactions }
+      ] = await Promise.all([
+        supabase
+          .from('todos')
+          .select('*')
+          .eq('user_id', user.id)
+          .limit(30),
+        supabase
+          .from('work_activities')
+          .select('*')
+          .eq('user_id', user.id)
+          .or(`and(scheduled_at.gte.${todayStart},scheduled_at.lte.${todayEnd}),and(deadline.gte.${todayStart},deadline.lte.${todayEnd})`)
+          .neq('status', 'completed')
+          .neq('status', 'cancelled')
+          .order('scheduled_at', { ascending: true })
+          .limit(10),
+        supabase
+          .from('finance_transactions')
+          .select('amount, type, tag, description')
+          .eq('user_id', user.id)
+          .gte('transaction_date', monthStart)
+          .lte('transaction_date', today)
+      ]);
+
+      const sortedTodos = (rawTodos || []).sort((a, b) => {
+        if (a.is_completed !== b.is_completed) {
+          return a.is_completed ? 1 : -1;
+        }
+        const dateA = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+        const dateB = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+        return dateA - dateB;
+      });
+
+      if (transactions) {
+        const summary: FinanceSummary = {
+          total_income: 0,
+          total_expenses: 0,
+          professional_income: 0,
+          personal_expenses: 0,
+        };
+        for (const tx of transactions) {
+          if (tx.description?.includes('___TRANSFER___')) continue;
+          const amt = Number(tx.amount);
+          if (tx.type === 'income') {
+            summary.total_income += amt;
+            if (tx.tag === 'professional') summary.professional_income += amt;
+          } else {
+            summary.total_expenses += amt;
+            if (tx.tag === 'personal') summary.personal_expenses += amt;
+          }
+        }
+        setFinanceSummary(summary);
+      }
+
+      setUrgentTodos(sortedTodos);
+      setTodaySchedule(schedule || []);
+      setLoading(false);
+  };
+
+  const fetchStocks = async () => {
+    setStocksLoading(true);
+    try {
+      // 1. Fetch user portfolio holdings to calculate average buy price & get portfolio tickers
+      const portRes = await fetch('/api/investasi/portfolio');
+      const summaryMap: Record<string, { avgPrice: number; lots: number }> = {};
+      let portSymbols: string[] = [];
+
+      if (portRes.ok) {
+        const portData = await portRes.json();
+        const items = portData.portfolio || [];
+        const portMap: Record<string, { totalCost: number; totalLots: number }> = {};
+        items.forEach((item: any) => {
+          const base = item.ticker.toUpperCase().replace('.JK', '');
+          if (!portMap[base]) portMap[base] = { totalCost: 0, totalLots: 0 };
+          portMap[base].totalCost += Number(item.buy_price) * Number(item.lots);
+          portMap[base].totalLots += Number(item.lots);
+        });
+        Object.keys(portMap).forEach((base) => {
+          summaryMap[base] = {
+            avgPrice: Math.round(portMap[base].totalCost / portMap[base].totalLots),
+            lots: portMap[base].totalLots,
+          };
+          portSymbols.push(`${base}.JK`);
+        });
+      }
+      setPortfolioSummary(summaryMap);
+
+      // 2. Fetch live Yahoo Finance prices for default tickers + user portfolio tickers
+      const allTickers = Array.from(new Set(['BBCA.JK', 'ELTY.JK', ...portSymbols]));
+      const res = await fetch(`/api/stocks?symbols=${allTickers.join(',')}`);
+      if (res.ok) {
+        const data = await res.json();
+        setStocks(data.stocks || []);
+      }
+    } catch (err) {
+      console.error('Stocks fetch error:', err);
+    }
+    setStocksLoading(false);
+  };
+
+  const fetchNews = async () => {
+    setNewsLoading(true);
+    try {
+      const res = await fetch('/api/news');
+      if (res.ok) {
+        const data = await res.json();
+        setNews(data.news || []);
+      }
+    } catch (err) {
+      console.error('News fetch error:', err);
+    }
+    setNewsLoading(false);
+  };
+
+  const handlePlayBrief = () => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    const synth = window.speechSynthesis;
+    synthRef.current = synth;
+
+    // If already speaking, stop it
+    if (isSpeaking) {
+      synth.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    // Build the script with natural conversational pauses (...) so it sounds human, not robotic
+    // Greeting -> 1. Today Schedule -> 2. To Do list -> 3. Hot News -> 4. IDX Watch
+    let script = 'Selamat Pagi Nico, Jax Disini... Berikut adalah ringkasan hari ini... ';
+
+    // 1. Today Schedule
+    if (todaySchedule.length > 0) {
+      script += `Pertama, jadwal hari ini ada ${todaySchedule.length} kegiatan... `;
+      todaySchedule.forEach((act, idx) => {
+        const timeStr = act.scheduled_at
+          ? new Date(act.scheduled_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+          : '';
+        script += `${idx + 1}. ${act.title}${timeStr ? `, pukul ${timeStr}` : ''}... `;
+      });
+    } else {
+      script += 'Pertama, jadwal hari ini kosong... ';
+    }
+
+    // 2. To Do list
+    if (urgentTodos.length > 0) {
+      script += `Kedua, daftar tugas penting ada ${urgentTodos.length} tugas... `;
+      urgentTodos.forEach((todo, idx) => {
+        script += `${idx + 1}. ${todo.title}... `;
+      });
+    } else {
+      script += 'Kedua, semua tugas penting sudah selesai... ';
+    }
+
+    // 3. Hot News
+    if (news.length > 0) {
+      script += 'Ketiga, berita utama hari ini... ';
+      news.forEach((item, idx) => {
+        script += `${idx + 1}. ${item.title}... `;
+      });
+    }
+
+    // 4. IDX Watch
+    if (stocks.length > 0) {
+      script += 'Keempat, pantauan saham IDX terkini... ';
+      stocks.forEach((s) => {
+        const direction = s.changePercent >= 0 ? 'naik' : 'turun';
+        const absPercent = Math.abs(s.changePercent).toFixed(2);
+        script += `${s.ticker.replace('.JK', '')} di harga ${Math.round(s.price)} rupiah, ${direction} ${absPercent} persen... `;
+      });
+    }
+
+    const utterance = new SpeechSynthesisUtterance(script);
+    utterance.lang = 'id-ID';
+
+    // Score and select a soft, natural Indonesian female voice (e.g., Natural / Neural / Gadis / Siti / Google Bahasa Indonesia)
+    const voices = synth.getVoices();
+    let bestVoice: SpeechSynthesisVoice | null = null;
+    let bestScore = -1000;
+
+    for (const v of voices) {
+      let score = 0;
+      const name = v.name.toLowerCase();
+      const lang = v.lang.toLowerCase();
+
+      if (lang.includes('id')) score += 50;
+      if (name.includes('natural') || name.includes('online') || name.includes('neural')) score += 35;
+      // Prioritize Female / Gadis / Siti / Rani / Google Bahasa Indonesia
+      if (/female|woman|wanita|gadis|siti|rani/i.test(name)) score += 45;
+      // Penalize Male voices
+      if (/male|man|pria|ardi|andika|budi|dika/i.test(name)) score -= 50;
+
+      if (score > bestScore && score > 0) {
+        bestScore = score;
+        bestVoice = v;
+      }
+    }
+
+    if (bestVoice) {
+      utterance.voice = bestVoice;
+    }
+
+    // Soft, warm, calm female tone (0.96 pitch ensures smooth softness without sharp/high-pitched tones)
+    utterance.pitch = 0.96;
+    utterance.rate = 0.94;
+
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    setIsSpeaking(true);
+    synth.speak(utterance);
+  };
+
+  useEffect(() => {
+    fetchDashboard();
+    fetchStocks();
+    fetchNews();
+
+    return () => {
+      // Cleanup: stop speech on unmount
+      if (synthRef.current) synthRef.current.cancel();
+    };
+  }, []);
+
+  const openEditActivity = (act: WorkActivity) => {
+    setEditingTodo(null);
+    setEditingActivity(act);
+    setFormTitle(act.title);
+    const dateStr = act.scheduled_at ? act.scheduled_at.split('T')[0] : getLocalDateString();
+    const startT = act.scheduled_at ? act.scheduled_at.split('T')[1]?.slice(0, 5) : '08:00';
+    const endT = act.deadline ? act.deadline.split('T')[1]?.slice(0, 5) : '09:00';
+    setFormDate(dateStr);
+    setFormStartTime(startT || '08:00');
+    setFormEndTime(endT || '09:00');
+  };
+
+  const openEditTodo = (todo: Todo) => {
+    setEditingActivity(null);
+    setEditingTodo(todo);
+    setFormTitle(todo.title);
+    setFormDate(todo.due_date || getLocalDateString());
+    setFormPriority(todo.priority);
+  };
+
+  const handleSaveActivity = async () => {
+    if (!editingActivity || !formTitle.trim()) return;
+    setSaving(true);
+    const [y, m, d] = formDate.split('-').map(Number);
+    const [sHr, sMin] = formStartTime.split(':').map(Number);
+    const [eHr, eMin] = formEndTime.split(':').map(Number);
+    const startIso = new Date(y, m - 1, d, sHr || 0, sMin || 0, 0).toISOString();
+    const endIso = new Date(y, m - 1, d, eHr || 0, eMin || 0, 0).toISOString();
+
+    const origMeta = (editingActivity.metadata as Record<string, any>) || {};
+    await supabase.from('work_activities').update({
+      title: formTitle,
+      scheduled_at: startIso,
+      deadline: endIso,
+      metadata: {
+        ...origMeta,
+        start_time: formStartTime,
+        end_time: formEndTime,
+      },
+    }).eq('id', editingActivity.id);
+    setSaving(false);
+    setEditingActivity(null);
+    fetchDashboard();
+  };
+
+  const handleSaveTodo = async () => {
+    if (!editingTodo || !formTitle.trim()) return;
+    setSaving(true);
+    await supabase.from('todos').update({
+      title: formTitle,
+      due_date: formDate,
+      priority: formPriority as any,
+    }).eq('id', editingTodo.id);
+    setSaving(false);
+    setEditingTodo(null);
+    fetchDashboard();
+  };
+
+  const handleToggleTodo = async (todo: Todo, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newStatus = !todo.is_completed;
+    await supabase.from('todos').update({ is_completed: newStatus }).eq('id', todo.id);
+    fetchDashboard();
+  };
+
+  const formatCurrency = (amount: number) => {
+    const formatted = new Intl.NumberFormat('id-ID', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+    return `Rp ${formatted}`;
+  };
+
+  const formatActivityTime = (activity: WorkActivity) => {
+    const meta = activity.metadata as Record<string, any> | null;
+    if (meta?.all_day) return 'All Day';
+    if (meta?.start_time) {
+      const endStr = meta.end_time ? ` - ${meta.end_time}` : '';
+      return `${meta.start_time}${endStr}`;
+    }
+    if (activity.scheduled_at) {
+      return new Date(activity.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+    return 'No time set';
+  };
+
+  const priorityVariant = (priority: Todo['priority']) => {
+    switch (priority) {
+      case 'urgent': return 'danger' as const;
+      case 'high': return 'warning' as const;
+      default: return 'default' as const;
+    }
+  };
+
+  if (loading) {
+    return <SkeletonDashboard />;
+  }

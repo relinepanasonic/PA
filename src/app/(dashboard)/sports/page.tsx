@@ -374,7 +374,7 @@ export default function SportsPage() {
   };
 
   const startExerciseFromLibrary = async (ex: Exercise) => {
-    setActiveTab('gym');
+    setActiveTab('workout');
     
     // If no active session, start one
     if (!activeSession) {
@@ -557,7 +557,7 @@ export default function SportsPage() {
             <p className="text-[11px] text-slate-400 font-medium">Track matches & workouts</p>
           </div>
         </div>
-        {activeTab === 'matches' && (
+        {activeTab === 'workout' && (
           <Button onClick={openCreateSport} size="sm">
             <Plus size={16} /> Add
           </Button>
