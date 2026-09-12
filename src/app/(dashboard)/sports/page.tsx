@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import type { SportActivity, GymSession, GymSessionExercise, BodyMeasurement } from '@/lib/types/database';
-import { Plus, Trophy, Calendar, Clock, MapPin, Users, Trash2, Target, Zap, Dumbbell, Play, Square, Search, Filter, ChevronDown, ChevronUp, BookOpen, Activity, Scale } from 'lucide-react';
+import { Plus, Trophy, Calendar, Clock, MapPin, Users, Trash2, Target, Zap, Dumbbell, Play, Square, Search, Filter, ChevronDown, ChevronUp, BookOpen, Activity, Scale, ChevronRight } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
