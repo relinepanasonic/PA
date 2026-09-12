@@ -1507,11 +1507,21 @@ export default function SportsPage() {
                 <div className="p-3 space-y-2">
                   <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
-                      {ex.imageUrl && (
-                        <div className="w-full h-32 mb-3 bg-white/5 rounded-lg overflow-hidden flex items-center justify-center">
-                          <img src={ex.imageUrl} alt={ex.name} className="max-w-full max-h-full object-contain mix-blend-screen" loading="lazy" />
-                        </div>
-                      )}
+                      {(() => {
+                        const imgMap: Record<string, string> = {
+                          Chest: '/muscle-chest.jpg',
+                          Back: '/muscle-back.jpg',
+                          Shoulders: '/muscle-shoulders.jpg',
+                          Biceps: '/muscle-biceps.jpg'
+                        };
+                        const fallbackImg = imgMap[ex.muscleGroup] || '/anatomy-bg.jpg';
+                        return (
+                          <div className="w-full h-32 mb-3 rounded-lg overflow-hidden flex items-center justify-center relative bg-slate-800">
+                             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${fallbackImg})` }}></div>
+                             <div className="absolute inset-0 bg-slate-900/30 mix-blend-multiply"></div>
+                          </div>
+                        );
+                      })()}
                       <p className="text-sm font-bold text-white">{ex.name}</p>
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         <Badge variant="accent" size="sm">{ex.muscleGroup}</Badge>
@@ -1679,15 +1689,18 @@ export default function SportsPage() {
                       className="p-3 flex items-center gap-4 cursor-pointer"
                       onClick={() => setExpandedExerciseId(expandedExerciseId === ex.id ? null : ex.id)}
                     >
-                      {ex.imageUrl ? (
-                        <div className="w-14 h-14 rounded-xl bg-white/5 overflow-hidden flex items-center justify-center flex-shrink-0 p-1">
-                          <img src={ex.imageUrl} alt="" className="max-w-full max-h-full object-contain mix-blend-screen" />
-                        </div>
-                      ) : (
-                        <div className="w-14 h-14 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                          <Dumbbell size={20} className="text-emerald-400" />
-                        </div>
-                      )}
+                      {(() => {
+                        const imgMap: Record<string, string> = {
+                          Chest: '/muscle-chest.jpg', Back: '/muscle-back.jpg', Shoulders: '/muscle-shoulders.jpg', Biceps: '/muscle-biceps.jpg'
+                        };
+                        const fallbackImg = imgMap[ex.muscleGroup] || '/anatomy-bg.jpg';
+                        return (
+                          <div className="w-14 h-14 rounded-xl bg-slate-800 overflow-hidden flex items-center justify-center flex-shrink-0 relative">
+                             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${fallbackImg})` }}></div>
+                             <div className="absolute inset-0 bg-slate-900/40 mix-blend-multiply"></div>
+                          </div>
+                        );
+                      })()}
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold text-white truncate">{ex.name}</p>
                         <p className="text-xs text-slate-400 mt-0.5">{ex.muscleGroup} · {ex.equipment}</p>
@@ -1870,8 +1883,19 @@ export default function SportsPage() {
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     }, 100);
                   }}>
-                    <div className="w-12 h-12 rounded bg-slate-800 overflow-hidden flex-shrink-0">
-                      <img src={ex.imageUrl} alt={ex.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                    <div className="w-12 h-12 rounded bg-slate-800 overflow-hidden flex-shrink-0 relative">
+                      {(() => {
+                        const imgMap: Record<string, string> = {
+                          Chest: '/muscle-chest.jpg', Back: '/muscle-back.jpg', Shoulders: '/muscle-shoulders.jpg', Biceps: '/muscle-biceps.jpg'
+                        };
+                        const fallbackImg = imgMap[ex.muscleGroup] || '/anatomy-bg.jpg';
+                        return (
+                          <>
+                            <div className="absolute inset-0 bg-cover bg-center opacity-80 group-hover:opacity-100 transition-opacity" style={{ backgroundImage: `url(${fallbackImg})` }}></div>
+                            <div className="absolute inset-0 bg-slate-900/30 mix-blend-multiply"></div>
+                          </>
+                        );
+                      })()}
                     </div>
                     <div className="flex-1">
                       <h4 className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">{ex.name}</h4>
@@ -1904,123 +1928,131 @@ export default function SportsPage() {
       <Modal
         isOpen={showTrainToday}
         onClose={() => setShowTrainToday(false)}
-        title={trainTodayGroup ? `${trainTodayGroup} Day` : 'Hi Nico, What do you train today?'}
+        title={trainTodayGroup ? `${trainTodayGroup} Focus` : 'Hi Nico, What do you train today?'}
       >
         {!trainTodayGroup ? (
           <div className="space-y-4">
-            {/* Anatomy Map Preview */}
-            <div className="w-full h-48 bg-slate-900 rounded-2xl overflow-hidden relative border border-white/10 flex items-center justify-center">
-              <div className="absolute inset-0 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center opacity-40"></div>
-              <div className="relative z-10 flex flex-col items-center">
-                <Dumbbell size={32} className="text-blue-400 mb-2" />
-                <p className="text-sm font-bold text-white uppercase tracking-widest">Select Target</p>
-              </div>
-            </div>
-            {/* Muscle Buttons Grid */}
-            <div className="grid grid-cols-2 gap-2">
-              {Object.keys(MUSCLE_HEADS).map(m => (
-                <button
-                  key={m}
-                  onClick={() => {
-                    setTrainTodayGroup(m);
-                    setTrainTodayTab('muscle');
-                    setTrainTodayFilter('');
-                  }}
-                  className="py-3 bg-white/[0.04] border border-white/10 rounded-xl text-sm font-bold text-slate-300 hover:text-white hover:bg-blue-500/20 hover:border-blue-500/40 transition-colors"
-                >
-                  {m}
-                </button>
-              ))}
+            {/* Muscle Buttons Image Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {Object.keys(MUSCLE_HEADS).map(m => {
+                const imgMap: Record<string, string> = {
+                  Chest: '/muscle-chest.jpg',
+                  Back: '/muscle-back.jpg',
+                  Shoulders: '/muscle-shoulders.jpg',
+                  Biceps: '/muscle-biceps.jpg',
+                  Triceps: '/anatomy-bg.jpg',
+                  Quads: '/anatomy-bg.jpg',
+                  Hamstrings: '/anatomy-bg.jpg',
+                  Glutes: '/anatomy-bg.jpg',
+                  Calves: '/anatomy-bg.jpg',
+                  Core: '/anatomy-bg.jpg',
+                };
+                const bgImage = imgMap[m] || '/anatomy-bg.jpg';
+                return (
+                  <button
+                    key={m}
+                    onClick={() => {
+                      setTrainTodayGroup(m);
+                      setTrainTodayFilter('');
+                    }}
+                    className="relative h-24 rounded-2xl overflow-hidden border border-white/10 group active:scale-95 transition-all"
+                  >
+                    <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${bgImage})` }}></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
+                    <div className="absolute inset-0 flex flex-col items-center justify-end pb-3">
+                      <p className="text-sm font-extrabold text-white tracking-wider">{m}</p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            {/* Tabs */}
-            <div className="flex bg-white/[0.04] p-1 rounded-2xl border border-white/10 gap-1">
-              <button
-                onClick={() => setTrainTodayTab('muscle')}
-                className={`flex-1 flex items-center justify-center py-2 text-xs font-bold rounded-xl transition-all ${
-                  trainTodayTab === 'muscle' ? 'bg-blue-600/40 text-blue-200 border border-blue-400/30' : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
-                }`}
-              >
-                Detailed Muscle
-              </button>
-              <button
-                onClick={() => setTrainTodayTab('library')}
-                className={`flex-1 flex items-center justify-center py-2 text-xs font-bold rounded-xl transition-all ${
-                  trainTodayTab === 'library' ? 'bg-blue-600/40 text-blue-200 border border-blue-400/30' : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
-                }`}
-              >
-                Exercise Library
-              </button>
-            </div>
-
-            {/* Content */}
-            {trainTodayTab === 'muscle' && (
-              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                <p className="text-xs text-slate-400 mb-3 text-center">Select a specific head to filter exercises</p>
+          <div className="space-y-5 -mx-2 px-2">
+            {/* Small Muscle Selector (Horizontal Scroll) */}
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Select Focus Area</p>
+              <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar snap-x">
+                <button
+                  onClick={() => setTrainTodayFilter('')}
+                  className={`snap-start flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                    !trainTodayFilter
+                      ? 'bg-blue-600/30 text-blue-300 border-blue-400/40 shadow-[0_0_15px_rgba(59,130,246,0.2)]'
+                      : 'bg-slate-800/50 text-slate-400 border-white/10 hover:bg-slate-800 hover:text-slate-300'
+                  }`}
+                >
+                  All ${trainTodayGroup}
+                </button>
                 {MUSCLE_HEADS[trainTodayGroup].map(head => (
                   <button
                     key={head.name}
-                    onClick={() => {
-                      setTrainTodayFilter(head.filter);
-                      setTrainTodayTab('library');
-                    }}
-                    className="w-full p-4 glass-card rounded-2xl border border-white/10 flex items-center justify-between group hover:bg-blue-500/10 hover:border-blue-500/30 transition-all text-left"
+                    onClick={() => setTrainTodayFilter(head.filter)}
+                    className={`snap-start flex-shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                      trainTodayFilter === head.filter
+                        ? 'bg-blue-600/30 text-blue-300 border-blue-400/40 shadow-[0_0_15px_rgba(59,130,246,0.2)]'
+                        : 'bg-slate-800/50 text-slate-400 border-white/10 hover:bg-slate-800 hover:text-slate-300'
+                    }`}
                   >
-                    <div>
-                      <p className="text-sm font-bold text-white group-hover:text-blue-300">{head.name}</p>
-                      <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider">Targets: {head.filter}</p>
-                    </div>
-                    <ChevronRight size={16} className="text-slate-600 group-hover:text-blue-400" />
+                    {head.name.split(' (')[0]}
                   </button>
                 ))}
               </div>
-            )}
+            </div>
 
-            {trainTodayTab === 'library' && (
-              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <p className="text-xs text-slate-400">
-                    {trainTodayFilter ? `Filtered by "${trainTodayFilter}"` : `All ${trainTodayGroup} Exercises`}
-                  </p>
-                  {trainTodayFilter && (
-                    <button onClick={() => setTrainTodayFilter('')} className="text-[10px] text-red-400 font-bold uppercase hover:underline">Clear Filter</button>
-                  )}
-                </div>
+            {/* Exercise List */}
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">
+                {trainTodayFilter ? `Filtered Exercises` : `All Exercises`}
+              </p>
+              <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar">
                 {EXERCISES.filter(ex => 
                   ex.muscleGroup.toLowerCase() === trainTodayGroup.toLowerCase() && 
                   (!trainTodayFilter || ex.name.toLowerCase().includes(trainTodayFilter.toLowerCase()))
-                ).map(ex => (
-                  <div key={ex.id} className="p-3 glass-card rounded-2xl border border-white/10 flex items-center gap-3">
-                    <img src={ex.imageUrl} alt={ex.name} className="w-12 h-12 rounded-xl object-cover bg-slate-800" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white truncate">{ex.name}</p>
-                      <p className="text-[10px] text-slate-400 truncate">{ex.equipment}</p>
+                ).map(ex => {
+                  const imgMap: Record<string, string> = {
+                    Chest: '/muscle-chest.jpg',
+                    Back: '/muscle-back.jpg',
+                    Shoulders: '/muscle-shoulders.jpg',
+                    Biceps: '/muscle-biceps.jpg'
+                  };
+                  const fallbackImg = imgMap[ex.muscleGroup] || '/anatomy-bg.jpg';
+                  return (
+                    <div key={ex.id} className="p-3 glass-card rounded-2xl border border-white/10 flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 relative bg-slate-800">
+                         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${fallbackImg})` }}></div>
+                         <div className="absolute inset-0 bg-slate-900/30 mix-blend-multiply"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-white truncate">{ex.name}</p>
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5">{ex.equipment}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setShowTrainToday(false);
+                          startExerciseFromLibrary(ex);
+                        }}
+                        className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 hover:bg-emerald-500/30 hover:scale-105 transition-all"
+                      >
+                        <Play size={14} className="ml-0.5" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => {
-                        setShowTrainToday(false);
-                        startExerciseFromLibrary(ex);
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30 hover:bg-emerald-500/30"
-                    >
-                      Start
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
                 {EXERCISES.filter(ex => 
                   ex.muscleGroup.toLowerCase() === trainTodayGroup.toLowerCase() && 
                   (!trainTodayFilter || ex.name.toLowerCase().includes(trainTodayFilter.toLowerCase()))
                 ).length === 0 && (
-                  <p className="text-center text-slate-400 text-sm py-10">No exercises found for this filter.</p>
+                  <div className="text-center py-10 glass-card rounded-2xl border border-white/10">
+                    <Dumbbell size={24} className="text-slate-500 mx-auto mb-2" />
+                    <p className="text-slate-400 text-sm font-semibold">No exercises found.</p>
+                  </div>
                 )}
               </div>
-            )}
+            </div>
 
-            <div className="pt-4 border-t border-white/10 flex justify-between">
-              <button onClick={() => setTrainTodayGroup(null)} className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white transition-colors">
-                Back to Muscle Groups
+            <div className="pt-2 border-t border-white/10 flex justify-center">
+              <button onClick={() => setTrainTodayGroup(null)} className="px-6 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors">
+                ← Back to Muscle Groups
               </button>
             </div>
           </div>
