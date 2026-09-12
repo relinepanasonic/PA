@@ -1935,19 +1935,19 @@ export default function SportsPage() {
             {/* Muscle Buttons Image Grid */}
             <div className="grid grid-cols-2 gap-3">
               {Object.keys(MUSCLE_HEADS).map(m => {
-                const imgMap: Record<string, string> = {
-                  Chest: '/muscle-chest.jpg',
-                  Back: '/muscle-back.jpg',
-                  Shoulders: '/muscle-shoulders.jpg',
-                  Biceps: '/muscle-biceps.jpg',
-                  Triceps: '/anatomy-bg.jpg',
-                  Quads: '/anatomy-bg.jpg',
-                  Hamstrings: '/anatomy-bg.jpg',
-                  Glutes: '/anatomy-bg.jpg',
-                  Calves: '/anatomy-bg.jpg',
-                  Core: '/anatomy-bg.jpg',
+                const imgMap: Record<string, {img: string, pos: string}> = {
+                  Chest: { img: '/muscle-chest.jpg', pos: 'object-[center_20%]' },
+                  Back: { img: '/muscle-back.jpg', pos: 'object-[center_20%]' },
+                  Shoulders: { img: '/muscle-shoulders.jpg', pos: 'object-[center_15%]' },
+                  Biceps: { img: '/muscle-biceps.jpg', pos: 'object-[center]' },
+                  Triceps: { img: '/anatomy-bg.jpg', pos: 'object-[center]' },
+                  Quads: { img: '/anatomy-bg.jpg', pos: 'object-[center]' },
+                  Hamstrings: { img: '/anatomy-bg.jpg', pos: 'object-[center]' },
+                  Glutes: { img: '/anatomy-bg.jpg', pos: 'object-[center]' },
+                  Calves: { img: '/anatomy-bg.jpg', pos: 'object-[center]' },
+                  Core: { img: '/anatomy-bg.jpg', pos: 'object-[center]' },
                 };
-                const bgImage = imgMap[m] || '/anatomy-bg.jpg';
+                const bgInfo = imgMap[m] || { img: '/anatomy-bg.jpg', pos: 'object-[center]' };
                 return (
                   <button
                     key={m}
@@ -1955,9 +1955,9 @@ export default function SportsPage() {
                       setTrainTodayGroup(m);
                       setTrainTodayFilter('');
                     }}
-                    className="relative h-24 rounded-2xl overflow-hidden border border-white/10 group active:scale-95 transition-all"
+                    className="relative h-32 rounded-2xl overflow-hidden border border-white/10 group active:scale-95 transition-all"
                   >
-                    <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${bgImage})` }}></div>
+                    <img src={bgInfo.img} alt={m} className={`absolute inset-0 w-full h-full transition-transform duration-500 group-hover:scale-110 object-cover ${bgInfo.pos}`} />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent"></div>
                     <div className="absolute inset-0 flex flex-col items-center justify-end pb-3">
                       <p className="text-sm font-extrabold text-white tracking-wider">{m}</p>
