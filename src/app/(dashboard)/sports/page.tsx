@@ -941,7 +941,7 @@ export default function SportsPage() {
                     >
                       <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Chest</h3>
                       <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80">
-                        <img src="/muscle-chest.jpg" alt="Chest Muscle" className="w-full h-full object-cover" />
+                        <img src="/muscle-chest.jpeg" alt="Chest Muscle" className="w-full h-full object-cover" />
                       </div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Pectoralis Major</h4>
                       <div className="space-y-1.5">
@@ -956,7 +956,7 @@ export default function SportsPage() {
                     >
                       <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Biceps</h3>
                       <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80">
-                        <img src="/muscle-biceps.jpg" alt="Biceps Muscle" className="w-full h-full object-cover" />
+                        <img src="/muscle-biceps.jpeg" alt="Biceps Muscle" className="w-full h-full object-cover" />
                       </div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Biceps Brachii</h4>
                       <div className="space-y-1.5">
@@ -970,7 +970,7 @@ export default function SportsPage() {
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
                       <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Core</h3>
-                      <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center" style={{ backgroundPosition: '50% 35%' }}></div>
+                      <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80"><img src="/muscle-core.jpeg" className="w-full h-full object-cover" /></div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Rectus Abdominis</h4>
                       <div className="space-y-1.5">
                         <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[45%]"></div></div>
@@ -983,7 +983,7 @@ export default function SportsPage() {
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
                       <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Quads</h3>
-                      <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center" style={{ backgroundPosition: '35% 65%' }}></div>
+                      <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80"><img src="/muscle-quads.jpeg" className="w-full h-full object-cover object-[center_top]" /></div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Quadriceps Femoris</h4>
                       <div className="space-y-1.5">
                         <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[90%]"></div></div>
@@ -999,7 +999,7 @@ export default function SportsPage() {
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
                       <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Back</h3>
-                      <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center" style={{ backgroundPosition: '50% 25%' }}></div>
+                      <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80"><img src="/muscle-back.jpeg" className="w-full h-full object-cover object-[center_top]" /></div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Latissimus Dorsi</h4>
                       <div className="space-y-1.5">
                         <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[80%]"></div></div>
@@ -1012,7 +1012,7 @@ export default function SportsPage() {
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
                       <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Shoulders</h3>
-                      <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center" style={{ backgroundPosition: '20% 25%' }}></div>
+                      <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80"><img src="/muscle-shoulders.jpeg" className="w-full h-full object-cover object-[center_top]" /></div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Deltoids</h4>
                       <div className="space-y-1.5">
                         <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[75%]"></div></div>
@@ -1025,7 +1025,7 @@ export default function SportsPage() {
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
                       <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Triceps</h3>
-                      <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center" style={{ backgroundPosition: '15% 35%' }}></div>
+                      <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80"><img src="/muscle-Triceps.jpeg" className="w-full h-full object-cover object-center" /></div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Triceps Brachii</h4>
                       <div className="space-y-1.5">
                         <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[85%]"></div></div>
@@ -1038,7 +1038,7 @@ export default function SportsPage() {
                       className="p-2 sm:p-3 rounded-xl border border-cyan-500/40 bg-[#0a1526]/90 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)] cursor-pointer hover:border-cyan-400 transition-colors"
                     >
                       <h3 className="text-[9px] font-bold text-cyan-500 uppercase tracking-widest mb-1">Calves</h3>
-                      <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80 bg-[url('/anatomy-bg.jpg')] bg-cover bg-center" style={{ backgroundPosition: '35% 85%' }}></div>
+                      <div className="w-full h-12 mb-2 rounded overflow-hidden border border-cyan-500/30 opacity-80"><img src="/muscle-calves.jpeg" className="w-full h-full object-cover object-[center_bottom]" /></div>
                       <h4 className="text-[11px] sm:text-xs font-bold text-white mb-2 leading-tight">Gastrocnemius</h4>
                       <div className="space-y-1.5">
                         <div className="h-1 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-cyan-400 w-[60%]"></div></div>
@@ -1509,10 +1509,11 @@ export default function SportsPage() {
                     <div className="min-w-0 flex-1">
                       {(() => {
                         const imgMap: Record<string, string> = {
-                          Chest: '/muscle-chest.jpg',
-                          Back: '/muscle-back.jpg',
-                          Shoulders: '/muscle-shoulders.jpg',
-                          Biceps: '/muscle-biceps.jpg'
+                          Chest: '/muscle-chest.jpeg', Back: '/muscle-back.jpeg',
+                          Shoulders: '/muscle-shoulders.jpeg', Biceps: '/muscle-biceps.jpeg',
+                          Triceps: '/muscle-Triceps.jpeg', Quads: '/muscle-quads.jpeg',
+                          Hamstrings: '/muscle-hamstrings.jpeg', Glutes: '/muscle-glutes.jpeg',
+                          Calves: '/muscle-calves.jpeg', Core: '/muscle-core.jpeg'
                         };
                         const fallbackImg = imgMap[ex.muscleGroup] || '/anatomy-bg.jpg';
                         return (
@@ -1691,7 +1692,7 @@ export default function SportsPage() {
                     >
                       {(() => {
                         const imgMap: Record<string, string> = {
-                          Chest: '/muscle-chest.jpg', Back: '/muscle-back.jpg', Shoulders: '/muscle-shoulders.jpg', Biceps: '/muscle-biceps.jpg'
+                          Chest: '/muscle-chest.jpeg', Back: '/muscle-back.jpeg', Shoulders: '/muscle-shoulders.jpeg', Biceps: '/muscle-biceps.jpeg', Triceps: '/muscle-Triceps.jpeg', Quads: '/muscle-quads.jpeg', Hamstrings: '/muscle-hamstrings.jpeg', Glutes: '/muscle-glutes.jpeg', Calves: '/muscle-calves.jpeg', Core: '/muscle-core.jpeg'
                         };
                         const fallbackImg = imgMap[ex.muscleGroup] || '/anatomy-bg.jpg';
                         return (
@@ -1886,7 +1887,7 @@ export default function SportsPage() {
                     <div className="w-12 h-12 rounded bg-slate-800 overflow-hidden flex-shrink-0 relative">
                       {(() => {
                         const imgMap: Record<string, string> = {
-                          Chest: '/muscle-chest.jpg', Back: '/muscle-back.jpg', Shoulders: '/muscle-shoulders.jpg', Biceps: '/muscle-biceps.jpg'
+                          Chest: '/muscle-chest.jpeg', Back: '/muscle-back.jpeg', Shoulders: '/muscle-shoulders.jpeg', Biceps: '/muscle-biceps.jpeg', Triceps: '/muscle-Triceps.jpeg', Quads: '/muscle-quads.jpeg', Hamstrings: '/muscle-hamstrings.jpeg', Glutes: '/muscle-glutes.jpeg', Calves: '/muscle-calves.jpeg', Core: '/muscle-core.jpeg'
                         };
                         const fallbackImg = imgMap[ex.muscleGroup] || '/anatomy-bg.jpg';
                         return (
@@ -1936,16 +1937,16 @@ export default function SportsPage() {
             <div className="grid grid-cols-2 gap-3">
               {Object.keys(MUSCLE_HEADS).map(m => {
                 const imgMap: Record<string, {img: string, pos: string}> = {
-                  Chest: { img: '/muscle-chest.jpg', pos: 'object-[center_20%]' },
-                  Back: { img: '/muscle-back.jpg', pos: 'object-[center_20%]' },
-                  Shoulders: { img: '/muscle-shoulders.jpg', pos: 'object-[center_15%]' },
-                  Biceps: { img: '/muscle-biceps.jpg', pos: 'object-[center]' },
-                  Triceps: { img: '/anatomy-bg.jpg', pos: 'object-[center]' },
-                  Quads: { img: '/anatomy-bg.jpg', pos: 'object-[center]' },
-                  Hamstrings: { img: '/anatomy-bg.jpg', pos: 'object-[center]' },
-                  Glutes: { img: '/anatomy-bg.jpg', pos: 'object-[center]' },
-                  Calves: { img: '/anatomy-bg.jpg', pos: 'object-[center]' },
-                  Core: { img: '/anatomy-bg.jpg', pos: 'object-[center]' },
+                  Chest: { img: '/muscle-chest.jpeg', pos: 'object-[center_20%]' },
+                  Back: { img: '/muscle-back.jpeg', pos: 'object-[center_20%]' },
+                  Shoulders: { img: '/muscle-shoulders.jpeg', pos: 'object-[center_15%]' },
+                  Biceps: { img: '/muscle-biceps.jpeg', pos: 'object-[center]' },
+                  Triceps: { img: '/muscle-Triceps.jpeg', pos: 'object-[center]' },
+                  Quads: { img: '/muscle-quads.jpeg', pos: 'object-[center]' },
+                  Hamstrings: { img: '/muscle-hamstrings.jpeg', pos: 'object-[center]' },
+                  Glutes: { img: '/muscle-glutes.jpeg', pos: 'object-[center]' },
+                  Calves: { img: '/muscle-calves.jpeg', pos: 'object-[center]' },
+                  Core: { img: '/muscle-core.jpeg', pos: 'object-[center]' },
                 };
                 const bgInfo = imgMap[m] || { img: '/anatomy-bg.jpg', pos: 'object-[center]' };
                 return (
@@ -2010,11 +2011,12 @@ export default function SportsPage() {
                   (!trainTodayFilter || ex.name.toLowerCase().includes(trainTodayFilter.toLowerCase()))
                 ).map(ex => {
                   const imgMap: Record<string, string> = {
-                    Chest: '/muscle-chest.jpg',
-                    Back: '/muscle-back.jpg',
-                    Shoulders: '/muscle-shoulders.jpg',
-                    Biceps: '/muscle-biceps.jpg'
-                  };
+                          Chest: '/muscle-chest.jpeg', Back: '/muscle-back.jpeg',
+                          Shoulders: '/muscle-shoulders.jpeg', Biceps: '/muscle-biceps.jpeg',
+                          Triceps: '/muscle-Triceps.jpeg', Quads: '/muscle-quads.jpeg',
+                          Hamstrings: '/muscle-hamstrings.jpeg', Glutes: '/muscle-glutes.jpeg',
+                          Calves: '/muscle-calves.jpeg', Core: '/muscle-core.jpeg'
+                        };
                   const fallbackImg = imgMap[ex.muscleGroup] || '/anatomy-bg.jpg';
                   return (
                     <div key={ex.id} className="p-3 glass-card rounded-2xl border border-white/10 flex items-center gap-3">
