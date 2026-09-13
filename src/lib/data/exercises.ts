@@ -16,7 +16,7 @@ export const MUSCLE_GROUPS = [
 ];
 
 export const EQUIPMENT_TYPES = [
-  'Barbell', 'Dumbbell', 'Cable', 'Machine', 'Bodyweight', 'EZ Bar', 'Kettlebell', 'Other'
+  'Shua Machine', 'Shua Cable', 'Shua Smith Machine', 'Dumbbell', 'Bodyweight'
 ];
 
 export const EXERCISES: Exercise[] = [
@@ -67,7 +67,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Select a light resistance and sit down on the ab machine placing your feet under the pads provided and grabbing the top handles. Your arms should be bent at a 90 degree angle as you rest the triceps on the pads provided. This will be your starting position.",
@@ -87,7 +87,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Hold the Ab Roller with both hands and kneel on the floor.",
@@ -105,7 +105,7 @@ export const EXERCISES: Exercise[] = [
       "adductors"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lie face down with one leg on a foam roll.",
@@ -144,7 +144,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "shoulders"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Clean and press a kettlebell overhead with one arm.",
@@ -289,7 +289,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Move the cables to the bottom of the tower and select an appropriate weight.",
@@ -330,7 +330,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "beginner",
     "instructions": [
       "Lie on the floor with two kettlebells next to your shoulders.",
@@ -355,7 +355,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "traps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place two kettlebells between your feet. To get in the starting position, push your butt back and look straight ahead.",
@@ -374,7 +374,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Clean two kettlebells to your shoulders. Clean the kettlebells to your shoulders by extending through the legs and hips as you pull the kettlebells towards your shoulders. Rotate your wrists as you do so.",
@@ -394,7 +394,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "lats"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place two kettlebells in front of your feet. Bend your knees slightly and push your butt out as much as possible. As you bend over to get into the starting position grab both kettlebells by the handles.",
@@ -417,7 +417,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "expert",
     "instructions": [
       "Place two kettlebells on the floor about shoulder width apart. Position yourself on your toes and your hands as though you were doing a pushup, with the body straight and extended. Use the handles of the kettlebells to support your upper body. You may need to position your feet wide for support.",
@@ -468,7 +468,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Begin seated on the ground with your legs bent and your feet on the floor.",
@@ -488,7 +488,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Place a bar on the ground behind the head of an incline bench.",
@@ -571,7 +571,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "quadriceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "This trainer is effective for developing Atlas Stone strength for those who don't have access to stones, and are typically made from bar ends or heavy pipe.",
@@ -600,7 +600,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "expert",
     "instructions": [
       "Begin with the atlas stone between your feet. Bend at the hips to wrap your arms vertically around the Atlas Stone, attempting to get your fingers underneath the stone. Many stones will have a small flat portion on the bottom, which will make the stone easier to hold.",
@@ -625,7 +625,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Approach the bar so that it is centered over your feet. You feet should be about hip width apart. Bend at the hip to grip the bar at shoulder width, allowing your shoulder blades to protract. Typically, you would use an over/under grip.",
@@ -646,7 +646,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Run a band around a stationary post like that of a squat rack.",
@@ -672,7 +672,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Load a sled with the desired weight, attaching a rope or straps to the sled that you can hold onto.",
@@ -688,7 +688,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "This exercise is best done with a partner. If you lack a partner, the ball can be thrown and retrieved or thrown against a wall.",
@@ -709,7 +709,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "quadriceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Place a balance board in front of you.",
@@ -729,7 +729,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "glutes"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Begin on the floor laying on your back with your feet on top of the ball.",
@@ -752,7 +752,7 @@ export const EXERCISES: Exercise[] = [
       "forearms",
       "middle back"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Choke the band around the center of the pullup bar. You can use different bands to provide varying levels of assistance.",
@@ -773,7 +773,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "lower back"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Using a 41 inch band, stand on one end, spreading your feet a small amount. Bend at the hips to loop the end of the band behind your neck. This will be your starting position.",
@@ -793,7 +793,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "lower back"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Loop the band around a post. Standing a little ways away, loop the opposite end around the neck. Your hands can help hold the band in position.",
@@ -810,7 +810,7 @@ export const EXERCISES: Exercise[] = [
       "adductors"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Anchor a band around a solid post or other object.",
@@ -833,7 +833,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "traps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Begin with your arms extended straight out in front of you, holding the band with both hands.",
@@ -851,7 +851,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Secure a band to the base of a rack or the bench. Lay on the bench so that the band is lined up with your head.",
@@ -871,7 +871,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "For this exercise you will need to get into a pushup position, but instead of having your hands of the floor, you will be grabbing on to an Olympic barbell (loaded with 5-10 lbs on each side) instead. This will be your starting position.",
@@ -892,7 +892,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Hold an Olympic barbell loaded with 5-10lbs on each side and kneel on the floor.",
@@ -913,7 +913,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Lie back on a flat bench. Using a medium width grip (a grip that creates a 90-degree angle in the middle of the movement between the forearms and the upper arms), lift the bar from the rack and hold it straight over you with your arms locked. This will be your starting position.",
@@ -934,7 +934,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Stand up with your torso upright while holding a barbell at a shoulder-width grip. The palm of your hands should be facing forward and the elbows should be close to the torso. This will be your starting position.",
@@ -953,7 +953,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Lie against an incline bench, with your arms holding a barbell and hanging down in a horizontal line. This will be your starting position.",
@@ -980,7 +980,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Stand in front of a loaded barbell.",
@@ -1004,7 +1004,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack just above shoulder level. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
@@ -1027,7 +1027,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin seated on the ground with a loaded barbell over your legs. Using a fat bar or having a pad on the bar can greatly reduce the discomfort caused by this exercise. Roll the bar so that it is directly above your hips, and lay down flat on the floor.",
@@ -1047,7 +1047,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Using a medium width grip (a grip that creates a 90-degree angle in the middle of the movement between the forearms and the upper arms), lift the bar from the rack and hold it straight over your neck with your arms locked. This will be your starting position.",
@@ -1070,7 +1070,7 @@ export const EXERCISES: Exercise[] = [
       "forearms",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Stand up straight while holding a barbell behind you at arms length and your feet at shoulder width. Tip: A shoulder width grip is best with the palms of your hands facing back. You can use wrist wraps for this exercise for a better grip. This will be your starting position.",
@@ -1091,7 +1091,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin seated on the ground with a bench directly behind you. Have a loaded barbell over your legs. Using a fat bar or having a pad on the bar can greatly reduce the discomfort caused by this exercise.",
@@ -1111,7 +1111,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Lie back on an incline bench. Using a medium-width grip (a grip that creates a 90-degree angle in the middle of the movement between the forearms and the upper arms), lift the bar from the rack and hold it straight over you with your arms locked. This will be your starting position.",
@@ -1132,7 +1132,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "chest"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Lie back on an Incline Bench. Using a medium width grip (a grip that is slightly wider than shoulder width), lift the bar from the rack and hold it straight over you with your arms straight. This will be your starting position.",
@@ -1154,7 +1154,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack just below shoulder level. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
@@ -1177,7 +1177,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "middle back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Stand up straight while holding a barbell using a wide (higher than shoulder width) and overhand (palms facing your body) grip.",
@@ -1201,7 +1201,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Place a loaded barbell on the ground, near the end of a bench. Kneel with both legs on the bench, and take a medium to narrow grip on the barbell. This will be your starting position.",
@@ -1218,7 +1218,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Place a block about 12 inches in front of a flat bench.",
@@ -1241,7 +1241,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Sit on a bench with back support in a squat rack. Position a barbell at a height that is just above your head. Grab the barbell with a pronated grip (palms facing forward).",
@@ -1260,7 +1260,7 @@ export const EXERCISES: Exercise[] = [
       "traps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Stand up straight with your feet at shoulder width as you hold a barbell with both hands in front of you using a pronated grip (palms facing the thighs). Tip: Your hands should be a little wider than shoulder width apart. You can use wrist wraps for this exercise for a better grip. This will be your starting position.",
@@ -1281,7 +1281,7 @@ export const EXERCISES: Exercise[] = [
       "forearms",
       "middle back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Stand up straight with your feet at shoulder width as you hold a barbell with both hands behind your back using a pronated grip (palms facing back). Tip: Your hands should be a little wider than shoulder width apart. You can use wrist wraps for this exercise for better grip. This will be your starting position.",
@@ -1301,7 +1301,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Stand up straight while holding a barbell placed on the back of your shoulders (slightly below the neck). Your feet should be shoulder width apart. This will be your starting position.",
@@ -1323,7 +1323,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Stand up straight while holding a barbell placed on the back of your shoulders (slightly below the neck). Your feet should be placed wide apart with the foot of the lead leg angled out to the side. This will be your starting position.",
@@ -1346,7 +1346,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack to just below shoulder level. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
@@ -1371,7 +1371,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "This exercise is best performed inside a squat rack for safety purposes. To begin, first place a flat bench or a box behind you. The flat bench is used to teach you to set your hips back and to hit depth.",
@@ -1398,7 +1398,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "quadriceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Stand up straight while holding a barbell placed on the back of your shoulders (slightly below the neck) and stand upright behind an elevated platform (such as the one used for spotting behind a flat bench). This is your starting position.",
@@ -1420,7 +1420,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Begin standing with your feet shoulder width apart and a barbell across your upper back.",
@@ -1441,7 +1441,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "forearms"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "For this exercise you will need a heavy rope anchored at its center 15-20 feet away. Standing in front of the rope, take an end in each hand with your arms extended at your side. This will be your starting position.",
@@ -1463,7 +1463,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Wearing either a harness or a loose weight belt, attach the chain to the back so that you will be facing away from the sled. Bend down so that your hands are on the ground. Your back should be flat and knees bent. This is your starting position.",
@@ -1481,7 +1481,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "expert",
     "instructions": [
       "Sit upright on the floor with your partner behind you.",
@@ -1548,7 +1548,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin by lying on the bench, getting your head beyond the bar if possible. Tuck your feet underneath you and arch your back. Using the bar to help support your weight, lift your shoulder off the bench and retract them, squeezing the shoulder blades together. Use your feet to drive your traps into the bench. Maintain this tight body position throughout the movement.",
@@ -1569,7 +1569,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Using a flat bench secure a band under the leg of the bench that is nearest to your head.",
@@ -1594,7 +1594,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Adjust the leader chain, shortening it to the desired length.Place the chains on the sleeves of the bar.",
@@ -1616,7 +1616,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Stand on the ground with one foot resting on a bench or box with your heel close to the edge.",
@@ -1639,7 +1639,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Lie on a flat bench with a barbell using a shoulder grip width.",
@@ -1705,7 +1705,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Holding a barbell with a pronated grip (palms facing down), bend your knees slightly and bring your torso forward, by bending at the waist, while keeping the back straight until it is almost parallel to the floor. Tip: Make sure that you keep the head up. The barbell should hang directly in front of you as your arms hang perpendicular to the floor and your torso. This is your starting position.",
@@ -1746,7 +1746,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "traps"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Select a weight and hold the handle of the low pulley with your right hand.",
@@ -1770,7 +1770,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Put weight on one of the ends of an Olympic barbell. Make sure that you either place the other end of the barbell in the corner of two walls; or put a heavy object on the ground so the barbell cannot slide backward.",
@@ -1793,7 +1793,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "lats"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Put weight on one of the ends of an Olympic barbell. Make sure that you either place the other end of the barbell in the corner of two walls; or put a heavy object on the ground so the barbell cannot slide backward.",
@@ -1863,7 +1863,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "expert",
     "instructions": [
       "Clean a kettlebell to your shoulder. Clean the kettlebell to your shoulders by extending through the legs and hips as you raise the kettlebell towards your shoulder. The wrist should rotate as you do so. This will be your starting position.",
@@ -1884,7 +1884,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "To begin, seat yourself on the bike and adjust the seat to your height."
@@ -1903,7 +1903,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, seat yourself on the bike and adjust the seat to your height.",
@@ -1924,7 +1924,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin by lying on the bench, getting your head beyond the bar if possible. One to five boards, made out of 2x6's, can be screwed together and held in place by a training partner, bands, or just tucked under your shirt.",
@@ -1986,7 +1986,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Position two equally loaded EZ bars on the ground next to each other. Ensure they are able to roll.",
@@ -2008,7 +2008,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "lats"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Begin by taking a medium to wide grip on a pull-up apparatus with your palms facing away from you. From a hanging position, tuck your knees to your chest, leaning back and getting your legs over your side of the pull-up apparatus. This will be your starting position.",
@@ -2067,7 +2067,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Connect a standard handle to each arm of a cable machine, and position them in the most downward position.",
@@ -2094,7 +2094,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "shoulders"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Initiate the exercise by standing upright with a kettlebell in one hand.",
@@ -2133,7 +2133,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "quadriceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Assume a relaxed stance facing the box or platform approximately an arm's length away. Arms should be down at the sides and legs slightly bent.",
@@ -2156,7 +2156,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "quadriceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "You will need several boxes lined up about 8 feet apart.",
@@ -2181,7 +2181,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "The box squat allows you to squat to desired depth and develop explosive strength in the squat movement. Begin in a power rack with a box at the appropriate height behind you. Typically, you would aim for a box height that brings you to a parallel squat, but you can train higher or lower if desired.",
@@ -2206,7 +2206,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Begin in a power rack with a box at the appropriate height behind you. Set up the bands on the sleeves, secured to either band pegs, the rack, or dumbbells so that there is appropriate tension. If dumbbells are used, secure them so that they don't move. Also, ensure that the dumbbells you are using are heavy enough for the bands that you are using. Additional plates can be used to hold the dumbbells down. If more tension is needed, you can either widen the base on the floor or choke the bands. Typically, you would aim for a box height that brings you to a parallel squat, but you can train higher or lower if desired.",
@@ -2231,7 +2231,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Begin in a power rack with a box at the appropriate height behind you. Typically, you would aim for a box height that brings you to a parallel squat, but you can train higher or lower if desired.",
@@ -2250,7 +2250,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lie on your side, with your upper arm against the foam roller. The upper arm should be more or less aligned with your body, with the outside of the bicep pressed against the foam roller.",
@@ -2268,7 +2268,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Sit on a Military Press Bench with a bar at shoulder level with a pronated grip (palms facing forward). Tip: Your grip should be wider than shoulder width and it should create a 90-degree angle between the forearm and the upper arm as the barbell goes down. This is your starting position.",
@@ -2326,7 +2326,7 @@ export const EXERCISES: Exercise[] = [
       "chest"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Sit on the machine with your back flat on the pad.",
@@ -2348,7 +2348,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the weight to an appropriate amount and be seated, grasping the handles. Your upper arms should be about 45 degrees to the body, with your head and chest up. The elbows should be bent to about 90 degrees. This will be your starting position.",
@@ -2368,7 +2368,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "To get yourself into the starting position, place the pulleys on a high position (above your head), select the resistance to be used and hold the pulleys in each hand.",
@@ -2387,7 +2387,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Kneel below a high pulley that contains a rope attachment.",
@@ -2412,7 +2412,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Move the cables to the bottom of the towers and select an appropriate weight. Stand directly in between the uprights.",
@@ -2430,7 +2430,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Attach a rope attachment to a low pulley and stand facing the machine about 12 inches away from it.",
@@ -2450,7 +2450,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Stand in front of a low pulley facing forward with one leg next to the pulley and the other one away.",
@@ -2471,7 +2471,7 @@ export const EXERCISES: Exercise[] = [
       "lats"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Lie on incline an bench facing away from a high pulley machine that has a straight bar attachment on it.",
@@ -2490,7 +2490,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Lie on incline an bench facing away from a high pulley machine that has a straight bar attachment on it.",
@@ -2509,7 +2509,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Sit next to a low pulley sideways (with legs stretched in front of you or crossed) and grasp the single hand cable attachment with the arm nearest to the cable. Tip: If you can adjust the pulley's height, you can use a flat bench to sit on instead.",
@@ -2528,7 +2528,7 @@ export const EXERCISES: Exercise[] = [
       "chest"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Begin by moving the pulleys to the high position, select the resistance to be used, and take a handle in each hand.",
@@ -2547,7 +2547,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Connect a rope attachment to a tower, and move the cable to the lowest pulley position. Stand with your side to the cable with a wide stance, and grab the rope with both hands.",
@@ -2566,7 +2566,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Lie on a flat bench and grasp the straight bar attachment of a low pulley with a narrow overhand grip. Tip: The easiest way to do this is to have someone hand you the bar as you lay down.",
@@ -2585,7 +2585,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "With your right hand, grasp a single handle attached to the high-cable pulley using a supinated (underhand; palms facing up) grip. You should be standing directly in front of the weight stack.",
@@ -2607,7 +2607,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Place a preacher bench about 2 feet in front of a pulley machine.",
@@ -2628,7 +2628,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the pulleys to the appropriate height and adjust the weight. The pulleys should be above your head.",
@@ -2646,7 +2646,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Connect an ankle strap attachment to a low pulley cable and position a mat on the floor in front of it.",
@@ -2666,7 +2666,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Attach a rope to the bottom pulley of the pulley machine.",
@@ -2688,7 +2688,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "middle back"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Sit in the same position on a low pulley row station as you would if you were doing seated cable rows for the back.",
@@ -2708,7 +2708,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Connect a standard handle attachment, and position the cable to a middle pulley position.",
@@ -2729,7 +2729,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Seat on a flat bench with your back facing a high pulley.",
@@ -2751,7 +2751,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "traps"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Stand in the middle of two low pulleys that are opposite to each other and place a flat bench right behind you (in perpendicular fashion to you; the narrow edge of the bench should be the one behind you). Select the weight to be used on each pulley.",
@@ -2774,7 +2774,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Move the cables to the bottom of the towers and select an appropriate weight.",
@@ -2792,7 +2792,7 @@ export const EXERCISES: Exercise[] = [
       "traps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Grasp a cable bar attachment that is attached to a low pulley with a shoulder width or slightly wider overhand (palms facing down) grip.",
@@ -2811,7 +2811,7 @@ export const EXERCISES: Exercise[] = [
       "forearms"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Start out by placing a flat bench in front of a low pulley cable that has a straight bar attachment.",
@@ -2831,7 +2831,7 @@ export const EXERCISES: Exercise[] = [
       "traps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Position yourself on the calf machine so that the shoulder pads are above your shoulders. Your torso should be straight with the arms extended normally by your side. This will be your starting position.",
@@ -2849,7 +2849,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the seat so that your legs are only slightly bent in the start position. The balls of your feet should be firmly on the platform.",
@@ -2867,7 +2867,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Using a leg press machine, sit down on the machine and place your legs on the platform directly in front of you at a medium (shoulder width) foot stance.",
@@ -2905,7 +2905,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Grab an exercise band and stand on it with your toes making sure that the length of the band between the foot and the arms is the same for both sides.",
@@ -2958,7 +2958,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Begin seated on the floor. Place a foam roller underneath your lower leg. Your other leg can either be crossed over the opposite or be placed on the floor, supporting some of your weight. This will be your starting position.",
@@ -2980,7 +2980,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "traps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "This event apparatus typically has neutral grip handles, however some have a straight bar that you can approach like a normal deadlift. The apparatus can be loaded with a vehicle or other heavy objects such as tractor tires or kegs.",
@@ -3000,7 +3000,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "While standing upright, hold a barbell plate in both hands at the 3 and 9 o'clock positions. Your palms should be facing each other and your arms should be extended straight out in front of you. This will be your starting position.",
@@ -3066,7 +3066,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Begin standing while facing a wall or a partner.",
@@ -3083,7 +3083,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "You will need two cable handle attachments and a flat bench, as well as chains, for this exercise. Clip the middle of the chains to the handles, and position yourself on the flat bench. Your elbows should be pointing straight up.",
@@ -3103,7 +3103,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Begin by connecting the chains to the cable handle attachments. Position yourself on the flat bench in the same position as for a dumbbell press. Your wrists should be pronated and arms perpendicular to the floor. This will be your starting position.",
@@ -3122,7 +3122,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "adductors"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Sit upright in a chair and grip the seat on the sides.",
@@ -3163,7 +3163,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, first set the bar to a position that best matches your height. Once the bar is loaded, step under it and position it across the back of your shoulders.",
@@ -3186,7 +3186,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "chest"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Sit on the edge of a chair, gripping the back of it.",
@@ -3204,7 +3204,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Start off by standing with your legs together, holding a bodybar or a broomstick.",
@@ -3225,7 +3225,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Begin in a three point stance, squatted down with your back flat and one hand on the ground. Place the medicine ball directly in front of you.",
@@ -3246,7 +3246,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Begin in a kneeling position facing a wall or utilize a partner. Hold the ball with both hands tight into the chest.",
@@ -3268,7 +3268,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Begin in a kneeling position holding the medicine ball with both hands tightly into the chest.",
@@ -3289,7 +3289,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Begin in an athletic stance with the knees bent, hips back, and back flat. Hold the medicine ball near your legs. This will be your starting position.",
@@ -3306,7 +3306,7 @@ export const EXERCISES: Exercise[] = [
       "chest"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Get on your hands and knees next to an exercise ball.",
@@ -3391,7 +3391,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "expert",
     "instructions": [
       "The circus bell is an oversized dumbbell with a thick handle. Begin with the dumbbell between your feet, and grip the handle with both hands.",
@@ -3417,7 +3417,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "With a barbell on the floor close to the shins, take an overhand (or hook) grip just outside the legs. Lower your hips with the weight focused on the heels, back straight, head facing forward, chest up, with your shoulders just in front of the bar. This will be your starting position.",
@@ -3444,7 +3444,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Begin standing with a barbell close to your shins. Your feet should be directly under your hips with your feet turned out slightly. Grip the bar with a double overhand grip or hook grip, about shoulder width apart. Squat down to the bar. Your spine should be in full extension, with a back angle that places your shoulders in front of the bar and your back as vertical as possible.",
@@ -3467,7 +3467,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "With a barbell on the floor close to the shins, take an overhand or hook grip just outside the legs. Lower your hips with the weight focused on the heels, back straight, head facing forward, chest up, with your shoulders just in front of the bar. This will be your starting position.",
@@ -3487,7 +3487,7 @@ export const EXERCISES: Exercise[] = [
       "forearms",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Begin with a shoulder width, double overhand or hook grip, with the bar hanging at the mid thigh position. Your back should be straight and inclined slightly forward.",
@@ -3511,7 +3511,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "With a barbell on the floor close to the shins, take an overhand or hook grip just outside the legs. Lower your hips with the weight focused on the heels, back straight, head facing forward, chest up, with your shoulders just in front of the bar. This will be your starting position.",
@@ -3544,7 +3544,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Assume a shoulder-width stance, with knees inside the arms. Now while keeping the back flat, bend at the knees and hips so that you can grab the bar with the arms fully extended and a pronated grip that is slightly wider than shoulder width. Point the elbows out to sides. The bar should be close to the shins. Position the shoulders over or slightly ahead of the bar. Establish a flat back posture. This will be your starting position.",
@@ -3571,7 +3571,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "With a barbell on boxes or stands of the desired height, take an overhand or hook grip just outside the legs. Lower your hips with the weight focused on the heels, back straight, head facing forward, chest up, with your shoulders just in front of the bar. This will be your starting position.",
@@ -3615,7 +3615,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Lie back on a flat bench. Using a close grip (around shoulder width), lift the bar from the rack and hold it straight over you with your arms locked. This will be your starting position.",
@@ -3658,7 +3658,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Attach a band to each end of the bar. Take the bar, placing a foot on the middle of the band. Stand upright with a narrow, supinated grip on the EZ bar. The elbows should be close to the torso. This will be your starting position.",
@@ -3680,7 +3680,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Lie on a flat bench with an EZ bar loaded to an appropriate weight.",
@@ -3701,7 +3701,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Stand up with your torso upright while holding an E-Z Curl Bar at the closer inner handle. The palm of your hands should be facing forward and they should be slightly tilted inwards due to the shape of the bar. The elbows should be close to the torso. This will be your starting position.",
@@ -3724,7 +3724,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Sit down on a pull-down machine with a wide bar attached to the top pulley. Make sure that you adjust the knee pad of the machine to fit your height. These pads will prevent your body from being raised by the resistance attached to the bar.",
@@ -3768,7 +3768,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Hold a barbell with both hands, palms up and a few inches apart.",
@@ -3812,7 +3812,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "With the weight loaded, take a zurcher hold on the end of the implement. Place the bar in the crook of the elbow and hold onto your wrist. Try to keep the weight off of the forearms.",
@@ -3891,7 +3891,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Secure an exercise band around a stationary post.",
@@ -3936,7 +3936,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "In the crucifix, you statically hold weights out to the side for time. While the event can be practiced using dumbbells, it is best to practice with one of the various implements used, such as axes and hammers, as it feels different.",
@@ -4082,7 +4082,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "To deadlift with short bands, simply loop them over the bar before you start, and step into them to set up. For long bands, they will need to be anchored to a secure base, such as heavy dumbbells or a rack.",
@@ -4106,7 +4106,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "You can attach the chains to the sleeves of the bar, or just drape the middle over the bar so there is a greater weight increase as you lift.",
@@ -4127,7 +4127,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Secure your legs at the end of the decline bench and slowly lay down on the bench.",
@@ -4150,7 +4150,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Secure your legs at the end of the decline bench and slowly lay down on the bench.",
@@ -4252,7 +4252,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Secure your legs at the end of the decline bench and slowly lay down on the bench.",
@@ -4334,7 +4334,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Place a decline bench underneath the Smith machine. Now place the barbell at a height that you can reach when lying down and your arms are almost fully extended. Using a pronated grip that is wider than shoulder width, unlock the bar from the rack and hold it straight over you with your arms extended. This will be your starting position.",
@@ -4360,7 +4360,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin by having a platform or weight plates that you can stand on, usually 1-3 inches in height. Approach the bar so that it is centered over your feet. You feet should be about hip width apart. Bend at the hip to grip the bar at shoulder width, allowing your shoulder blades to protract. Typically, you would use an overhand grip or an over/under grip on heavier sets.",
@@ -4383,7 +4383,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "For this drill you will need two boxes or benches, one 12 to 16 inches high and the other 22 to 26 inches high.",
@@ -4404,7 +4404,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Sit securely in a dip machine, select the weight and firmly grasp the handles.",
@@ -4426,7 +4426,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "For this exercise you will need access to parallel bars. To get yourself into the starting position, hold your body at arms length (arms locked) above the bars.",
@@ -4465,7 +4465,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "For this exercise you will need access to a donkey calf raise machine. Start by positioning your lower back and hips under the padded lever provided. The tailbone area should be the one making contact with the pad.",
@@ -4492,7 +4492,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place two kettlebells between your feet. To get in the starting position, push your butt back and look straight ahead.",
@@ -4513,7 +4513,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Hold a kettlebell by the handle in each hand.",
@@ -4538,7 +4538,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Clean two kettlebells to your shoulders.",
@@ -4559,7 +4559,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "quadriceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "expert",
     "instructions": [
       "Place two kettlebells behind your feet. Bend your knees and sit back to pick up the kettlebells.",
@@ -4581,7 +4581,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place a kettlebell in front of your front foot and clean and press a kettlebell overhead with your opposite arm. Clean the kettlebell to your shoulder by extending through the legs and hips as you pull the kettlebell towards your shoulders. Rotate your wrist as you do so, so that the palm faces forward.",
@@ -4626,7 +4626,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lie facedown on top of an exercise ball.",
@@ -4644,7 +4644,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Grab a barbell with a supinated grip (palms facing forward) and get your elbows close to your torso and back. This will be your starting position.",
@@ -4665,7 +4665,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Position low boxes or other platforms 2-3 feet apart.",
@@ -5345,7 +5345,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Stand up straight while holding an EZ curl bar at the wide outer handle. The palms of your hands should be facing forward and slightly tilted inward due to the shape of the bar. Keep your elbows close to your torso. This will be your starting position.",
@@ -5366,7 +5366,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Using a close grip, lift the EZ bar and hold it with your elbows in as you lie on the bench. Your arms should be perpendicular to the floor. This will be your starting position.",
@@ -5442,7 +5442,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Position a bar onto a rack at shoulder height loaded to an appropriate weight. Place a short, raised platform behind you.",
@@ -5463,7 +5463,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "traps"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "Get a platform of some sort (it can be an aerobics or calf raise platform) that is around 4-6 inches in height.",
@@ -5488,7 +5488,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "To begin, step onto the elliptical and select the desired option from the menu. Most ellipticals have a manual setting, or you can select a program to run. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise. Elevation can be adjusted to change the intensity of the workout.",
@@ -5504,7 +5504,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Lie on an exercise ball with your lower back curvature pressed against the spherical surface of the ball. Your feet should be bent at the knee and pressed firmly against the floor. The upper torso should be hanging off the top of the ball. The arms should either be kept alongside the body or crossed on top of your chest as these positions avoid neck strains (as opposed to the hands behind the back of the head position).",
@@ -5523,7 +5523,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Place an exercise ball nearby and lay on the floor in front of it with your hands on the floor shoulder width apart in a push-up position.",
@@ -5545,7 +5545,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "beginner",
     "instructions": [
       "Lie on the floor and position a kettlebell for one arm to press. The kettlebell should be held by the handle. The leg on the same side that you are pressing should be bent, with the knee crossing over the midline of the body.",
@@ -5581,7 +5581,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Choke the band around a post. The band should be at the same height as your elbow. Stand with your left side to the band a couple of feet away.",
@@ -5600,7 +5600,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the cable to the same height as your elbow. Stand with your left side to the band a couple of feet away.",
@@ -5620,7 +5620,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "middle back"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "Facing a high pulley with a rope or dual handles attached, pull the weight directly towards your face, separating your hands as you do so. Keep your upper arms parallel to the ground."
@@ -5642,7 +5642,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "There are various implements that can be used for the farmers walk. These can also be performed with heavy dumbbells or short bars if these implements aren't available. Begin by standing between the implements.",
@@ -5682,7 +5682,7 @@ export const EXERCISES: Exercise[] = [
       "forearms"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Hold a barbell with both hands and your palms facing up; hands spaced about shoulder width.",
@@ -5700,7 +5700,7 @@ export const EXERCISES: Exercise[] = [
       "chest"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "Position a flat bench between two low pulleys so that when you are laying on it, your chest will be lined up with the cable pulleys.",
@@ -5802,7 +5802,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Adjust the j-hooks so they are at the appropriate height to rack the bar. Begin lying on the floor with your head near the end of a power rack. Keeping your shoulder blades pulled together; pull the bar off of the hooks.",
@@ -5822,7 +5822,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Adjust the j-hooks so they are at the appropriate height to rack the bar. For this exercise, drape the chains directly over the end of the bar, trying to keep the ends away from the plates.",
@@ -5861,7 +5861,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "This exercise stretches the fascia of the muscles in the feet. Start off seated with your shoes removed. Using a foot roller or a similar object, such as a small section of pvc pipe, place your foot against the roller across the arch of your foot. This will be your starting position.",
@@ -5884,7 +5884,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Attach a dual handled chain or rope attachment to the sled. You should be facing away from the sled, holding a handle in each hand.",
@@ -5905,7 +5905,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "This drill teaches you the proper positioning of both the bar and your body during the clean and front squat.",
@@ -5992,7 +5992,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack that best matches your height. Once the correct height is chosen and the bar is loaded, bring your arms up under the bar while keeping the elbows high and the upper arm slightly above parallel to the floor. Rest the bar on top of the deltoids and cross your arms while grasping the bar for total control.",
@@ -6016,7 +6016,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "This exercise is best performed inside a squat rack for safety purposes. To begin, first set a flat bench behind you and set the bar on a rack that best matches your height. Once the correct height is chosen and the bar is loaded, bring your arms up under the bar while keeping the elbows high and the upper arm slightly above parallel to the floor. Rest the bar on top of the deltoids and cross your arms while grasping the bar for total control.",
@@ -6042,7 +6042,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "quadriceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Begin with a box of an appropriate height 1-2 feet in front of you. Stand with your feet should width apart. This will be your starting position.",
@@ -6060,7 +6060,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Select the weight on a low pulley machine and grasp the single hand cable attachment that is attached to the low pulley with your left hand.",
@@ -6085,7 +6085,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Set up a row of cones or other small barriers, placing them a few feet apart.",
@@ -6157,7 +6157,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "While standing straight, hold a barbell plate in both hands at the 3 and 9 o'clock positions. Your palms should be facing each other and your arms should be extended and locked with a slight bend at the elbows and the plate should be down near your waist in front of you as far as you can go. Tip: The arms will remain in this position throughout the exercise. This will be your starting position.",
@@ -6179,7 +6179,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Lie on a flat bench while holding a barbell using a palms down grip that is about 15 inches apart.",
@@ -6202,7 +6202,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "To begin, first set the bar in a rack slightly below shoulder level. Rest the bar on top of the deltoids, pushing into the clavicles, and lightly touching the throat. Your hands should be in a clean grip, touching the bar only with your fingers to help keep it in position.",
@@ -6223,7 +6223,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "glutes"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Clean two kettlebells to your shoulders. Clean the kettlebells to your shoulders by extending through the legs and hips as you pull the kettlebells towards your shoulders. Rotate your wrists as you do so.",
@@ -6262,7 +6262,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "Either standing or seated on a high bench, grasp two stirrup cables that are attached to the high pulleys. Grab with the opposing hand so your arms are crisscrossed about you and your palms are facing forward.",
@@ -6281,7 +6281,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "middle back"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Grasp the pull-up bar with a shoulder width underhand grip.",
@@ -6304,7 +6304,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "glutes"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin by adjusting the equipment to fit your body. Place your feet against the footplate in between the rollers as you lie facedown. Your knees should be just behind the pad.",
@@ -6346,7 +6346,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "shoulders"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "beginner",
     "instructions": [
       "Stand holding a light kettlebell by the horns close to your chest. This will be your starting position.",
@@ -6367,7 +6367,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin with a bar on a rack at shoulder height. Rack the bar across the rear of your shoulders as you would a power squat, not on top of your shoulders. Keep your back tight, shoulder blades pinched together, and your knees slightly bent. Step back from the rack.",
@@ -6388,7 +6388,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin with a bar on a rack at about the same height as your stomach. Bend over underneath the bar and rack the bar across the rear of your shoulders as you would a power squat, not on top of your shoulders. At the proper height, you should be near parallel to the floor when bent over. Keep your back tight, shoulder blades pinched together, and your knees slightly bent. Keep your back arched and your cervical spine in proper alignment.",
@@ -6464,7 +6464,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Place the back of your torso against the back pad of the machine and hook your shoulders under the shoulder pads provided.",
@@ -6528,7 +6528,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "In a seated position, extend your legs over a foam roll so that it is position on the back of the upper legs. Place your hands to the side or behind you to help support your weight. This will be your starting position.",
@@ -6591,7 +6591,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin with a shoulder width, double overhand or hook grip, with the bar hanging at the mid thigh position. Your back should be straight and inclined slightly forward.",
@@ -6616,7 +6616,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin with a shoulder width, double overhand or hook grip, with the bar hanging just below the knees. Your back should be straight and inclined slightly forward.",
@@ -6643,7 +6643,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Begin with a wide grip on the bar, with an overhand or hook grip. The feet should be directly below the hips with the feet turned out. Your knees should be slightly bent, and the torso inclined forward. The spine should be fully extended and the head facing forward. The bar should be at the hips. This will be your starting position.",
@@ -6670,7 +6670,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Begin with a wide grip on the bar, with an overhand or hook grip. The feet should be directly below the hips with the feet turned out. Your knees should be slightly bent, and the torso inclined forward. The spine should be fully extended and the head facing forward. The bar should be just below the knees. This will be your starting position.",
@@ -6692,7 +6692,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin with a bar on a rack at about the same height as your stomach. Suspend the bar using chains or suspension straps.",
@@ -6754,7 +6754,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "This drill helps you learn the snatch. Begin by holding a light weight across the back of the shoulders. Your feet should be slightly wider than hip width apart with the feet turned out, the same position that you would perform a squat with.",
@@ -6775,7 +6775,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Utilize a heavy bag for this exercise. Assume an upright stance next to the bag, with your feet staggered, fairly wide apart. Place your hand on the bag at about chest height. This will be your starting position.",
@@ -6792,7 +6792,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "Stand between a couple of high pulleys and grab a handle in each arm. Position your upper arms in a way that they are parallel to the floor with the palms of your hands facing you. This will be your starting position.",
@@ -6831,7 +6831,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Secure one end of the band to the lower portion of a post and attach the other to one ankle.",
@@ -6849,7 +6849,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Secure one end of the band to the lower portion of a post and attach the other to one ankle.",
@@ -6870,7 +6870,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "After choosing a suitable band, lay down in the middle of the rack, after securing the band on either side of you. If your rack doesn't have pegs, the band can be secured using heavy dumbbells or similar objects, just ensure they won't move.",
@@ -6891,7 +6891,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "glutes"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Seat yourself on the floor.",
@@ -6933,7 +6933,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Set up a row of hurdles or other small barriers, placing them a few feet apart.",
@@ -6954,7 +6954,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Lie face down on a hyperextension bench, tucking your ankles securely under the footpads.",
@@ -6996,7 +6996,7 @@ export const EXERCISES: Exercise[] = [
       "abductors"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Loop a belt, rope, or band around one of your feet, and swing that leg across your body to the opposite side, keeping the leg extended as you lay on the ground. This will be your starting position.",
@@ -7012,7 +7012,7 @@ export const EXERCISES: Exercise[] = [
       "abductors"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lay on your side, with the bottom leg placed onto a foam roller between the hip and the knee. The other leg can be crossed in front of you.",
@@ -7050,7 +7050,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Hold a barbell with an overhand grip (palms down) that is a little closer together than shoulder width.",
@@ -7073,7 +7073,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Grab a dumbbell in each hand and lie face down on an incline bench that is set to an incline that is approximately 30 degrees.",
@@ -7097,7 +7097,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the weight to an appropriate amount and be seated, grasping the handles. Your upper arms should be about 45 degrees to the body, with your head and chest up. The elbows should be bent to about 90 degrees. This will be your starting position.",
@@ -7116,7 +7116,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "To get yourself into the starting position, set the pulleys at the floor level (lowest level possible on the machine that is below your torso).",
@@ -7327,7 +7327,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "For this drill you will need a box about 12 inches high, and two thick mats or aerobics steps.",
@@ -7414,7 +7414,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lie on your back with your legs extended. Loop a belt, rope, or band around one of your feet, and swing that leg as far to the side as you can. This will be your starting position.",
@@ -7430,7 +7430,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lie face down on the floor, with a rope, belt, or band looped around one foot.",
@@ -7446,7 +7446,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Choke the band around a post. The band should be at the same height as your elbow. Stand with your right side to the band a couple of feet away.",
@@ -7489,7 +7489,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "lats"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Hang a rope or suspension straps from a rack or other stable object. Grasp the ends and position yourself in a supine position hanging from the ropes. Your body should be straight with your heels on the ground with your arms fully extended. This will be your starting position.",
@@ -7629,7 +7629,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Start the exercise the same way you would a close grip bench press. You will lie on a flat bench while holding a barbell at arms length (fully extended) with the elbows in. However, instead of having the arms perpendicular to the torso, make sure the bar is set in a direct line above the upper chest. This will be your starting position.",
@@ -7690,7 +7690,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Place a barbell on the floor.",
@@ -7716,7 +7716,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "This drill helps you learn to drive yourself low enough during the jerk and corrects those who move backward during the movement. Begin with the bar racked in the jerk position, with the shoulders forward, torso upright, and the feet split slightly apart.",
@@ -7736,7 +7736,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals",
       "calves"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "This movement strengthens the dip portion of the jerk. Begin with the bar racked in the jerk position, with the shoulders forward to create a shelf and the bar lightly contacting the throat. The feet should be directly under the hips, with the feet turned out as is comfortable.",
@@ -7755,7 +7755,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, step onto the treadmill and select the desired option from the menu. Most treadmills have a manual setting, or you can select a program to run. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise. Elevation can be adjusted to change the intensity of the workout.",
@@ -7782,7 +7782,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "To load kegs, place the desired number a distance from the loading platform, typically 30-50 feet.",
@@ -7802,7 +7802,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Clean a kettlebell to your shoulder. Clean the kettlebell to your shoulder by extending through the legs and hips as you raise the kettlebell towards your shoulder. The palm should be facing inward.",
@@ -7825,7 +7825,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place kettlebell between your feet. To get in the starting position, push your butt back and look straight ahead.",
@@ -7845,7 +7845,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "shoulders"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place one kettlebell between your legs and take a wider than shoulder width stance. Bend over by pushing your butt out and keeping your back flat.",
@@ -7866,7 +7866,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "beginner",
     "instructions": [
       "Stand tall with your feet hip-width apart. Hold a kettlebell upside down by the horns, with the bell above your hands and close to your chest. Brace your abdominals and squeeze your glutes so your ribcage stays down. This is your starting position.",
@@ -7890,7 +7890,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "abdominals"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Stand tall with your feet hip-width apart. Hold a kettlebell upside down by the horns, with the bell above your hands and close to your chest. Brace your abdominals and squeeze your glutes so your ribcage stays down. This is your starting position.",
@@ -7916,7 +7916,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place kettlebell between your feet. To get in the starting position, push your butt back and look straight ahead.",
@@ -7936,7 +7936,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "lower back"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Hold a kettlebell by the handle in one hand. Stand on one leg, on the same side that you hold the kettlebell.",
@@ -7956,7 +7956,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "abdominals"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "beginner",
     "instructions": [
       "Stand with your feet hip-width apart, holding a kettlebell by the horns with both hands. Press it overhead until your arms are extended, with the bell hanging behind your hands.",
@@ -7979,7 +7979,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "shoulders"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place one kettlebell between your legs and take a comfortable stance. Bend over by pushing your butt out and keeping your back flat.",
@@ -7997,7 +7997,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "abdominals"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "beginner",
     "instructions": [
       "With a wide stance, hold a kettlebell with both hands. Allow it to hang at waist level with your arms extended. This will be your starting position.",
@@ -8020,7 +8020,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "shoulders"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "expert",
     "instructions": [
       "Pick up a kettlebell with two hands and hold it by the horns. Hold one leg off of the floor and squat down on the other.",
@@ -8040,7 +8040,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Sit on the floor and spread your legs out comfortably.",
@@ -8059,7 +8059,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Clean two kettlebells two your shoulders.",
@@ -8082,7 +8082,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "shoulders"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place a kettlebell on the ground between your feet. Position your feet in a wide stance, and grasp the kettlebell with two hands. Set your hips back as far as possible, with your knees bent. Keep your chest and head up. This will be your starting position.",
@@ -8101,7 +8101,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Clean two kettlebells to your shoulders. Clean the kettlebells to your shoulders by extending through the legs and hips as you pull the kettlebells towards your shoulders. Rotate your wrists as you do so. This will be your starting position.",
@@ -8124,7 +8124,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Lie on your back on the floor and press a kettlebell to the top position by extending the elbow. Bend the knee on the same side as the kettlebell.",
@@ -8147,7 +8147,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Lie on your back on the floor and press a kettlebell to the top position by extending the elbow. Bend the knee on the same side as the kettlebell.",
@@ -8169,7 +8169,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place a kettlebell in front of your lead foot and clean and press it overhead with your opposite arm. Clean the kettlebell to your shoulder by extending through the legs and hips as you pull the kettlebell towards your shoulders. Rotate your wrist as you do so, so that the palm faces forward. Press it overhead by extending the elbow.",
@@ -8194,7 +8194,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Grip the rings using a false grip, with the base of your palms on top of the rings.",
@@ -8252,7 +8252,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Position your body on the vertical leg raise bench so that your forearms are resting on the pads next to the torso and holding on to the handles. Your arms will be bent at a 90 degree angle.",
@@ -8314,7 +8314,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Connect a rope attachment to a high pulley cable and position a mat on the floor in front of it.",
@@ -8337,7 +8337,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "Place a bench sideways in front of a high pulley machine.",
@@ -8377,7 +8377,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "middle back"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Select the appropriate weight using a pulley that is above your head. Attach a rope to the cable and kneel a couple of feet away, holding the rope out in front of you with both arms extended. This will be your starting position.",
@@ -8416,7 +8416,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "quadriceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Begin kneeling on the floor with a barbell racked across the back of your shoulders, or you can use your body weight for this exercise. This can be done inside of a power rack to make unracking easier.",
@@ -8437,7 +8437,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "middle back"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Attach a single handle to a high pulley and make your weight selection.",
@@ -8459,7 +8459,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Set the bar to the proper height in a power rack. Kneel behind the bar; it may be beneficial to put a mat down to pad your knees. Slide under the bar, racking it across the back of your shoulders. Your shoulder blades should be retracted and the bar tight across your back. Unrack the weight.",
@@ -8480,7 +8480,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Position a bar into a landmine or securely anchor it in a corner. Load the bar to an appropriate weight.",
@@ -8506,7 +8506,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Position a bar into landmine or, lacking one, securely anchor it in a corner. Load the bar to an appropriate weight and position the handle attachment on the bar.",
@@ -8556,7 +8556,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "quadriceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Assume a comfortable standing position, with a short box positioned next to you. This will be your starting position.",
@@ -8581,7 +8581,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "quadriceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Position a number of cones in a row several feet apart.",
@@ -8599,7 +8599,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "To begin, stand on an exercise band so that tension begins at arm's length. Grasp the handles using a pronated (palms facing your thighs) grip that is slightly less than shoulder width. The handles should be resting on the sides of your thighs. Your arms should be extended with a slight bend at the elbows and your back should be straight. This will be your starting position.",
@@ -8617,7 +8617,7 @@ export const EXERCISES: Exercise[] = [
       "lats"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "While lying on the floor, place a foam roll under your back and to one side, just behind your arm pit. This will be your starting position.",
@@ -8636,7 +8636,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Lie on the floor with one kettlebell in place on your chest, holding it by the handle. Extend leg on working side over leg on non-working side.Your free arm can be extended out to your side for support.",
@@ -8670,7 +8670,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "For this exercise you will need to use a leg extension machine. First choose your weight and sit on the machine with your legs under the pad (feet pointed forward) and the hands holding the side bars. This will be your starting position. Tip: You will need to adjust the pad so that it falls on top of your lower leg (just above your feet). Also, make sure that your legs form a 90-degree angle between the lower and upper leg. If the angle is less than 90-degrees then that means the knee is over the toes which in turn creates undue stress at the knee joint. If the machine is designed that way, either look for another machine or just make sure that when you start executing the exercise you stop going down once you hit the 90-degree angle.",
@@ -8713,7 +8713,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Using a leg press machine, sit down on the machine and place your legs on the platform directly in front of you at a medium (shoulder width) foot stance. (Note: For the purposes of this discussion we will use the medium stance described above which targets overall development; however you can choose any of the three stances described in the foot positioning section).",
@@ -8753,7 +8753,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Load an appropriate weight onto the pins and adjust the seat for your height. The handles should be near the bottom or middle of the pectorals at the beginning of the motion.",
@@ -8774,7 +8774,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Load the pins to an appropriate weight. Position yourself directly between the handles. Grasp the bottom handles with a comfortable grip, and then lower your hips as you take a breath. Look forward with your head and keep your chest up. This will be your starting position.",
@@ -8793,7 +8793,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Load an appropriate weight onto the pins and adjust the seat for your height. The handles should be near the bottom of the pectorals at the beginning of the motion. Your chest and head should be up and your shoulder blades retracted. This will be your starting position.",
@@ -8812,7 +8812,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "lats"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Load an appropriate weight onto the pins and adjust the seat height so that you can just reach the handles above you. Adjust the knee pad to help keep you down. Grasp the handles with a pronated grip. This will be your starting position.",
@@ -8833,7 +8833,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Load an appropriate weight onto the pins and adjust the seat for your height. The handles should be near the top of the pectorals at the beginning of the motion. Your chest and head should be up and your shoulder blades retracted. This will be your starting position.",
@@ -8853,7 +8853,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "middle back"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Load an appropriate weight onto the pins and adjust the seat height so that the handles are at chest level. Grasp the handles with either a neutral or pronated grip. This will be your starting position.",
@@ -8872,7 +8872,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Load an appropriate weight onto the pins and adjust the seat for your height. The handles should be near the top of the shoulders at the beginning of the motion. Your chest and head should be up and handles held with a pronated grip. This will be your starting position.",
@@ -8891,7 +8891,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Load the pins to an appropriate weight. Position yourself directly between the handles.",
@@ -8957,7 +8957,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "You will need two boxes or benches spaced a few feet away from each other. Begin by standing on one box facing towards the other platform.",
@@ -8985,7 +8985,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Begin standing with the log in front of you. Grasp the handles, and begin to clean the log. As you are bent over to start the clean, attempt to get the log as high as possible, pulling it into your chest. Extend through the hips and knees to bring it up to complete the clean.",
@@ -9006,7 +9006,7 @@ export const EXERCISES: Exercise[] = [
       "forearms",
       "middle back"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Attach a climbing rope to a high beam or cross member. Below it, ensure that the smith machine bar is locked in place with the safeties and cannot move. Alternatively, a secure box could also be utilized.",
@@ -9042,7 +9042,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "To move into the starting position, place the pulleys at the low position, select the resistance to be used and grasp a handle in each hand.",
@@ -9060,7 +9060,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Select the desired weight and lay down face up on the bench of a seated row machine that has a rope attached to it. Your head should be pointing towards the attachment.",
@@ -9084,7 +9084,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "traps"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Sit on a low pulley row machine with a rope attachment.",
@@ -9103,7 +9103,7 @@ export const EXERCISES: Exercise[] = [
       "lower back"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "In a seated position, place a foam roll under your lower back. Cross your arms in front of you and protract your shoulders. This will be your starting position.",
@@ -9139,7 +9139,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "quadriceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Stand with your torso upright holding a kettlebell in your right hand. This will be your starting position.",
@@ -9162,7 +9162,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Adjust a bar in a Smith machine to an appropriate height. Position yourself under the bar, racking it across the back of your shoulders. Unrack the bar, and then split your feet, moving one foot forward and one foot back. This will be your starting position.",
@@ -9180,7 +9180,7 @@ export const EXERCISES: Exercise[] = [
       "adductors"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "expert",
     "instructions": [
       "Lie on your back with your knees bent and the soles of the feet pressed together. Have your partner hold your knees. This will be your starting position.",
@@ -9197,7 +9197,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "Grab a straight bar or E-Z bar attachment that is attached to the low pulley with both hands, using an underhand (palms facing up) shoulder-width grip.",
@@ -9221,7 +9221,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Place a cambered bar underneath an exercise bench.",
@@ -9239,7 +9239,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Place a flat bench in front of a high pulley or lat pulldown machine.",
@@ -9260,7 +9260,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "While holding a barbell or EZ Curl bar with a pronated grip (palms facing forward), lie on your back on a flat bench with your head close to the end of the bench. Tip: If you are holding a barbell grab it using a shoulder-width grip and if you are using an E-Z Bar grab it on the inner handles.",
@@ -9279,7 +9279,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "While holding a barbell or EZ Curl bar with a pronated grip (palms facing forward), lie on your back on a flat bench with your head off the end of the bench. Tip: If you are holding a barbell grab it using a shoulder-width grip and if you are using an E-Z Bar grab it on the inner handles.",
@@ -9337,7 +9337,7 @@ export const EXERCISES: Exercise[] = [
       "neck"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lie face down with your whole body straight on a flat bench while holding a weight plate behind your head. Tip: You will need to position yourself so that your shoulders are slightly above the end of a flat bench in order for the upper chest, neck and face to be off the bench. This will be your starting position.",
@@ -9355,7 +9355,7 @@ export const EXERCISES: Exercise[] = [
       "neck"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lie face up with your whole body straight on a flat bench while holding a weight plate on top of your forehead. Tip: You will need to position yourself so that your shoulders are slightly above the end of a flat bench in order for the traps, neck and head to be off the bench. This will be your starting position.",
@@ -9395,7 +9395,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "calves"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "expert",
     "instructions": [
       "Lie on your back with your legs extended. Your partner should be kneeling beside you. Raise one leg up towards the ceiling and have your partner hold the ankle. Your partner can use their shoulder to brace your leg if necessary. This will be your starting position.",
@@ -9412,7 +9412,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Lie face forward on a tall flat bench while holding a barbell with a supinated grip (palms facing up). Tip: If you are holding a barbell grab it using a shoulder-width grip and if you are using an E-Z Bar grab it on the inner handles. Your upper body should be positioned in a way that the upper chest is over the end of the bench and the barbell is hanging in front of you with the arms extended and perpendicular to the floor. This will be your starting position.",
@@ -9430,7 +9430,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the machine lever to fit your height and lie face down on the leg curl machine with the pad of the lever on the back of your legs (just a few inches under the calves). Tip: Preferably use a leg curl machine that is angled as opposed to flat since an angled position is more favorable for hamstrings recruitment.",
@@ -9452,7 +9452,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Adjust the leg machine to a height that will allow you to get inside it with your knees bent and the thighs slightly below parallel.",
@@ -9550,7 +9550,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "lats"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Load up the T-bar Row Machine with the desired weight and adjust the leg height so that your upper chest is at the top of the pad. Tip: In some machines all you can do is stand on the appropriate step that allows you to be at a height that has the upper chest at the top of the pad.",
@@ -9570,7 +9570,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lie on a flat bench with either an e-z bar (my preference) or a straight bar placed on the floor behind your head and your feet on the floor.",
@@ -9592,7 +9592,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Sit down on the Chest Press Machine and select the weight.",
@@ -9613,7 +9613,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the seat to the appropriate height and make your weight selection. Place your upper arms against the pads and grasp the handles. This will be your starting position.",
@@ -9631,7 +9631,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Sit down on the Preacher Curl Machine and select the weight.",
@@ -9652,7 +9652,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Sit down on the Shoulder Press Machine and select the weight.",
@@ -9671,7 +9671,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the seat to the appropriate height and make your weight selection. Place your upper arms against the pads and grasp the handles. This will be your starting position.",
@@ -9692,7 +9692,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "You will need a partner for this exercise. Lacking one, this movement can be performed against a wall.",
@@ -9713,7 +9713,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "For this exercise you will need a medicine ball and a partner. Stand back to back with your partner, spaced 2-3 feet apart. This will be your starting position.",
@@ -9735,7 +9735,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "quadriceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Assume a semisquat stance with a medicine ball in your hands. Your arms should hang so the ball is near your feet.",
@@ -9793,7 +9793,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "lats"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "expert",
     "instructions": [
       "Using a spacing that is just about 1 inch wider than shoulder width, grab a pull-up bar with the palms of one hand facing forward and the palms of the other hand facing towards you. This will be your starting position.",
@@ -9812,7 +9812,7 @@ export const EXERCISES: Exercise[] = [
       "abductors"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Place a band around both ankles and another around both knees. There should be enough tension that they are tight when your feet are shoulder width apart.",
@@ -9875,7 +9875,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin with a loaded barbell held at the mid thigh position with a wide grip. The feet should be directly below the hips, with the feet turned out as needed. Lower the hips, with the chest up and the head looking forward. The shoulders should be just in front of the bar. This will be the starting position.",
@@ -9900,7 +9900,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Grip the rings using a false grip, with the base of your palms on top of the rings. Initiate a pull up by pulling the elbows down to your side, flexing the elbows.",
@@ -9922,7 +9922,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Place the back of your torso against the back pad of the machine and hook your shoulders under the shoulder pads provided.",
@@ -9947,7 +9947,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Using a leg press machine, sit down on the machine and place your legs on the platform directly in front of you at a less-than-shoulder-width narrow stance with the toes slightly pointed out. Your feet should be around 3 inches or less apart. Tip: Keep your head up at all times and also maintain the back on the pad at all times.",
@@ -9971,7 +9971,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack that best matches your height. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
@@ -10013,7 +10013,7 @@ export const EXERCISES: Exercise[] = [
       "neck"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Using a muscle roller or a rolling pin, place the roller behind your head and against your neck. Make sure that you do not place the roller directly against the spine, but turned slightly so that the roller is pressed against the muscles to either side of the spine. This will be your starting position.",
@@ -10032,7 +10032,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Lie back on a flat bench. Using a medium-width grip (a grip that creates a 90-degree angle in the middle of the movement between the forearms and the upper arms), lift the bar from the rack and hold it straight over your neck with your arms locked. This will be your starting position.",
@@ -10095,7 +10095,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin with a barbell supported on top of the traps. The chest should be up, and the head facing forward. Adopt a hip width stance with the feet turned out as needed.",
@@ -10112,7 +10112,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Lie on a flat bench or step, and hang one leg and arm over the side.",
@@ -10191,7 +10191,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Connect a standard handle to a tower. Move cable to highest pulley position.",
@@ -10238,7 +10238,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place a kettlebell between your feet. As you bend down to grab the kettlebell, push your butt back and keep your eyes looking forward.",
@@ -10255,7 +10255,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Hold a kettlebell by the handle.",
@@ -10277,7 +10277,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Lie on the floor holding a kettlebell with one hand, with your upper arm supported by the floor. The palm should be facing in.",
@@ -10298,7 +10298,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Hold a kettlebell by the handle. Clean the kettlebell to your shoulder by extending through the legs and hips as you pull the kettlebell towards your shoulder. Rotate your wrist as you do so, so that the palm faces forward. This will be your starting position.",
@@ -10318,7 +10318,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Clean a kettlebell to your shoulder. Clean the kettlebell to your shoulder by extending through the legs and hips as you pull the kettlebell towards your shoulder. Rotate your wrist as you do so, so that the palm faces inward. This will be your starting position.",
@@ -10337,7 +10337,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Clean a kettlebell to your shoulder. Clean the kettlebell to your shoulder by extending through the legs and hips as you pull the kettlebell towards your shoulder. Rotate your wrist as you do so, so that the palm faces forward. This will be your starting position.",
@@ -10358,7 +10358,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Hold a kettlebell by the handle. Clean the kettlebell to your shoulder by extending through the legs and hips as you pull the kettlebell towards your shoulder. Rotate your wrist as you do so, so that the palm faces forward. This will be your starting position.",
@@ -10378,7 +10378,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "lats"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place a kettlebell in front of your feet. Bend your knees slightly and then push your butt out as much as possible as you bend over to get in the starting position. Grab the kettlebell and pull it to your stomach, retracting your shoulder blade and flexing the elbow. Keep your back straight. Lower and repeat."
@@ -10400,7 +10400,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "expert",
     "instructions": [
       "Place a kettlebell between your feet. Bend your knees and push your butt back to get in the proper starting position.",
@@ -10422,7 +10422,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Hold a kettlebell by the handle. Clean the kettlebell to your shoulder by extending through the legs and hips as you pull the kettlebell towards your shoulder. Rotate your wrist as you do so, so that the palm faces forward. This will be your starting position.",
@@ -10444,7 +10444,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "quadriceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "expert",
     "instructions": [
       "Hold a kettlebell in one hand by the handle.",
@@ -10467,7 +10467,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "shoulders"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [],
     "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One-Arm_Kettlebell_Swings/0.jpg"
@@ -10483,7 +10483,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "lats"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Position a bar into a landmine or in a corner to keep it from moving. Load an appropriate weight onto your end.",
@@ -10505,7 +10505,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Start in a standing position with a staggered, athletic stance. Hold a medicine ball in one hand, on the same side as your back leg. This will be your starting position.",
@@ -10529,7 +10529,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "shoulders"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place one kettlebell between your feet.",
@@ -10552,7 +10552,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "shoulders"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "expert",
     "instructions": [
       "Clean and press a kettlebell with one arm. Clean the kettlebell to your shoulder by extending through the legs and hips as you pull the kettlebell towards your shoulder. Rotate your wrist as you do so. Press the weight overhead by extending through the elbow.This will be your starting position.",
@@ -10576,7 +10576,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Stand to the side of a barbell next to its center. Bend your knees and lower your body until you are able to reach the barbell.",
@@ -10618,7 +10618,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "hamstrings"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "Hook a leather ankle cuff to a low cable pulley and then attach the cuff to your ankle.",
@@ -10658,7 +10658,7 @@ export const EXERCISES: Exercise[] = [
       "forearms",
       "lats"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "expert",
     "instructions": [
       "For this exercise, start out by placing a towel around a chin up bar.",
@@ -10725,7 +10725,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Lie down on a flat surface with your back pressing against the floor or an exercise mat. Make sure your knees are bent.",
@@ -10749,7 +10749,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "middle back"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Select an appropriate weight and adjust the knee pad to help keep you down. Grasp the handle with a pronated grip. This will be your starting position.",
@@ -10832,7 +10832,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "biceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Grab onto a chinup bar with one hand, using a pronated grip. Keep your feet on the floor or a step. Allow the majority of your weight to hang from that hand, while keeping your feet on the ground. Hold for 10-20 seconds and switch sides."
@@ -10872,7 +10872,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Start by standing about 2 to 3 feet in front of a flat bench with your back facing the bench. Have a barbell in front of you on the floor. Tip: Your feet should be shoulder width apart from each other.",
@@ -10898,7 +10898,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "shoulders"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "expert",
     "instructions": [
       "Place one kettlebell between your feet. Clean the kettlebell by extending through the legs and hips as you raise the kettlebell towards your shoulders.",
@@ -10919,7 +10919,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Secure your feet and lay back on the floor. Your knees should be bent. Hold a weight with both hands to your chest. This will be your starting position.",
@@ -10937,7 +10937,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "To begin, set a weight that is comfortable on each side of the pulley machine. Note: Make sure that the amount of weight selected is the same on each side.",
@@ -10959,7 +10959,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "expert",
     "instructions": [
       "Sit upright on the floor with your partner behind you. Raise one arm straight up, and flex the elbow, attempting to touch your hand to your back. Your parner should hold your tricep and wrist. This will be your starting position.",
@@ -10976,7 +10976,7 @@ export const EXERCISES: Exercise[] = [
       "lats"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Hold a medine ball with both hands and stand with your feet at shoulder width. This will be your starting position.",
@@ -11002,7 +11002,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Start out by having a barbell in front of you on the floor. Your feet should be wider than shoulder width apart from each other.",
@@ -11066,7 +11066,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Connect a standard handle to a tower, and—if possible—position the cable to shoulder height. If not, a low pulley will suffice.",
@@ -11090,7 +11090,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Connect a standard handle to a tower, and position the cable to shoulder height.",
@@ -11134,7 +11134,7 @@ export const EXERCISES: Exercise[] = [
       "forearms"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Start out by placing a barbell on one side of a flat bench.",
@@ -11155,7 +11155,7 @@ export const EXERCISES: Exercise[] = [
       "forearms"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Start out by placing a barbell on one side of a flat bench.",
@@ -11200,7 +11200,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Stand between a set of parallel bars. Place a hand on each bar, and then take a small jump to help you get into the starting position with your arms locked out.",
@@ -11235,7 +11235,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lay on your side, supporting your weight on your forearm and on a foam roller placed on the outside of your lower leg. Your upper leg can either be on top of your lower leg, or you can cross it in front of you. This will be your starting position.",
@@ -11251,7 +11251,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "In a seated position, loop a belt, rope, or band around one foot. This will be your starting position.",
@@ -11269,7 +11269,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Lay on a ball so that your upper back is on the ball with your hips unsupported. Both feet should be flat on the floor, hip width apart or wider. This will be your starting position.",
@@ -11292,7 +11292,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Pin presses remove the eccentric phase of the bench press, developing starting strength. They also allow you to train a desired range of motion.",
@@ -11312,7 +11312,7 @@ export const EXERCISES: Exercise[] = [
       "glutes"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Sit with your buttocks on top of a foam roll. Bend your knees, and then cross one leg so that the ankle is over the knee. This will be your starting position.",
@@ -11344,7 +11344,7 @@ export const EXERCISES: Exercise[] = [
       "forearms"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Grab two wide-rimmed plates and put them together with the smooth sides facing outward",
@@ -11363,7 +11363,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lie down on the floor or an exercise mat with your legs fully extended and your upper body upright. Grab the plate by its sides with both hands out in front of your abdominals with your arms slightly bent.",
@@ -11384,7 +11384,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "glutes"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "For this movement a wooden floor or similar is needed. Lay on your back with your legs extended. Place a gym towel or a light weight underneath your heel. This will be your starting position.",
@@ -11429,7 +11429,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "expert",
     "instructions": [
       "Place a kettlebell on the floor. Place yourself in a pushup position, on your toes with one hand on the ground and one hand holding the kettlebell, with your elbows extended. This will be your starting position.",
@@ -11469,7 +11469,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "In a seated position, loop a belt, rope, or band around one foot. This will be your starting position.",
@@ -11495,7 +11495,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Stand with your feet slightly wider than shoulder width apart and toes pointing out slightly.",
@@ -11535,7 +11535,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "quadriceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "With a barbell on boxes of the desired height, take a grip just outside the legs. Lower your hips with the weight focused on the heels, back straight, head facing forward, chest up, with your shoulders just in front of the bar. This will be your starting position.",
@@ -11561,7 +11561,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Standing with the weight racked on the front of the shoulders, begin with the dip. With your feet directly under your hips, flex the knees without moving the hips backward. Go down only slightly, and reverse direction as powerfully as possible.",
@@ -11607,7 +11607,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Begin with a loaded barbell on the floor. The bar should be close to or touching the shins, and a wide grip should be taken on the bar. The feet should be directly below the hips, with the feet turned out as needed. Lower the hips, with the chest up and the head looking forward. The shoulders should be just in front of the bar. This will be the starting position.",
@@ -11635,7 +11635,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin with a loaded barbell on boxes or stands of the desired height. A wide grip should be taken on the bar. The feet should be directly below the hips, with the feet turned out as needed. Lower the hips, with the chest up and the head looking forward. The shoulders should be just in front of the bar, with the elbows pointed out. This will be the starting position.",
@@ -11662,7 +11662,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "In the power stairs, implements are moved up a staircase. For training purposes, these can be performed with a tire or box.",
@@ -11680,7 +11680,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "To perform this movement you will need a preacher bench and an E-Z bar. Grab the E-Z curl bar at the close inner handle (either have someone hand you the bar which is preferable or grab the bar from the front bar rest provided by most preacher benches). The palm of your hands should be facing forward and they should be slightly tilted inwards due to the shape of the bar.",
@@ -11723,7 +11723,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "To begin, lie down on a bench with a barbell resting on your chest. Position your legs so they are secure on the extension of the abdominal bench. This is the starting position.",
@@ -11764,7 +11764,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Place your sled on an appropriate surface, loaded to a suitable weight. The sled should provide enough resistance to require effort, but not so heavy that you are significantly slowed down.",
@@ -11784,7 +11784,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Begin standing a few feet in front of a low pulley with a rope or handle attached. Face away from the machine, straddling the cable, with your feet set wide apart.",
@@ -11890,7 +11890,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lie on the floor face down and place your hands about 36 inches apart from each other holding your torso up at arms length.",
@@ -11912,7 +11912,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [],
     "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Push_Press/0.jpg"
@@ -11929,7 +11929,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Standing with the weight racked on the back of the shoulders, begin with the dip. With your feet directly under your hips, flex the knees without moving the hips backward. Go down only slightly, and reverse direction as powerfully as possible. Drive through the heels create as much speed and force as possible, moving the bar in a vertical path.",
@@ -12013,7 +12013,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Start off by rolling your torso forward onto the ball so your hips rest on top of the ball and become the highest point of your body.",
@@ -12029,7 +12029,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lay on your side. Loop a belt, rope, or band around your top foot. Flex the knee and extend your hip, attempting to touch your glutes with your foot, and holding the belt with your hands. This will be your starting position.",
@@ -12045,7 +12045,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lay facedown on the floor with your weight supported by your hands or forearms. Place a foam roll underneath one leg on the quadriceps, and keep the foot off of the ground. Make sure to relax the leg as much as possible. This will be your starting position.",
@@ -12064,7 +12064,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "You will need a box for this exerise.",
@@ -12085,7 +12085,7 @@ export const EXERCISES: Exercise[] = [
       "forearms",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "This drill teaches the delivery of the barbell to the rack position on the shoulders. Begin holding a bar in the scarecrow position, with the upper arms parallel to the floor, and the forearms hanging down. Use a hook grip, with your fingers wrapped over your thumbs.",
@@ -12108,7 +12108,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Set up in a power rack with the bar on the pins. The pins should be set to the desired point; just below the knees, just above, or in the mid thigh position. Attach bands to the base of the rack, or secure them with dumbbells. Attach the other end to the bar. You may need to choke the bands to provide tension.",
@@ -12130,7 +12130,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Set up in a power rack with the bar on the pins. The pins should be set to the desired point; just below the knees, just above, or in the mid thigh position. Position yourself against the bar in proper deadlifting position. Your feet should be under your hips, your grip shoulder width, back arched, and hips back to engage the hamstrings. Since the weight is typically heavy, you may use a mixed grip, a hook grip, or use straps to aid in holding the weight.",
@@ -12167,7 +12167,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, seat yourself on the bike and adjust the seat to your height.",
@@ -12187,7 +12187,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "You will need a partner for this drill.",
@@ -12212,7 +12212,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Position a bench inside a power rack, with the bar set to the correct height. Begin by anchoring bands either to band pegs or to the top of the rack. Ensure that you will be position properly under the bands. Attach the other end to the barbell.",
@@ -12238,7 +12238,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin in a power rack with a box at the appropriate height behind you. Set up the bands either on band pegs or attached to the top of the rack, ensuring they will be directly above the bar during the squat. Attach the other end to the bar.",
@@ -12263,7 +12263,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "quadriceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Set the bar up in a power rack. Attach bands to the top of the rack, using either bands pegs or the frame itself. Attach the other end of the bands to the bar.",
@@ -12288,7 +12288,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Begin in a power rack with the pins and bar set at the appropriate height. After loading the bar, attach bands to the top of the rack, using either pegs or the frame itself. Attach the other end of the bands to the bar.",
@@ -12315,7 +12315,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Begin with a bar loaded on the floor inside of a power rack. Attach bands to the top of the rack, using either pegs or the frame itself. Attach the other end to the barbell.",
@@ -12336,7 +12336,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Stand up with your torso upright while holding a barbell at shoulder width with the elbows close to the torso. The palm of your hands should be facing down (pronated grip). This will be your starting position.",
@@ -12356,7 +12356,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Grab an EZ-bar using a shoulder width and palms down (pronated) grip.",
@@ -12377,7 +12377,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Stand up with your torso upright while holding a bar attachment that is attached to a low pulley using a pronated (palms down) and shoulder width grip. Make sure also that you keep the elbows close to the torso. This will be your starting position.",
@@ -12459,7 +12459,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Stand erect while holding a barbell with a supinated grip (palms facing up).",
@@ -12478,7 +12478,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Start by setting a bar attachment (straight or e-z) on a high pulley machine.",
@@ -12500,7 +12500,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "glutes"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Place your feet between the pads after loading an appropriate weight. Lay on the top pad, allowing your hips to hang off the back, while grasping the handles to hold your position.",
@@ -12519,7 +12519,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the handles so that they are fully to the rear. Make an appropriate weight selection and adjust the seat height so the handles are at shoulder level. Grasp the handles with your hands facing inwards. This will be your starting position.",
@@ -12539,7 +12539,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Start by standing straight with a weighted plate held by both hands and arms fully extended. Use a pronated grip (palms facing down) and make sure your fingers grab the rough side of the plate while your thumb grabs the smooth side. Note: For the best results, grab the weighted plate at an 11:00 and 1:00 o'clock position.",
@@ -12561,7 +12561,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Lie back on a flat bench. Using a close, supinated grip (around shoulder width), lift the bar from the rack and hold it straight over you with your arms locked extended in front of you and perpendicular to the floor. This will be your starting position.",
@@ -12582,7 +12582,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "traps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Lay down with your back on the floor. Place a foam roll underneath your upper back, and cross your arms in front of you, protracting your shoulders. This will be your starting position.",
@@ -12606,7 +12606,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Position the frame at the starting point, and load with the appropriate weight. Standing in the center of the frame, begin by gripping the handles and driving through your heels to lift the frame. Ensure your chest and head are up and your back is straight.",
@@ -12628,7 +12628,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "traps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Load the frame with the desired weight. Center yourself between the handles. You feet should be about hip width apart. Bend at the hips to grip the handles, allowing your shoulder blades to protract.",
@@ -12648,7 +12648,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Grip a ring in each hand, and then take a small jump to help you get into the starting position with your arms locked out.",
@@ -12686,7 +12686,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack that best matches your height. Once the correct height is chosen and the bar is loaded, step under the bar and place it on the back of your shoulders (slightly below the neck).",
@@ -12712,7 +12712,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Grab the pull-up bar with the palms facing forward using a wide grip.",
@@ -12736,7 +12736,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Put a barbell in front of you on the ground and grab it using a pronated (palms facing down) grip that a little wider than shoulder width. Tip: Depending on the weight used, you may need wrist wraps to perform the exercise and also a raised platform in order to allow for better range of motion.",
@@ -12760,7 +12760,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin standing while holding a bar at arm's length in front of you. You can stand on a raised platform to increase the range of motion.",
@@ -12782,7 +12782,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Grab the rope with both hands above your head. Pull down on the rope as you take a small jump.",
@@ -12801,7 +12801,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Kneel 1-2 feet in front of a cable system with a rope attached.",
@@ -12823,7 +12823,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Hold an end of the rope in each hand. Position the rope behind you on the ground. Raise your arms up and turn the rope over your head bringing it down in front of you. When it reaches the ground, jump over it. Find a good turning pace that can be maintained. Different speeds and techniques can be used to introduce variation.",
@@ -12839,7 +12839,7 @@ export const EXERCISES: Exercise[] = [
       "lats"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Attach a rope to a high pulley and make your weight selection. Stand a couple feet back from the pulley with your feet staggered and take the rope with both hands. Lean forward from the hip, keeping your back straight, with your arms extended up in front of you. This will be your starting position.",
@@ -12860,7 +12860,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "chest"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Stand up straight with your legs together, holding a bodybar or broomstick.",
@@ -12884,7 +12884,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "middle back"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "To begin, seat yourself on the rower. Make sure that your heels are resting comfortably against the base of the foot pedals and that the straps are secured. Select the program that you wish to use, if applicable. Sit up straight and bend forward at the hips.",
@@ -12924,7 +12924,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, step onto the treadmill and select the desired option from the menu. Most treadmills have a manual setting, or you can select a program to run. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise. Elevation can be adjusted to change the intensity of the workout.",
@@ -12972,7 +12972,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "To load sandbags or other objects, begin with the implements placed a distance from the loading platform, typically 50 feet.",
@@ -13050,7 +13050,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Secure a band close to the ground and place a bench a couple feet away from it.",
@@ -13070,7 +13070,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Sit on a Military Press Bench with a bar behind your head and either have a spotter give you the bar (better on the rotator cuff this way) or pick it up yourself carefully with a pronated grip (palms facing forward). Tip: Your grip should be wider than shoulder width and it should create a 90-degree angle between the forearm and the upper arm as the barbell goes down.",
@@ -13089,7 +13089,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Start out by sitting at the end of a flat bench with a barbell placed on top of your thighs. Your feet should be shoulder width apart from each other.",
@@ -13194,7 +13194,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "For this exercise you will need access to a low pulley row machine with a V-bar. Note: The V-bar will enable you to have a neutral grip where the palms of your hands face each other. To get into the starting position, first sit down on the machine and place your feet on the front platform or crossbar provided making sure that your knees are slightly bent and not locked.",
@@ -13215,7 +13215,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the weight to an appropriate amount and be seated, grasping the handles. Your upper arms should be about 90 degrees to the body, with your head and chest up. The elbows should also be bent to about 90 degrees. This will be your starting position.",
@@ -13233,7 +13233,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Sit on the machine and place your toes on the lower portion of the platform provided with the heels extending off. Choose the toe positioning of your choice (forward, in, or out) as per the beginning of this chapter.",
@@ -13274,7 +13274,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Sit down on a flat bench with a barbell or E-Z Bar in front of you in between your legs. Your legs should be spread with the knees bent and the feet on the floor.",
@@ -13472,7 +13472,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "glutes"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Set up a box in a power rack. The pins should be set at an appropriate height. Begin by stepping under the bar and placing it across the back of the shoulders, not on top of your traps. Squeeze your shoulder blades together and rotate your elbows forward, attempting to bend the bar across your shoulders.",
@@ -13511,7 +13511,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "calves"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Loop a belt, rope, or band around one foot. Sit down with both legs extended . This will be your starting position.",
@@ -13527,7 +13527,7 @@ export const EXERCISES: Exercise[] = [
       "neck"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Place a neck strap on the floor at the end of a flat bench. Once you have selected the weights, sit at the end of the flat bench with your feet wider than shoulder width apart from each other. Your toes should be pointed out.",
@@ -13547,7 +13547,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the machine lever to fit your height and sit on the machine with your back against the back support pad.",
@@ -13628,7 +13628,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "traps"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "To get into the starting position, first sit down on the machine and place your feet on the front platform or crossbar provided making sure that your knees are slightly bent and not locked.",
@@ -13666,7 +13666,7 @@ export const EXERCISES: Exercise[] = [
       "forearms"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Hold a barbell with both hands and your palms facing up; hands spaced about shoulder width.",
@@ -13685,7 +13685,7 @@ export const EXERCISES: Exercise[] = [
       "forearms"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Hold a barbell with both hands and your palms facing down; hands spaced about shoulder width.",
@@ -13740,7 +13740,7 @@ export const EXERCISES: Exercise[] = [
       "forearms"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Put a bench in front of a low pulley machine that has a barbell or EZ Curl attachment on it.",
@@ -13788,7 +13788,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "middle back"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Attach a single handle to a low cable.",
@@ -13826,7 +13826,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "To begin, stand on an exercise band so that tension begins at arm's length. Grasp the handles and lift them so that the hands are at shoulder height at each side.",
@@ -13911,7 +13911,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Stand to the side of a cone or hurdle.",
@@ -14059,7 +14059,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Grab the pull-up bar with the palms facing forward using a wide grip.",
@@ -14104,7 +14104,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Stand to one side of the box with your left foot resting on the middle of it.",
@@ -14121,7 +14121,7 @@ export const EXERCISES: Exercise[] = [
       "chest"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Begin by moving the pulleys to the high position, select the resistance to be used, and take a handle in each hand.",
@@ -14143,7 +14143,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Position a bar into a landmine or securely anchor it in a corner. Load the bar to an appropriate weight.",
@@ -14186,7 +14186,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "This drill teaches quick foot action. You need a single cone. Begin standing next to the cone with one arm back and one arm forward.",
@@ -14206,7 +14206,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Position a box in a rack. Secure a band or rope in place above the box.",
@@ -14228,7 +14228,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Arrange a line of cones in front of you. Assume a relaxed standing position, balanced on one leg. Raise the knee of your opposite leg. This will be your starting position.",
@@ -14251,7 +14251,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Stand to the side of a cone or hurdle. To get into the start position, stand on one leg with your knee slightly bent.",
@@ -14269,7 +14269,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Seat yourself in the machine and adjust it so that you are positioned properly. The pad should be against the lower part of the shin but not in contact with the ankle. Adjust the seat so that the pivot point is in line with your knee. Select a weight appropriate for your abilities.",
@@ -14292,7 +14292,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Stand to the side of a box with your inside foot on top of it, close to the edge.",
@@ -14373,7 +14373,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Stand on the ground with one foot resting on the box, heel close to the edge.",
@@ -14436,7 +14436,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Roller skating is a fun activity which can be effective in improving cardiorespiratory fitness and muscular endurance. It requires relatively good balance and coordination. It is necessary to learn the basics of skating including turning and stopping and to wear protective gear to avoid possible injury.",
@@ -14456,7 +14456,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "To begin, load the sled with the desired weight and attach the pulling strap. You can pull with handles, use a harness, or attach the pulling strap to a weight belt.",
@@ -14476,7 +14476,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "quadriceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Attach dual handles to a sled connected by a rope or chain. Load the sled to a light weight.",
@@ -14493,7 +14493,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Attach dual handles to a sled using a chain or rope. Load the sled to an appropriate load.",
@@ -14517,7 +14517,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Load your pushing sled with the desired weight.",
@@ -14533,7 +14533,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Attach dual handles to a sled connected by a rope or chain. Load the sled to a light weight.",
@@ -14554,7 +14554,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "lats"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Attach dual handles to a sled connected by a rope or chain. Load the sled to an appropriate weight. Face the sled, backing up until there is some tension in the line.",
@@ -14578,7 +14578,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "You will need a tire and a sledgehammer for this exercise. Stand in front of the tire about two feet away from it with a staggered stance. Grip the sledgehammer.",
@@ -14598,7 +14598,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "chest"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Place an incline bench underneath the smith machine. Place the barbell at a height that you can reach when lying down and your arms are almost fully extended. Once the weight you need is selected, lie down on the incline bench and make sure your shoulders are aligned right under the barbell.",
@@ -14620,7 +14620,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "With the bar at thigh level, load an appropriate weight.",
@@ -14642,7 +14642,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Place a flat bench underneath the smith machine. Now place the barbell at a height that you can reach when lying down and your arms are almost fully extended. Once the weight you need is selected, lie down on the flat bench. Using a pronated grip that is wider than shoulder width, unlock the bar from the rack and hold it straight over you with your arms locked. This will be your starting position.",
@@ -14665,7 +14665,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "shoulders"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Set the barbell attached to the smith machine to a height that is about 2 inches below your knees.",
@@ -14685,7 +14685,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Place a block or weight plate below the bar on the Smith machine. Set the bar to a position that best matches your height. Once the correct height is chosen and the bar is loaded, step onto the plates with the balls of your feet and place the bar on the back of your shoulders.",
@@ -14707,7 +14707,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Place a flat bench underneath the smith machine. Place the barbell at a height that you can reach when lying down and your arms are almost fully extended. Once the weight you need is selected, lie down on the flat bench. Using a close and pronated grip (palms facing forward) that is around shoulder width, unlock the bar from the rack and hold it straight over you with your arms locked. This will be your starting position.",
@@ -14729,7 +14729,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Position a decline bench in the rack so that the bar will be above your chest. Load an appropriate weight and take your place on the bench.",
@@ -14754,7 +14754,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Position the bar at knee height and load it to an appropriate weight.",
@@ -14774,7 +14774,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Position a bench in the rack and load the bar to an appropriate weight. Lie down on the bench, placing the bottom of your feet against the bar. Unlock the bar and extend your legs. You may need to use your hands to assist you. For added stability grasp the sides of the Smith Machine. This will be your starting position.",
@@ -14795,7 +14795,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Place an incline bench underneath the smith machine. Place the barbell at a height that you can reach when lying down and your arms are almost fully extended. Once the weight you need is selected, lie down on the incline bench and make sure your upper chest is aligned with the barbell. Using a pronated grip (palms facing forward) that is wider than shoulder width, unlock the bar from the rack and hold it straight over you with your arms locked. This will be your starting position.",
@@ -14818,7 +14818,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Position a Smith machine bar a couple feet off of the ground. Ensure that it is resting on the safeties. After loading the bar to an appropriate weight, lie underneath the bar. Place the middle of your feet on the bar, tucking your knees to your chest. This will be your starting position.",
@@ -14838,7 +14838,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "traps"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "With the bar at thigh level, load an appropriate weight.",
@@ -14859,7 +14859,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, place a flat bench (or preferably one with back support) underneath a smith machine. Position the barbell at a height so that when seated on the flat bench, the arms must be almost fully extended to reach the barbell.",
@@ -14882,7 +14882,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "To begin, first set the bar to a position that best matches your height. Step under it and position the bar across the back of your shoulders.",
@@ -14901,7 +14901,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the barbell on the smith machine to fit your height and align a raised platform right under the bar.",
@@ -14926,7 +14926,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, first set the bar on the height that best matches your height. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
@@ -14949,7 +14949,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "lower back"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, set the bar on the smith machine to a height that is around the middle of your thighs. Once the correct height is chosen and the bar is loaded, grasp the bar using a pronated (palms forward) grip that is shoulder width apart. You may need some wrist wraps if using a significant amount of weight.",
@@ -14972,7 +14972,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "shoulders"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, set the bar on the smith machine to a height that is around the middle of your thighs. Once the correct height is chosen and the bar is loaded, grasp the bar using a pronated (palms forward) grip that is shoulder width apart. You may need some wrist wraps if using a significant amount of weight.",
@@ -14995,7 +14995,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, place a flat bench 2-3 feet behind the smith machine. Then, set the bar on the height that best matches your height. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
@@ -15024,7 +15024,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Place your feet at a shoulder width stance with the barbell resting right above the connection between the toes and the rest of the foot.",
@@ -15051,7 +15051,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin with the feet in the pulling position, the bar racked across the back of the shoulders, and the hands placed in a wide snatch grip.",
@@ -15076,7 +15076,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "The snatch deadlift strengthens the first pull of the snatch. Begin with a wide snatch grip with the barbell placed on the platform. The feet should be directly under the hips, with the feet turned out. Squat down to the bar, keeping the back in absolute extension with the head facing forward.",
@@ -15099,7 +15099,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "With a barbell on the floor close to the shins, take a wide snatch grip. Lower your hips with the weight focused on the heels, back straight, head facing forward, chest up, with your shoulders just in front of the bar. This will be your starting position.",
@@ -15120,7 +15120,7 @@ export const EXERCISES: Exercise[] = [
       "forearms",
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin with a wide grip, with the bar hanging at the mid thigh position. You can use a hook or overhand grip. Your back should be straight and inclined slightly forward.",
@@ -15145,7 +15145,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Begin with a loaded barbell on boxes or stands of the desired height. A wide grip should be taken on the bar. The feet should be directly below the hips, with the feet turned out as needed. Lower the hips, with the chest up and the head looking forward. The shoulders should be just in front of the bar, with the elbows pointed out. This will be the starting position.",
@@ -15164,7 +15164,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "For this exercise anchor a band to the ground. We used an incline bench and anchored the band to the base, standing over the bench. Alternatively, this could be performed standing on the band.",
@@ -15186,7 +15186,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Attach bands to the bar that are securely anchored near the ground. You may need to choke the bands to get adequate tension.",
@@ -15210,7 +15210,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack that best matches your height. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
@@ -15272,7 +15272,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Start out by setting the bar on the part of the preacher bench that you would normally sit on. Make sure to align the barbell properly so that it is balanced and will not fall off.",
@@ -15324,7 +15324,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "With a barbell on the floor close to the shins, take an overhand grip just outside the legs. Lower your hips with the weight focused on the heels, back straight, head facing forward, chest up, with your shoulders just in front of the bar. This will be your starting position.",
@@ -15349,7 +15349,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Standing with the weight racked on the front of the shoulders, begin with the dip. With your feet directly under your hips, flex the knees without moving the hips backward.",
@@ -15400,7 +15400,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Begin with a loaded barbell on the floor. The bar should be close to or touching the shins, and a wide grip should be taken on the bar. The feet should be directly below the hips, with the feet turned out as needed. Lower the hips, with the chest up and the head looking forward. The shoulders should be just in front of the bar. This will be the starting position.",
@@ -15467,7 +15467,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Standing with the weight racked on the front of the shoulders, begin with the dip. With your feet directly under your hips, flex the knees without moving the hips backward. Go down only slightly, and reverse direction as powerfully as possible. Drive through the heels create as much speed and force as possible, and be sure to move your head out of the way as the bar leaves the shoulders.",
@@ -15490,7 +15490,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Set up the bands on the sleeves, secured to either band pegs, the rack, or dumbbells so that there is appropriate tension.",
@@ -15514,7 +15514,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "To set up the chains, begin by looping the leader chain over the sleeves of the bar. The heavy chain should be attached using a snap hook. Adjust the length of the lead chain so that a few links are still on the floor at the top of the movement.",
@@ -15538,7 +15538,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "To begin, first set the bar on a rack to just below shoulder level. Position a weight plate on the ground a couple feet back from the rack. Once the bar is loaded, step under it and place the back of your shoulders across it.",
@@ -15565,7 +15565,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "To start out, make sure that the exercise band is at an even split between both the left and right side of the body. To do this, use your hands to grab both sides of the band and place both feet in the middle of the band. Your feet should be shoulder width apart from each other.",
@@ -15588,7 +15588,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "To begin, step onto the stairmaster and select the desired option from the menu. You can choose a manual setting, or you can select a program to run. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise.",
@@ -15625,7 +15625,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack that best matches your height. Once the correct height is chosen and the bar is loaded, step under the bar and place the bar on the back of your shoulders (slightly below the neck).",
@@ -15647,7 +15647,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "This exercise is best performed inside a squat rack for easier pick up of the bar. To begin, first set the bar on a rack that best matches your height. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
@@ -15707,7 +15707,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Stand up with your torso upright while holding a cable curl bar that is attached to a low pulley. Grab the cable bar at shoulder width and keep the elbows close to the torso. The palm of your hands should be facing up (supinated grip). This will be your starting position.",
@@ -15728,7 +15728,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Clasp your hands behind your back with your palms together, straighten arms and then rotate them so your palms face downward.",
@@ -15746,7 +15746,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Place a loaded bar at shoulder level in a rack. With a pronated grip at shoulder width, begin with the bar racked across the front of your shoulders. This is your starting position.",
@@ -15769,7 +15769,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Position dual pulleys to chest height and select an appropriate weight. Stand a foot or two in front of the cables, holding one in each hand. You can stagger your stance for better stability.",
@@ -15789,7 +15789,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Connect a standard handle on a tower, and move the cable to the lowest pulley position.",
@@ -15813,7 +15813,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Connect a standard handle to a tower, and move the cable to the highest pulley position.",
@@ -15835,7 +15835,7 @@ export const EXERCISES: Exercise[] = [
       "calves"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the padded lever of the calf raise machine to fit your height.",
@@ -15990,7 +15990,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Start by standing with your back about two to three feet away from a bench or step.",
@@ -16007,7 +16007,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "To begin, stand straight with a barbell in your hands. You should grip the bar with palms facing down and a closer than shoulder width grip apart from each other.",
@@ -16045,7 +16045,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Being by looping a belt, band, or rope around one foot. While standing, place that foot forward.",
@@ -16137,7 +16137,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings"
     ],
     "secondaryMuscles": [],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "Adjust the machine lever to fit your height and lie with your torso bent at the waist facing forward around 30-45 degrees (since an angled position is more favorable for hamstrings recruitment) with the pad of the lever on the back of your right leg (just a few inches under the calves) and the front of the right leg on top of the machine pad.",
@@ -16180,7 +16180,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "forearms"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Start by standing to the right side of a low pulley row. Use your left hand to come across the body and grab a single handle attached to the low pulley with a pronated grip (palms facing down). Rest your arm in front of you. Your right hand should grab the machine for better support and balance.",
@@ -16203,7 +16203,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "Grab a single handle with your left arm next to the low pulley machine. Turn away from the machine keeping the handle to the side of your body with your arm fully extended. Now use both hands to elevate the single handle directly above the head with the palm facing forward. Keep your upper arm completely vertical (perpendicular to the floor) and put your right hand on your left elbow to help keep it steady. This is the starting position.",
@@ -16224,7 +16224,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Start by placing a barbell that is about chest high on a squat rack. Once you have selected the weights, grab the barbell using a pronated (palms facing forward) grip. Make sure to grip the bar wider than shoulder width apart from each other.",
@@ -16246,7 +16246,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "biceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "To begin, stand straight while holding a weight plate by the ridge at arm's length in each hand using a neutral grip (palms facing in). You feet should be shoulder width apart from each other. This will be your starting position.",
@@ -16264,7 +16264,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "Start out by grabbing single handle next to the low pulley machine. Make sure you are far enough from the machine so that your arm is supporting the weight.",
@@ -16329,7 +16329,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, stand up holding a barbell or e-z bar using a pronated grip (palms facing forward) with your hands closer than shoulder width apart from each other. Your feet should be about shoulder width apart.",
@@ -16391,7 +16391,7 @@ export const EXERCISES: Exercise[] = [
       "forearms"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Start by standing straight and holding a barbell behind your glutes at arm's length while using a pronated grip (palms will be facing back away from the glutes) and having your hands shoulder width apart from each other.",
@@ -16430,7 +16430,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Attach a rope to a high pulley and select an appropriate weight.",
@@ -16503,7 +16503,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "lats"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Stand with your feet shoulder width apart holding a medicine ball in both hands. To begin, reach the medicine ball deep behind your head as you bend the knees slightly and lean back.",
@@ -16566,7 +16566,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "intermediate",
     "instructions": [
       "To begin, step onto the stepmill and select the desired option from the menu. You can choose a manual setting, or you can select a program to run. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise. Use caution so that you don't trip as you climb the stairs. It is recommended that you maintain your grip on the handles so that you don't fall.",
@@ -16585,7 +16585,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Grasp a bar using an overhand grip (palms facing down). You may need some wrist wraps if using a significant amount of weight.",
@@ -16629,7 +16629,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack that best matches your height. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
@@ -16692,7 +16692,7 @@ export const EXERCISES: Exercise[] = [
       "lats"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "You will start by grabbing the wide bar from the top pulley of a pulldown machine and using a wider than shoulder-width pronated (palms down) grip. Step backwards two feet or so.",
@@ -16714,7 +16714,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "lats"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Place a loaded barbell on the end of a bench. Standing on the bench behind the bar, take a medium, pronated grip. Stand with your hips back and chest up, maintaining a neutral spine. This will be your starting position.",
@@ -16733,7 +16733,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Place a bar on the ground behind the head of an incline bench.",
@@ -16756,7 +16756,7 @@ export const EXERCISES: Exercise[] = [
       "calves",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Stand to the side of a box with your inside foot on top of it, close to the edge.",
@@ -16782,7 +16782,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin with a bar loaded on the ground. Approach the bar so that the bar intersects the middle of the feet. The feet should be set very wide, near the collars. Bend at the hips to grip the bar. The arms should be directly below the shoulders, inside the legs, and you can use a pronated grip, a mixed grip, or hook grip. Relax the shoulders, which in effect lengthens your arms.",
@@ -16808,7 +16808,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "To deadlift with short bands, simply loop them over the bar before you start, and step into them to set up. Ensure that they under the back half of your foot, directly where you are driving into the floor.",
@@ -16836,7 +16836,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "You can attach the chains to the sleeves of the bar, or just drape the middle over the bar so there is a greater weight increase as you lift. Attempt to keep the ends of the chains away from the plates so you don't hit them when you lower the weight.",
@@ -16879,7 +16879,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "This drill is great for chest passes when you lack a partner or a wall of sufficient strength. Lay on the ground on your back with your knees bent.",
@@ -16901,7 +16901,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Lay on the ground on your back with your knees bent. Hold the ball with one hand, extending the arm fully behind your head. This will be your starting position.",
@@ -16922,7 +16922,7 @@ export const EXERCISES: Exercise[] = [
       "lats",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Lay on the ground on your back with your knees bent.",
@@ -16944,7 +16944,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Adjust the straps so the handles are at an appropriate height, below waist level.",
@@ -16966,7 +16966,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Anchor your suspension straps securely to the top of a rack or other object.",
@@ -16984,7 +16984,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Secure a set of suspension straps with the handles hanging about a foot off of the ground. Move yourself into a pushup plank position facing away from the rack.",
@@ -17005,7 +17005,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "lats"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Suspend your straps at around chest height. Take a handle in each hand and lean back. Keep your body erect and your head and chest up. Your arms should be fully extended. This will be your starting position.",
@@ -17028,7 +17028,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Suspend your straps so the handles are 18-30 inches from the floor.",
@@ -17050,7 +17050,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Begin in a standing position.",
@@ -17071,7 +17071,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "lats"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Position a bar into a landmine or in a corner to keep it from moving. Load an appropriate weight onto your end.",
@@ -17133,7 +17133,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "glutes"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, sit down on the abductor machine and select a weight you are comfortable with. When your legs are positioned properly, grip the handles on each side. Your entire upper body (from the waist up) should be stationary. This is the starting position.",
@@ -17154,7 +17154,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, sit down on the adductor machine and select a weight you are comfortable with. When your legs are positioned properly on the leg pads of the machine, grip the handles on each side. Your entire upper body (from the waist up) should be stationary. This is the starting position.",
@@ -17182,7 +17182,7 @@ export const EXERCISES: Exercise[] = [
       "traps",
       "triceps"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Begin by gripping the bottom of the tire on the tread, and position your feet back a bit. Your chest should be driving into the tire.",
@@ -17219,7 +17219,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Stand upright holding an exercise ball with both hands. Extend your arms so the ball is straight out in front of you. This will be your starting position.",
@@ -17258,7 +17258,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "For this exercise load a trap bar, also known as a hex bar, to an appropriate weight resting on the ground. Stand in the center of the apparatus and grasp both handles.",
@@ -17311,7 +17311,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Attach a rope to a low pulley. After selecting an appropriate weight, grasp the rope with both hands and face away from the cable.",
@@ -17329,7 +17329,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Attach a straight or angled bar to a high pulley and grab with an overhand grip (palms facing down) at shoulder width.",
@@ -17348,7 +17348,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Attach a rope attachment to a high pulley and grab with a neutral grip (palms facing each other).",
@@ -17367,7 +17367,7 @@ export const EXERCISES: Exercise[] = [
       "triceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Attach a V-Bar to a high pulley and grab with an overhand grip (palms facing down) at shoulder width.",
@@ -17447,7 +17447,7 @@ export const EXERCISES: Exercise[] = [
       "lower back",
       "traps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place two kettlebells between your feet. To get in the starting position, push your butt back and look straight ahead.",
@@ -17468,7 +17468,7 @@ export const EXERCISES: Exercise[] = [
       "quadriceps",
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Clean two kettlebells to your shoulders. Clean the kettlebells to your shoulders by extending through the legs and hips as you swing the kettlebells towards your shoulders. Rotate your wrists as you do so, so that the palms face forward. Squat down a few inches and reverse the motion rapidly driving both kettlebells overhead. Immediately after the initial push, squat down again and get under the kettlebells. Once the kettlebells are locked out, stand upright to complete the exercise."
@@ -17485,7 +17485,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "triceps"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Clean two kettlebells to your shoulders. Clean the kettlebells to your shoulders by extending through the legs and hips as you swing the kettlebells towards your shoulders. Rotate your wrists as you do so, so that the palms face forward.",
@@ -17504,7 +17504,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "lats"
     ],
-    "equipment": "Kettlebell",
+    "equipment": "Dumbbell",
     "difficulty": "intermediate",
     "instructions": [
       "Place two kettlebells in front of your feet. Bend your knees slightly and then push your butt out as much as possible as you bend over to get in the starting position.",
@@ -17524,7 +17524,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Sit down on a pull-down machine with a wide bar attached to the top pulley. Adjust the knee pad of the machine to fit your height. These pads will prevent your body from being raised by the resistance attached to the bar.",
@@ -17582,7 +17582,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "traps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Grasp a barbell with an overhand grip that is slightly less than shoulder width. The bar should be resting on the top of your thighs with your arms extended and a slight bend in your elbows. Your back should also be straight. This will be your starting position.",
@@ -17602,7 +17602,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "Grasp a straight bar cable attachment that is attached to a low pulley with a pronated (palms facing your thighs) grip that is slightly less than shoulder width. The bar should be resting on top of your thighs. Your arms should be extended with a slight bend at the elbows and your back should be straight. This will be your starting position.",
@@ -17622,7 +17622,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "To begin, stand on an exercise band so that tension begins at arm's length. Grasp the handles using a pronated (palms facing your thighs) grip that is slightly less than shoulder width. The handles should be resting on top of your thighs. Your arms should be extended with a slight bend at the elbows and your back should be straight. This will be your starting position.",
@@ -17663,7 +17663,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "Sit down on a pull-down machine with a V-Bar attached to the top pulley.",
@@ -17732,7 +17732,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Machine",
+    "equipment": "Shua Machine",
     "difficulty": "beginner",
     "instructions": [
       "To begin, step onto the treadmill and select the desired option from the menu. Most treadmills have a manual setting, or you can select a program to run. Typically, you can enter your age and weight to estimate the amount of calories burned during exercise. Elevation can be adjusted to change the intensity of the workout.",
@@ -17752,7 +17752,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "middle back"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "To begin, lie down on an exercise ball with your torso pressing against the ball and parallel to the floor. The ball of your feet should be pressed against the floor to help keep you balanced. Place a weighted plate under your chin or behind your neck. This is the starting position.",
@@ -17770,7 +17770,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "To begin, lie down on an exercise ball with your left side of the torso (waist, hips and shoulder) pressed against the ball.",
@@ -17794,7 +17794,7 @@ export const EXERCISES: Exercise[] = [
       "chest",
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "For this exercise you will need to place a bench behind your back and another one in front of you. With the benches perpendicular to your body, hold on to one bench on its edge with the hands close to your body, separated at shoulder width. Your arms should be fully extended.",
@@ -17813,7 +17813,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "Lie flat on your back with your feet flat on the ground or resting on a bench with your knees bent at a 90 degree angle.",
@@ -17837,7 +17837,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Position a lightly loaded barbell across the back of your shoulders. You could also use a weighted vest, sandbag, or other type of resistance for this exercise.",
@@ -17858,7 +17858,7 @@ export const EXERCISES: Exercise[] = [
       "biceps",
       "middle back"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Attach a weight to a dip belt and secure it around your waist. Grab the pull-up bar with the palms of your hands facing forward. For a medium grip, your hands should be spaced at shoulder width. Both arms should be extended in front of you holding the bar at the chosen grip.",
@@ -17880,7 +17880,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "Standing upright, with feet at shoulder width and toes raised, use one hand to hold onto the beams of a squat rack and the opposite arm to hold a plate on top of your chest. This is your starting position.",
@@ -17898,7 +17898,7 @@ export const EXERCISES: Exercise[] = [
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Start out by strapping the bands around the base of the decline bench. Place the handles towards the inside of the decline bench so that when lying down, you can reach for both of them.",
@@ -17920,7 +17920,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "Start by positioning two flat benches shoulder width apart from each other. Stand on top of them and wrap the weighted belt around your waist with the amount of weight you feel comfortable with. Make sure your toes are facing out.",
@@ -17942,7 +17942,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Lie back on a flat bench with feet firm on the floor. Using a wide, pronated (palms forward) grip that is around 3 inches away from shoulder width (for each hand), lift the bar from the rack and hold it straight over you with your arms locked. The bar will be perpendicular to the torso and the floor. This will be your starting position.",
@@ -17963,7 +17963,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Lie back on a decline bench with the feet securely locked at the front of the bench. Using a wide, pronated (palms forward) grip that is around 3 inches away from shoulder width (for each hand), lift the bar from the rack and hold it straight over you with your arms locked. The bar will be perpendicular to the torso and the floor. This will be your starting position.",
@@ -17984,7 +17984,7 @@ export const EXERCISES: Exercise[] = [
       "shoulders",
       "triceps"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Lie down on a decline bench with both legs securely locked in position. Reach for the barbell behind the head using a pronated grip (palms facing out). Make sure to grab the barbell wider than shoulder width apart for this exercise. Slowly lift the barbell up from the floor by using your arms.",
@@ -18008,7 +18008,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "beginner",
     "instructions": [
       "Sit down on a pull-down machine with a wide bar attached to the top pulley. Make sure that you adjust the knee pad of the machine to fit your height. These pads will prevent your body from being raised by the resistance attached to the bar.",
@@ -18032,7 +18032,7 @@ export const EXERCISES: Exercise[] = [
       "middle back",
       "shoulders"
     ],
-    "equipment": "Cable",
+    "equipment": "Shua Cable",
     "difficulty": "intermediate",
     "instructions": [
       "Sit down on a pull-down machine with a wide bar attached to the top pulley. Make sure that you adjust the knee pad of the machine to fit your height. These pads will prevent your body from being raised by the resistance attached to the bar.",
@@ -18075,7 +18075,7 @@ export const EXERCISES: Exercise[] = [
       "biceps"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Stand up with your torso upright while holding a barbell at the wide outer handle. The palm of your hands should be facing forward. The elbows should be close to the torso. This will be your starting position.",
@@ -18099,7 +18099,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack that best matches your height. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
@@ -18123,7 +18123,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "lower back"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "intermediate",
     "instructions": [
       "Begin with a barbell loaded on the floor. Adopt a wide stance, and then bend at the hips to grab the bar. Your hips should be as far back as possible, and your legs nearly straight. Keep your back straight, and your head and chest up. This will be your starting position.",
@@ -18218,7 +18218,7 @@ export const EXERCISES: Exercise[] = [
     "secondaryMuscles": [
       "shoulders"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "beginner",
     "instructions": [
       "To begin, stand straight up grabbing a wrist roller using a pronated grip (palms facing down). Your feet should be shoulder width apart.",
@@ -18237,7 +18237,7 @@ export const EXERCISES: Exercise[] = [
       "forearms"
     ],
     "secondaryMuscles": [],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "beginner",
     "instructions": [
       "Hold a barbell with both hands and your palms facing down; hands spaced about shoulder width. This will be your starting position.",
@@ -18262,7 +18262,7 @@ export const EXERCISES: Exercise[] = [
       "hamstrings",
       "lower back"
     ],
-    "equipment": "Other",
+    "equipment": "Bodyweight",
     "difficulty": "intermediate",
     "instructions": [
       "The yoke is usually done with a yoke apparatus, but is sometimes seen with refrigerators or other heavy objects.",
@@ -18283,7 +18283,7 @@ export const EXERCISES: Exercise[] = [
       "glutes",
       "hamstrings"
     ],
-    "equipment": "Barbell",
+    "equipment": "Shua Smith Machine",
     "difficulty": "expert",
     "instructions": [
       "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack that best matches your height. The correct height should be anywhere above the waist but below the chest. Once the correct height is chosen and the bar is loaded, lock your hands together and place the bar on top of your arms in between the forearm and upper arm.",
