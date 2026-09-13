@@ -86,6 +86,15 @@ const MUSCLE_HEADS: Record<string, {name: string, filter: string}[]> = {
 };
 
 export default function SportsPage() {
+  const getExerciseHeads = (ex: any) => {
+    const heads = MUSCLE_HEADS[ex.muscleGroup] || [];
+    const matched = heads.filter(h => ex.name.toLowerCase().includes(h.filter.toLowerCase()));
+    if (matched.length > 0) {
+      return matched.map(m => m.name.split(' (')[0]);
+    }
+    return ex.targetMuscles;
+  };
+
   const [activeTab, setActiveTab] = useState<'dashboard' | 'workout' | 'library'>('dashboard');
   const [dashboardTab, setDashboardTab] = useState<'body' | 'performance' | 'strength'>('body');
 
@@ -1507,7 +1516,7 @@ export default function SportsPage() {
                 {/* Badges - Muscle Group & Heads */}
                 <div className="flex items-center gap-1.5 mb-2 flex-wrap px-3 pt-3">
                   <Badge variant="accent" size="sm">{ex.muscleGroup}</Badge>
-                  {ex.targetMuscles.map(m => (
+                  {getExerciseHeads(ex).map((m: string) => (
                     <Badge key={m} variant="muted" size="sm">{m}</Badge>
                   ))}
                   <Badge variant="muted" size="sm">{ex.equipment}</Badge>
