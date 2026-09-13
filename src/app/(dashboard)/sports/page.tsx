@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import type { SportActivity, GymSession, GymSessionExercise, BodyMeasurement } from '@/lib/types/database';
-import { Plus, Trophy, Calendar, Clock, MapPin, Users, Trash2, Target, Zap, Dumbbell, Play, Square, Search, Filter, ChevronDown, ChevronUp, BookOpen, Activity, Scale, ChevronRight } from 'lucide-react';
+import { Plus, Trophy, Calendar, Clock, MapPin, Users, Trash2, Target, Zap, Dumbbell, Play, Square, Search, Filter, ChevronDown, ChevronUp, BookOpen, Activity, Scale, ChevronRight, Check } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
@@ -168,6 +168,9 @@ export default function SportsPage() {
   const [exReps, setExReps] = useState('10');
   const [exWeight, setExWeight] = useState('0');
   const [exNotes, setExNotes] = useState('');
+
+  const [exerciseSets, setExerciseSets] = useState([{ reps: '', weight: '', done: false }]);
+
   const [exerciseSaving, setExerciseSaving] = useState(false);
 
   // Session detail
@@ -382,14 +385,47 @@ export default function SportsPage() {
     fetchGymSessions();
   };
 
-  const addExerciseToSession = async () => {
+  
+  const startEmptySession = async () => {
+    setGymError(null);
+    if (!activeSession) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from('gym_sessions')
+          .insert({ user_id: user.id, started_at: new Date().toISOString(), notes: '' })
+          .select()
+          .single();
+        if (data && !error) {
+          setActiveSession(data);
+          setSessionExercises([]);
+          setSessionNotes('');
+        } else if (error) {
+          setGymError(error.message);
+        }
+      }
+    }
+  };
+
+  
+  const finishExerciseSets = async () => {
     if (!activeSession || !selectedExercise) return;
+    const completedSets = exerciseSets.filter(s => s.reps && s.weight && s.done);
+    if (completedSets.length === 0) {
+      setGymError("Please complete at least one set.");
+      return;
+    }
+    
     setExerciseSaving(true);
     setGymError(null);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
     if (!user) { setExerciseSaving(false); return; }
-
+  
+    const totalReps = completedSets.reduce((sum, s) => sum + parseInt(s.reps), 0);
+    const totalWeight = completedSets.reduce((sum, s) => sum + parseFloat(s.weight), 0);
+    const avgReps = Math.round(totalReps / completedSets.length);
+    const avgWeight = totalWeight / completedSets.length;
+  
     const { data, error } = await supabase
       .from('gym_session_exercises')
       .insert({
@@ -397,27 +433,24 @@ export default function SportsPage() {
         user_id: user.id,
         exercise_id: selectedExercise.id,
         exercise_name: selectedExercise.name,
-        sets: parseInt(exSets) || 1,
-        reps: parseInt(exReps) || 1,
-        weight_kg: parseFloat(exWeight) || 0,
+        sets: completedSets.length,
+        reps: avgReps,
+        weight_kg: parseFloat(avgWeight.toFixed(1)),
         order_index: sessionExercises.length,
-        notes: exNotes,
+        notes: JSON.stringify(completedSets),
       })
       .select()
       .single();
-
+  
     if (error || !data) {
       setGymError(error?.message ?? 'Could not add the exercise.');
-      setExerciseSaving(false);
-      return;
+    } else {
+      setSessionExercises([...sessionExercises, data]);
+      setShowExerciseModal(false);
+      setSelectedExercise(null);
+      setExerciseSets([{ reps: '', weight: '', done: false }]);
     }
-
-    setSessionExercises(prev => [...prev, data]);
-
     setExerciseSaving(false);
-    setShowExerciseModal(false);
-    setSelectedExercise(null);
-    setExSets('3'); setExReps('10'); setExWeight('0'); setExNotes('');
   };
 
   const removeExerciseFromSession = async (id: string) => {
@@ -467,6 +500,7 @@ export default function SportsPage() {
     }
 
     setSelectedExercise(ex);
+    setExerciseSets([{ reps: '', weight: '', done: false }]);
     setShowExerciseModal(true);
   };
 
@@ -1310,7 +1344,7 @@ export default function SportsPage() {
           {!activeSession && (
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => { setTrainTodayGroup(null); setTrainTodayTab('muscle'); setTrainTodayFilter(''); setShowTrainToday(true); }}
+                onClick={startEmptySession}
                 className="py-4 rounded-3xl bg-gradient-to-br from-blue-600/40 to-blue-900/30 hover:from-blue-500/50 hover:to-blue-800/40 border border-blue-400/40 shadow-[0_0_20px_rgba(59,130,246,0.1)] text-white font-bold flex flex-col items-center justify-center gap-2 transition-all active:scale-[0.98]"
               >
                 <Dumbbell size={24} className="text-blue-400" />
@@ -1768,51 +1802,71 @@ export default function SportsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sets</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={exSets}
-                    onChange={(e) => setExSets(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-center text-lg font-bold text-white focus:outline-none focus:border-emerald-400"
-                  />
+              <div className="space-y-2 mt-4">
+                <div className="flex text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">
+                  <span className="w-8">Set</span>
+                  <span className="flex-1 text-center">Reps</span>
+                  <span className="flex-1 text-center">Kg</span>
+                  <span className="w-10 text-center"></span>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Reps</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={exReps}
-                    onChange={(e) => setExReps(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-center text-lg font-bold text-white focus:outline-none focus:border-emerald-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kg</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    value={exWeight}
-                    onChange={(e) => setExWeight(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-center text-lg font-bold text-white focus:outline-none focus:border-emerald-400"
-                  />
-                </div>
+                
+                {exerciseSets.map((set, idx) => (
+                  <div key={idx} className="flex gap-2 items-center bg-white/[0.02] p-2 rounded-xl border border-white/5">
+                    <span className="w-8 text-center text-xs font-bold text-slate-500">{idx + 1}</span>
+                    <input 
+                      type="number" 
+                      value={set.reps}
+                      onChange={(e) => {
+                         const newSets = [...exerciseSets];
+                         newSets[idx].reps = e.target.value;
+                         setExerciseSets(newSets);
+                      }}
+                      placeholder="0"
+                      className="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-center text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
+                    />
+                    <input 
+                      type="number" 
+                      step="0.5"
+                      value={set.weight}
+                      onChange={(e) => {
+                         const newSets = [...exerciseSets];
+                         newSets[idx].weight = e.target.value;
+                         setExerciseSets(newSets);
+                      }}
+                      placeholder="0"
+                      className="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-center text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
+                    />
+                    <button 
+                      onClick={() => {
+                         const newSets = [...exerciseSets];
+                         newSets[idx].done = !newSets[idx].done;
+                         setExerciseSets(newSets);
+                         if (newSets[idx].done && idx === exerciseSets.length - 1) {
+                           setExerciseSets([...newSets, { reps: newSets[idx].reps, weight: newSets[idx].weight, done: false }]);
+                         }
+                      }}
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${set.done ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
+                    >
+                      <Check size={16} />
+                    </button>
+                  </div>
+                ))}
               </div>
+              
+              <Button 
+                variant="secondary" 
+                fullWidth 
+                className="mt-3"
+                onClick={() => setExerciseSets([...exerciseSets, { reps: '', weight: '', done: false }])}
+              >
+                <Plus size={16} /> Add Set
+              </Button>
 
-              <input
-                type="text"
-                value={exNotes}
-                onChange={(e) => setExNotes(e.target.value)}
-                placeholder="Notes (optional)"
-                className="w-full px-3 py-2 rounded-xl bg-white/[0.04] border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-400/50"
-              />
+              {gymError && <p className="text-red-400 text-xs text-center mt-3">{gymError}</p>}
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-4">
                 <Button variant="secondary" fullWidth onClick={() => { setShowExerciseModal(false); setSelectedExercise(null); }}>Cancel</Button>
-                <Button fullWidth isLoading={exerciseSaving} onClick={addExerciseToSession}>Add to Session</Button>
+                <Button fullWidth isLoading={exerciseSaving} onClick={finishExerciseSets}>Finish Exercise</Button>
               </div>
             </>
           )}
