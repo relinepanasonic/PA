@@ -1504,60 +1504,49 @@ export default function SportsPage() {
                 className="glass-card overflow-hidden cursor-pointer transition-all hover:border-purple-400/30"
                 onClick={() => setExpandedExerciseId(expandedExerciseId === ex.id ? null : ex.id)}
               >
-                <div className="p-3 space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0 flex-1">
-                      {(() => {
-                        const imgMap: Record<string, string> = {
-                          Chest: '/muscle-chest.jpeg', Back: '/muscle-back.jpeg',
-                          Shoulders: '/muscle-shoulders.jpeg', Biceps: '/muscle-biceps.jpeg',
-                          Triceps: '/muscle-Triceps.jpeg', Quads: '/muscle-quads.jpeg',
-                          Hamstrings: '/muscle-hamstrings.jpeg', Glutes: '/muscle-glutes.jpeg',
-                          Calves: '/muscle-calves.jpeg', Core: '/muscle-core.jpeg'
-                        };
-                        const fallbackImg = imgMap[ex.muscleGroup] || '/anatomy-bg.jpg';
-                        return (
-                          <div className="w-full h-32 mb-3 rounded-lg overflow-hidden flex items-center justify-center relative bg-slate-800">
-                             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${fallbackImg})` }}></div>
-                             <div className="absolute inset-0 bg-slate-900/30 mix-blend-multiply"></div>
-                          </div>
-                        );
-                      })()}
-                      <p className="text-sm font-bold text-white">{ex.name}</p>
-                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        <Badge variant="accent" size="sm">{ex.muscleGroup}</Badge>
-                        <Badge variant="muted" size="sm">{ex.equipment}</Badge>
-                        <Badge variant={ex.difficulty === 'beginner' ? 'success' : ex.difficulty === 'intermediate' ? 'warning' : 'danger'} size="sm">
-                          {ex.difficulty}
-                        </Badge>
+                {/* Badges - Muscle Group & Heads */}
+                <div className="flex items-center gap-1.5 mb-2 flex-wrap px-3 pt-3">
+                  <Badge variant="accent" size="sm">{ex.muscleGroup}</Badge>
+                  {ex.targetMuscles.map(m => (
+                    <Badge key={m} variant="muted" size="sm">{m}</Badge>
+                  ))}
+                  <Badge variant="muted" size="sm">{ex.equipment}</Badge>
+                </div>
+                
+                {/* 2-Picture Split View */}
+                {(() => {
+                  const imgMap: Record<string, string> = {
+                    Chest: '/muscle-chest.jpeg', Back: '/muscle-back.jpeg',
+                    Shoulders: '/muscle-shoulders.jpeg', Biceps: '/muscle-biceps.jpeg',
+                    Triceps: '/muscle-Triceps.jpeg', Quads: '/muscle-quads.jpeg',
+                    Hamstrings: '/muscle-hamstrings.jpeg', Glutes: '/muscle-glutes.jpeg',
+                    Calves: '/muscle-calves.jpeg', Core: '/muscle-core.jpeg'
+                  };
+                  const fallbackImg = imgMap[ex.muscleGroup] || '/anatomy-bg.jpg';
+                  return (
+                    <div className="grid grid-cols-2 gap-2 h-40 mb-3 px-3">
+                      {/* Left: How to do the exercise */}
+                      <div className="rounded-lg overflow-hidden bg-slate-900 border border-white/5 relative flex items-center justify-center">
+                        {ex.imageUrl ? (
+                          <img src={ex.imageUrl} alt={ex.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-500">No Image</div>
+                        )}
+                        <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/60 text-[8px] text-white font-bold backdrop-blur-md">RAW</div>
+                      </div>
+                      {/* Right: The Muscle Hit */}
+                      <div className="rounded-lg overflow-hidden bg-slate-900 border border-white/5 relative flex items-center justify-center">
+                        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${fallbackImg})` }}></div>
+                        <div className="absolute inset-0 bg-slate-900/30 mix-blend-multiply"></div>
+                        <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-blue-500/80 text-[8px] text-white font-bold backdrop-blur-md border border-blue-400/50">ANATOMY</div>
                       </div>
                     </div>
-                    {expandedExerciseId === ex.id ? <ChevronUp size={16} className="text-slate-400 flex-shrink-0 mt-1" /> : <ChevronDown size={16} className="text-slate-400 flex-shrink-0 mt-1" />}
-                  </div>
+                  );
+                })()}
 
-                  <div className="flex flex-wrap gap-1">
-                    {ex.targetMuscles.map(m => (
-                      <span key={m} className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 font-semibold">{m}</span>
-                    ))}
-                    {ex.secondaryMuscles.map(m => (
-                      <span key={m} className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/5 text-slate-400 font-semibold">{m}</span>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-col gap-1.5 mt-2">
-                    <div className="flex items-start gap-2">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider w-20">Focus Area</span>
-                      <span className="text-[11px] text-slate-300">
-                        {ex.muscleGroup}
-                        {(ex.targetMuscles.length > 0 || ex.secondaryMuscles.length > 0) && ' · '}
-                        {[...ex.targetMuscles, ...ex.secondaryMuscles].join(', ')}
-                      </span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider w-20">Equipment</span>
-                      <span className="text-[11px] text-slate-300">{ex.equipment}</span>
-                    </div>
-                  </div>
+                <div className="flex items-start justify-between mt-1 px-3 pb-3">
+                  <p className="text-sm font-bold text-white flex-1">{ex.name}</p>
+                  {expandedExerciseId === ex.id ? <ChevronUp size={16} className="text-slate-400 flex-shrink-0 mt-1" /> : <ChevronDown size={16} className="text-slate-400 flex-shrink-0 mt-1" />}
                 </div>
 
                 {expandedExerciseId === ex.id && (
