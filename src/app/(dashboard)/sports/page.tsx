@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import type { SportActivity, GymSession, GymSessionExercise, BodyMeasurement } from '@/lib/types/database';
-import { Plus, Trophy, Calendar, Clock, MapPin, Users, Trash2, Target, Zap, Dumbbell, Play, Square, Search, Filter, ChevronDown, ChevronUp, BookOpen, Activity, Scale, ChevronRight, Check } from 'lucide-react';
+import { Plus, Trophy, Flame, Timer, Calendar, Clock, MapPin, Users, Trash2, Target, Zap, Dumbbell, Play, Square, Search, Filter, ChevronDown, ChevronUp, BookOpen, Activity, Scale, ChevronRight, Check } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
@@ -180,6 +180,25 @@ export default function SportsPage() {
   // Session notes
   const [sessionNotes, setSessionNotes] = useState('');
 
+  // Extended Session State
+  const [showFocusModal, setShowFocusModal] = useState(false);
+  const [sessionFocus, setSessionFocus] = useState<string[]>([]);
+  const [showCardioModal, setShowCardioModal] = useState(false);
+  const [cardioType, setCardioType] = useState('Treadmill');
+  const [cardioMinutes, setCardioMinutes] = useState('');
+  const [sessionCardio, setSessionCardio] = useState<{ type: string; minutes: number }[]>([]);
+  
+  // Finish Session Summary
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [workoutSummary, setWorkoutSummary] = useState<{ time: string, cals: number, volume: number } | null>(null);
+
+  const syncSessionMeta = async (focus: string[], cardio: any[], text: string) => {
+    if (!activeSession) return;
+    const jsonString = JSON.stringify({ focus, cardio, textNotes: text });
+    await supabase.from('gym_sessions').update({ notes: jsonString }).eq('id', activeSession.id);
+  };
+
+
   // === LIBRARY STATE ===
   const [libMuscleFilter, setLibMuscleFilter] = useState('All');
   const [libEquipFilter, setLibEquipFilter] = useState('All');
@@ -252,7 +271,16 @@ export default function SportsPage() {
     const active = (sessions || []).find(s => !s.ended_at);
     if (active) {
       setActiveSession(active);
-      setSessionNotes(active.notes || '');
+      let parsedNotes: any = { textNotes: '' };
+      try {
+        parsedNotes = JSON.parse(active.notes);
+        if (typeof parsedNotes !== 'object') throw new Error();
+      } catch (e) {
+        parsedNotes = { textNotes: active.notes || '' };
+      }
+      setSessionNotes(parsedNotes.textNotes || '');
+      setSessionFocus(parsedNotes.focus || []);
+      setSessionCardio(parsedNotes.cardio || []);
       // Load exercises for active session
       const { data: exs } = await supabase
         .from('gym_session_exercises')
@@ -359,33 +387,79 @@ export default function SportsPage() {
     setSessionStarting(false);
   };
 
-  const finishSession = async () => {
+  const triggerSummary = () => {
     if (!activeSession) return;
     const now = new Date();
     const startedAt = new Date(activeSession.started_at);
     const durationMinutes = Math.round((now.getTime() - startedAt.getTime()) / 60000);
+    
+    const weight = bodyMeasurements.length > 0 ? bodyMeasurements[bodyMeasurements.length - 1].weight_kg : 75;
+    
+    let totalCals = 0;
+    const cardioMins = sessionCardio.reduce((sum, c) => sum + c.minutes, 0);
+    let liftMins = durationMinutes - cardioMins;
+    if (liftMins < 0) liftMins = 0;
+    
+    // Weightlifting MET ~ 5.0
+    totalCals += (liftMins * 5.0 * weight * 3.5) / 200;
+    
+    // Cardio METs
+    sessionCardio.forEach(c => {
+      let met = 2.0; 
+      if (c.type === 'Treadmill' || c.type === 'Stairmaster') met = 9.0;
+      if (c.type === 'Cycling') met = 7.0;
+      totalCals += (c.minutes * met * weight * 3.5) / 200;
+    });
+
+    let totalVolume = 0;
+    sessionExercises.forEach(ex => {
+       try { 
+         const sets = JSON.parse(ex.notes);
+         if (Array.isArray(sets)) {
+            sets.forEach((s) => { totalVolume += parseInt(s.reps) * parseFloat(s.weight); });
+         } else throw new Error();
+       } catch (e) {
+         totalVolume += ex.sets * ex.reps * ex.weight_kg;
+       }
+    });
+
+    setWorkoutSummary({
+      time: formatDuration(durationMinutes * 60),
+      cals: Math.round(totalCals),
+      volume: totalVolume
+    });
+    setShowSummaryModal(true);
+  };
+
+  const confirmFinishSession = async () => {
+    if (!activeSession) return;
+    const now = new Date();
+    const startedAt = new Date(activeSession.started_at);
+    const durationMinutes = Math.round((now.getTime() - startedAt.getTime()) / 60000);
+
+    const jsonNotes = JSON.stringify({ focus: sessionFocus, cardio: sessionCardio, textNotes: sessionNotes, calories_burned: workoutSummary?.cals, volume: workoutSummary?.volume });
 
     const { error } = await supabase
       .from('gym_sessions')
       .update({
         ended_at: now.toISOString(),
         duration_minutes: durationMinutes,
-        notes: sessionNotes,
+        notes: jsonNotes,
       })
       .eq('id', activeSession.id);
 
-    if (error) {
-      setGymError(error.message);
-      return;
+    if (!error) {
+      setActiveSession(null);
+      setSessionExercises([]);
+      setSessionNotes('');
+      setSessionFocus([]);
+      setSessionCardio([]);
+      if (timerRef.current) clearInterval(timerRef.current);
+      setShowSummaryModal(false);
+      window.location.reload();
     }
-
-    setActiveSession(null);
-    setSessionExercises([]);
-    if (timerRef.current) clearInterval(timerRef.current);
-    fetchGymSessions();
   };
 
-  
   const startEmptySession = async () => {
     setGymError(null);
     if (!activeSession) {
@@ -400,6 +474,9 @@ export default function SportsPage() {
           setActiveSession(data);
           setSessionExercises([]);
           setSessionNotes('');
+          setSessionFocus([]);
+          setSessionCardio([]);
+          setShowFocusModal(true);
         } else if (error) {
           setGymError(error.message);
         }
@@ -407,7 +484,6 @@ export default function SportsPage() {
     }
   };
 
-  
   const finishExerciseSets = async () => {
     if (!activeSession || !selectedExercise) return;
     const completedSets = exerciseSets.filter(s => s.reps && s.weight && s.done);
@@ -1236,7 +1312,7 @@ export default function SportsPage() {
               {/* Session Notes */}
               <textarea
                 value={sessionNotes}
-                onChange={(e) => setSessionNotes(e.target.value)}
+                onChange={(e) => { setSessionNotes(e.target.value); syncSessionMeta(sessionFocus, sessionCardio, e.target.value); }}
                 placeholder="Session notes (optional)..."
                 className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-400/50 resize-none"
                 rows={2}
@@ -1251,7 +1327,7 @@ export default function SportsPage() {
                   <Plus size={16} /> Add Exercise
                 </button>
                 <button
-                  onClick={finishSession}
+                  onClick={triggerSummary}
                   className="px-6 py-3 rounded-2xl bg-red-600/20 hover:bg-red-600/30 border border-red-400/30 text-red-300 text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                 >
                   <Square size={14} /> Finish
@@ -2113,6 +2189,98 @@ export default function SportsPage() {
         )}
       </Modal>
 
+
+      {/* ── WORKOUT FOCUS MODAL ── */}
+      <Modal isOpen={showFocusModal} onClose={() => setShowFocusModal(false)} title="What are we hitting today?">
+        <div className="space-y-4 mt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {MUSCLE_GROUPS.map(mg => (
+              <button
+                key={mg}
+                onClick={() => {
+                  const newFocus = sessionFocus.includes(mg) ? sessionFocus.filter(m => m !== mg) : [...sessionFocus, mg];
+                  setSessionFocus(newFocus);
+                  syncSessionMeta(newFocus, sessionCardio, sessionNotes);
+                }}
+                className={`py-3 px-2 rounded-xl text-sm font-bold border transition-all flex items-center justify-center gap-2 ${sessionFocus.includes(mg) ? 'bg-blue-600/30 border-blue-400/50 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-slate-900 border-white/5 text-slate-400 hover:text-white hover:border-white/20'}`}
+              >
+                {sessionFocus.includes(mg) && <Check size={14} />} {mg}
+              </button>
+            ))}
+          </div>
+          <Button fullWidth onClick={() => setShowFocusModal(false)} className="mt-4">Start Workout</Button>
+        </div>
+      </Modal>
+
+      {/* ── ADDITIONAL MODAL ── */}
+      <Modal isOpen={showCardioModal} onClose={() => setShowCardioModal(false)} title="Log Cardio / Recovery">
+        <div className="space-y-4 mt-2">
+          <div className="grid grid-cols-2 gap-2">
+            {['Treadmill', 'Stairmaster', 'Cycling', 'Sauna', 'Steam Room'].map(type => (
+              <button
+                key={type}
+                onClick={() => setCardioType(type)}
+                className={`py-3 rounded-xl text-xs font-bold border transition-all ${cardioType === type ? 'bg-emerald-600/30 border-emerald-400/50 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'bg-slate-900 border-white/5 text-slate-400 hover:text-white'}`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+          <div className="mt-4">
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Duration (minutes)</label>
+            <Input type="number" value={cardioMinutes} onChange={(e) => setCardioMinutes(e.target.value)} placeholder="e.g. 20" />
+          </div>
+          <Button 
+            fullWidth 
+            className="mt-4"
+            onClick={() => {
+              const mins = parseInt(cardioMinutes);
+              if (mins > 0) {
+                const newCardio = [...sessionCardio, { type: cardioType, minutes: mins }];
+                setSessionCardio(newCardio);
+                syncSessionMeta(sessionFocus, newCardio, sessionNotes);
+              }
+              setShowCardioModal(false);
+              setCardioMinutes('');
+            }}
+          >
+            Add to Session
+          </Button>
+        </div>
+      </Modal>
+
+      {/* ── SUMMARY MODAL ── */}
+      <Modal isOpen={showSummaryModal} onClose={() => setShowSummaryModal(false)} title="Workout Complete!">
+        {workoutSummary && (
+          <div className="space-y-6 mt-2 text-center animate-fade-in">
+            <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-blue-500/30">
+              <Trophy size={40} className="text-blue-400" />
+            </div>
+            
+            <h2 className="text-2xl font-black text-white">Great job!</h2>
+            
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-slate-900 p-3 rounded-xl border border-white/10">
+                <Timer size={16} className="text-blue-400 mx-auto mb-2" />
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Time</p>
+                <p className="text-sm font-bold text-white">{workoutSummary.time}</p>
+              </div>
+              <div className="bg-slate-900 p-3 rounded-xl border border-white/10">
+                <Flame size={16} className="text-orange-400 mx-auto mb-2" />
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Burn</p>
+                <p className="text-sm font-bold text-white">{workoutSummary.cals} <span className="text-[10px] text-slate-500">kcal</span></p>
+              </div>
+              <div className="bg-slate-900 p-3 rounded-xl border border-white/10">
+                <Dumbbell size={16} className="text-purple-400 mx-auto mb-2" />
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Volume</p>
+                <p className="text-sm font-bold text-white">{workoutSummary.volume} <span className="text-[10px] text-slate-500">kg</span></p>
+              </div>
+            </div>
+
+            <Button fullWidth onClick={confirmFinishSession} className="mt-4 py-4">Save & Close Workout</Button>
+          </div>
+        )}
+      </Modal>
 </div>
   );
 }
