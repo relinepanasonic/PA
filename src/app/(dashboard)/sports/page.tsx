@@ -1336,6 +1336,8 @@ export default function SportsPage() {
             </div>
           ) : null}
 
+          {!activeSession && (
+            <>
           {/* Monthly Calendar View */}
           <div className="glow-card p-4">
             <div className="flex items-center justify-between mb-4">
@@ -1558,6 +1560,8 @@ export default function SportsPage() {
               });
             })()}
           </div>
+          </>
+          )}
         </div>
       )}
 
