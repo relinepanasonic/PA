@@ -1901,7 +1901,7 @@ export default function SportsPage() {
                   <span className="w-6">Set</span>
                   <span className="flex-1 text-center">Reps</span>
                   <span className="flex-[1.5] text-center whitespace-nowrap">Total Kg</span>
-                  <span className="w-10 text-center"></span>
+                  <span className="w-8 sm:w-10 text-center"></span>
                 </div>
                 
                 {exerciseSets.map((set, idx) => (
@@ -1916,7 +1916,7 @@ export default function SportsPage() {
                          setExerciseSets(newSets);
                       }}
                       placeholder="0"
-                      className="flex-1 px-1 sm:px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-center text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
+                      className="flex-1 min-w-0 w-0 px-1 sm:px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-center text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
                     />
                     <input 
                       type="number" 
