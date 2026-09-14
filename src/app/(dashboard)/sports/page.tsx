@@ -583,7 +583,7 @@ export default function SportsPage() {
   // === SPORT CRUD ===
   const openCreateSport = () => {
     setEditingSport(null);
-    setSTitle(''); setSSportType('padel');
+    setSTitle(''); setSSportType('');
     setSDate(new Date().toISOString().split('T')[0]);
     setSStartTime(''); setSEndTime(''); setSVenue('');
     setSOpponent(''); setSResult(''); setSIsWin(null);
@@ -1430,7 +1430,7 @@ export default function SportsPage() {
               </button>
               <button
                 onClick={openCreateSport}
-                className="py-4 rounded-3xl bg-gradient-to-br from-emerald-600/40 to-emerald-900/30 hover:from-emerald-500/50 hover:to-emerald-800/40 border border-emerald-400/40 shadow-[0_0_20px_rgba(16,185,129,0.1)] text-white font-bold flex flex-col items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                className="py-4 rounded-3xl bg-gradient-to-br from-orange-600/40 to-orange-900/30 hover:from-orange-500/50 hover:to-orange-800/40 border border-orange-400/40 shadow-[0_0_20px_rgba(249,115,22,0.1)] text-white font-bold flex flex-col items-center justify-center gap-2 transition-all active:scale-[0.98]"
               >
                 <Trophy size={24} className="text-emerald-400" />
                 <span className="text-sm">Log Match</span>
@@ -1740,7 +1740,20 @@ export default function SportsPage() {
       {/* ============ MODALS ============ */}
 
       {/* Sport Modal */}
-      <Modal isOpen={showSportModal} onClose={() => setShowSportModal(false)} title={editingSport ? 'Edit Match' : 'New Match'}>
+      <Modal isOpen={showSportModal} onClose={() => setShowSportModal(false)} title={editingSport ? 'Edit Match' : (sSportType ? 'Log ' + sSportType : 'Select Sport')}>
+        {(!sSportType && !editingSport) ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 animate-fade-in">
+            {['Run', 'Walk', 'Bike', 'Swim', 'Tennis', 'Padel', 'Basketball', 'Soccer', 'Golf', 'Yoga', 'Pilates', 'Martial Arts', 'Hiking'].map(s => (
+              <button
+                key={s}
+                onClick={() => { setSSportType(s); setSTitle(s + ' Session'); }}
+                className="py-4 rounded-xl bg-slate-900 border border-white/5 hover:border-orange-500/50 hover:bg-orange-900/20 text-slate-300 hover:text-orange-400 font-bold transition-all"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        ) : (
         <div className="space-y-4">
           <Input id="s-title" label="Title" placeholder="Match title" value={sTitle} onChange={(e) => setSTitle(e.target.value)} icon={<Trophy size={16} />} />
           <Input id="s-sport" label="Sport Type" placeholder="e.g. Padel, Tennis" value={sSportType} onChange={(e) => setSSportType(e.target.value)} />
@@ -1765,6 +1778,7 @@ export default function SportsPage() {
             <Button fullWidth isLoading={sportSaving} onClick={saveSport} disabled={!sTitle.trim()}>{editingSport ? 'Update' : 'Create'}</Button>
           </div>
         </div>
+        )}
       </Modal>
 
       {/* Exercise Picker Modal */}
@@ -1884,15 +1898,15 @@ export default function SportsPage() {
 
               <div className="space-y-2 mt-4">
                 <div className="flex text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">
-                  <span className="w-8">Set</span>
+                  <span className="w-6">Set</span>
                   <span className="flex-1 text-center">Reps</span>
-                  <span className="flex-1 text-center">Kg</span>
+                  <span className="flex-[1.5] text-center whitespace-nowrap">Total Kg</span>
                   <span className="w-10 text-center"></span>
                 </div>
                 
                 {exerciseSets.map((set, idx) => (
                   <div key={idx} className="flex gap-2 items-center bg-white/[0.02] p-2 rounded-xl border border-white/5">
-                    <span className="w-8 text-center text-xs font-bold text-slate-500">{idx + 1}</span>
+                    <span className="w-6 text-center text-xs font-bold text-slate-500">{idx + 1}</span>
                     <input 
                       type="number" 
                       value={set.reps}
@@ -1902,7 +1916,7 @@ export default function SportsPage() {
                          setExerciseSets(newSets);
                       }}
                       placeholder="0"
-                      className="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-center text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
+                      className="flex-1 px-1 sm:px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-center text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
                     />
                     <input 
                       type="number" 
@@ -1914,7 +1928,7 @@ export default function SportsPage() {
                          setExerciseSets(newSets);
                       }}
                       placeholder="0"
-                      className="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-center text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
+                      className="flex-[1.5] px-1 sm:px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-center text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
                     />
                     <button 
                       onClick={() => {
