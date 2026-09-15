@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Todo, WorkActivity } from '@/lib/types/database';
-import { AlertTriangle, TrendingUp, TrendingDown, Calendar, CheckCircle2, Clock, ChevronRight, Sparkles, Activity, Volume2, VolumeX, Newspaper, BarChart3, Brain, Heart, DollarSign } from 'lucide-react';
+import { AlertTriangle, Moon, Footprints, Flame,  TrendingUp, TrendingDown, Calendar, CheckCircle2, Clock, ChevronRight, Sparkles, Activity, Volume2, VolumeX, Newspaper, BarChart3, Brain, Heart, DollarSign } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { SkeletonDashboard } from '@/components/ui/LoadingSkeleton';
 import Link from 'next/link';
@@ -42,6 +42,21 @@ const getLocalDateString = (d = new Date()) => {
 
 export default function DashboardPage() {
   const [briefTab, setBriefTab] = useState<'productivity' | 'health' | 'money'>('productivity');
+  const [fitbitData, setFitbitData] = useState<any>(null);
+  const [loadingFitbit, setLoadingFitbit] = useState(false);
+
+  useEffect(() => {
+    if (briefTab === 'health' && !fitbitData && !loadingFitbit) {
+      setLoadingFitbit(true);
+      fetch('/api/fitbit/data')
+        .then(res => res.json())
+        .then(data => {
+          if (!data.error) setFitbitData(data);
+          setLoadingFitbit(false);
+        })
+        .catch(() => setLoadingFitbit(false));
+    }
+  }, [briefTab]);
   const [urgentTodos, setUrgentTodos] = useState<Todo[]>([]);
   const [todaySchedule, setTodaySchedule] = useState<WorkActivity[]>([]);
   const [financeSummary, setFinanceSummary] = useState<FinanceSummary>({
@@ -690,6 +705,85 @@ export default function DashboardPage() {
       {/* ══ HEALTH TAB ══════════════════════════════════════════════════ */}
       {briefTab === 'health' && (
         <div className="space-y-5">
+          
+          {/* Fitbit Live Data Section */}
+          <section>
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <Activity size={16} className="text-cyan-400" />
+              <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Today's Vitals (Fitbit)</h2>
+            </div>
+            
+            {loadingFitbit ? (
+              <div className="glass-card rounded-2xl p-6 text-center border border-white/10 flex flex-col items-center justify-center gap-3">
+                <div className="w-8 h-8 rounded-full border-2 border-cyan-500/30 border-t-cyan-400 animate-spin"></div>
+                <p className="text-xs font-bold text-slate-400">Syncing with Fitbit...</p>
+              </div>
+            ) : !fitbitData ? (
+               <div className="glass-card rounded-2xl p-6 text-center border border-white/10">
+                 <p className="text-xs text-slate-400">Connect Fitbit to see live stats</p>
+               </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {/* Steps & Activity */}
+                <div className="col-span-2 glass-card p-4 rounded-3xl border border-white/10 bg-gradient-to-br from-cyan-900/20 to-transparent relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-[50px] rounded-full"></div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                        <Footprints size={14} className="text-cyan-400" />
+                      </div>
+                      <span className="text-xs font-bold text-cyan-300 uppercase tracking-widest">Steps</span>
+                    </div>
+                    {fitbitData.distance > 0 && <span className="text-xs font-bold text-slate-400">{fitbitData.distance} km</span>}
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <span className="text-4xl font-black text-white tracking-tight">{fitbitData.steps?.toLocaleString() || 0}</span>
+                  </div>
+                  <div className="mt-3 h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${Math.min((fitbitData.steps / 10000) * 100, 100)}%` }}></div>
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-500 mt-2 text-right uppercase tracking-wider">Goal: 10,000</p>
+                </div>
+
+                {/* Heart Rate */}
+                <div className="glass-card p-4 rounded-3xl border border-white/10 bg-gradient-to-br from-rose-900/20 to-transparent">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-7 h-7 rounded-full bg-rose-500/20 flex items-center justify-center">
+                      <Heart size={14} className="text-rose-400" />
+                    </div>
+                    <span className="text-[10px] font-bold text-rose-300 uppercase tracking-widest">Heart</span>
+                  </div>
+                  <span className="text-2xl font-black text-white">{fitbitData.heartRate?.restingHeartRate || '--'} <span className="text-[10px] font-bold text-slate-500 uppercase">bpm</span></span>
+                  <p className="text-[10px] text-slate-400 font-medium mt-1">Resting HR</p>
+                </div>
+
+                {/* Sleep */}
+                <div className="glass-card p-4 rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-900/20 to-transparent">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-7 h-7 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                      <Moon size={14} className="text-indigo-400" />
+                    </div>
+                    <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">Sleep</span>
+                  </div>
+                  <span className="text-2xl font-black text-white">
+                    {fitbitData.sleep ? Math.floor(fitbitData.sleep.totalMinutesAsleep / 60) : '-'}
+                    <span className="text-[10px] font-bold text-slate-500 uppercase mx-0.5">h</span>
+                    {fitbitData.sleep ? fitbitData.sleep.totalMinutesAsleep % 60 : '-'}
+                    <span className="text-[10px] font-bold text-slate-500 uppercase ml-0.5">m</span>
+                  </span>
+                  <p className="text-[10px] text-slate-400 font-medium mt-1">Total Asleep</p>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Spacer */}
+          <div className="h-1"></div>
+
+          <div className="flex items-center gap-2 mb-1 px-1">
+            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Body Composition Baseline</h2>
+          </div>
+
           <div className="glass-card rounded-2xl p-5 border border-white/10 text-center">
             <Heart size={32} className="text-rose-400 mx-auto mb-3" />
             <p className="text-base font-bold text-white mb-1">Body Composition</p>
