@@ -16,7 +16,8 @@ export async function GET(request: Request) {
 
   const clientId = process.env.FITBIT_CLIENT_ID;
   const clientSecret = process.env.FITBIT_CLIENT_SECRET;
-  const redirectUri = 'http://localhost:3000/api/fitbit/callback';
+  const origin = new URL(request.url).origin;
+  const redirectUri = `${origin}/api/fitbit/callback`;
 
   try {
     // Exchange code for tokens

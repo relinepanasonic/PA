@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: Request) {
   const clientId = process.env.FITBIT_CLIENT_ID;
-  const redirectUri = 'http://localhost:3000/api/fitbit/callback';
+  const origin = new URL(request.url).origin;
+  const redirectUri = `${origin}/api/fitbit/callback`;
   
   // Google Health Connect / Fitness API scopes
   const scopes = [
