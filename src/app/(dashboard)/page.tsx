@@ -722,9 +722,9 @@ export default function DashboardPage() {
                <div className="glass-card rounded-2xl p-6 text-center border border-white/10 flex flex-col items-center gap-3">
                  <Activity size={24} className="text-cyan-400" />
                  <p className="text-xs text-slate-400 mb-2">Connect your Fitbit to sync live health stats</p>
-                 <a href="/api/fitbit/auth" className="px-5 py-2.5 rounded-xl bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 font-bold text-xs hover:bg-cyan-600/30 transition-colors">
+                 <button onClick={() => window.location.href = '/api/fitbit/auth'} className="px-5 py-2.5 rounded-xl bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 font-bold text-xs hover:bg-cyan-600/30 transition-colors cursor-pointer relative z-50">
                    Connect Fitbit
-                 </a>
+                 </button>
                </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
