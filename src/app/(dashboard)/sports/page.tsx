@@ -161,6 +161,7 @@ export default function SportsPage() {
 
   // Add exercise modal
   const [showExerciseModal, setShowExerciseModal] = useState(false);
+  const [viewExerciseDetail, setViewExerciseDetail] = useState<any>(null);
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [exerciseMuscleFilter, setExerciseMuscleFilter] = useState('All');
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
@@ -1781,6 +1782,51 @@ export default function SportsPage() {
         )}
       </Modal>
 
+      {/* Exercise Detail Modal */}
+      <Modal isOpen={!!viewExerciseDetail} onClose={() => setViewExerciseDetail(null)} title={viewExerciseDetail?.exercise_name || "Exercise Detail"}>
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="glow-card p-3 text-center rounded-2xl">
+              <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Sets</p>
+              <p className="text-lg font-extrabold text-emerald-400">{viewExerciseDetail?.sets}</p>
+            </div>
+            <div className="glow-card p-3 text-center rounded-2xl">
+              <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Avg Reps</p>
+              <p className="text-lg font-extrabold text-cyan-400">{viewExerciseDetail?.reps}</p>
+            </div>
+            <div className="glow-card p-3 text-center rounded-2xl">
+              <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Avg Kg</p>
+              <p className="text-lg font-extrabold text-amber-400">{viewExerciseDetail?.weight_kg}</p>
+            </div>
+          </div>
+          
+          <div className="bg-white/[0.02] border border-white/5 rounded-xl p-3 space-y-2">
+            <div className="grid grid-cols-[auto_1fr_1fr] gap-4 text-[10px] font-bold text-slate-400 uppercase px-2 mb-2">
+              <span className="w-6 text-center">Set</span>
+              <span className="text-center">Reps</span>
+              <span className="text-center">Total Kg</span>
+            </div>
+            
+            {viewExerciseDetail?.notes && (() => {
+              try {
+                const sets = JSON.parse(viewExerciseDetail.notes);
+                return sets.map((s: any, i: number) => (
+                  <div key={i} className="grid grid-cols-[auto_1fr_1fr] gap-4 items-center bg-white/[0.02] py-2 px-2 rounded-lg border border-white/5">
+                    <span className="w-6 text-center text-xs font-bold text-slate-500">{i + 1}</span>
+                    <span className="text-center text-sm font-bold text-white">{s.reps}</span>
+                    <span className="text-center text-sm font-bold text-white">{s.weight}</span>
+                  </div>
+                ));
+              } catch (e) {
+                return <p className="text-xs text-slate-500">Error parsing sets details.</p>;
+              }
+            })()}
+          </div>
+          
+          <Button fullWidth onClick={() => setViewExerciseDetail(null)}>Close</Button>
+        </div>
+      </Modal>
+      
       {/* Exercise Picker Modal */}
       <Modal isOpen={showExerciseModal} onClose={() => setShowExerciseModal(false)} title="Add Exercise">
         <div className="space-y-4">
@@ -1916,7 +1962,7 @@ export default function SportsPage() {
                          setExerciseSets(newSets);
                       }}
                       placeholder="0"
-                      className="flex-1 min-w-0 w-0 px-1 sm:px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-center text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
+                      className="w-full px-1 sm:px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-center text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
                     />
                     <input 
                       type="number" 
