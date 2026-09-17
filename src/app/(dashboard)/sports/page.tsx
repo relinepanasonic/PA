@@ -1951,7 +1951,7 @@ export default function SportsPage() {
                 </div>
                 
                 {exerciseSets.map((set, idx) => (
-                  <div key={idx} className="flex gap-2 items-center bg-white/[0.02] p-2 rounded-xl border border-white/5">
+                  <div key={idx} className="grid grid-cols-[auto_1fr_1fr_auto] gap-2 items-center bg-white/[0.02] p-2 rounded-xl border border-white/5">
                     <span className="w-6 text-center text-xs font-bold text-slate-500">{idx + 1}</span>
                     <input 
                       type="number" 
@@ -1974,7 +1974,7 @@ export default function SportsPage() {
                          setExerciseSets(newSets);
                       }}
                       placeholder="0"
-                      className="flex-[1.5] px-1 sm:px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-center text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
+                      className="w-full px-1 sm:px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-center text-sm font-bold text-white focus:outline-none focus:border-emerald-400"
                     />
                     <button 
                       onClick={() => {
