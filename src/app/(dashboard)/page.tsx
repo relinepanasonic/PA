@@ -279,62 +279,95 @@ export default function DashboardPage() {
     return true;
   };
 
-  const handlePlayBrief = () => {
+  const [activeCat, setActiveCat] = useState<'schedule' | 'stocks' | 'health' | 'news' | null>(null);
+
+  // Read one category aloud. Tapping the active category again stops it.
+  const handlePlayBrief = async (category: 'schedule' | 'stocks' | 'health' | 'news') => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
     const synth = window.speechSynthesis;
     synthRef.current = synth;
 
-    // If already speaking, stop it
-    if (isSpeaking) {
-      synth.cancel();
-      stopCloudVoice();
-      setIsSpeaking(false);
+    const wasSpeaking = isSpeaking;
+    synth.cancel();
+    stopCloudVoice();
+    setIsSpeaking(false);
+    if (wasSpeaking && activeCat === category) {
+      setActiveCat(null);
       return;
     }
+    setActiveCat(category);
 
-    // Build the script with natural conversational pauses (...) so it sounds human, not robotic
-    // Greeting -> 1. Today Schedule -> 2. To Do list -> 3. Hot News -> 4. IDX Watch
-    let script = 'Selamat Pagi Nico, Jax Disini... Berikut adalah ringkasan hari ini... ';
+    let script = '';
 
-    // 1. Today Schedule
-    if (todaySchedule.length > 0) {
-      script += `Pertama, jadwal hari ini ada ${todaySchedule.length} kegiatan... `;
-      todaySchedule.forEach((act, idx) => {
-        const timeStr = act.scheduled_at
-          ? new Date(act.scheduled_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-          : '';
-        script += `${idx + 1}. ${act.title}${timeStr ? `, pukul ${timeStr}` : ''}... `;
-      });
+    if (category === 'schedule') {
+      script = 'Jax disini... Berikut jadwal dan tugas kamu hari ini... ';
+      if (todaySchedule.length > 0) {
+        script += `Jadwal hari ini ada ${todaySchedule.length} kegiatan... `;
+        todaySchedule.forEach((act, idx) => {
+          const timeStr = act.scheduled_at
+            ? new Date(act.scheduled_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+            : '';
+          script += `${idx + 1}. ${act.title}${timeStr ? `, pukul ${timeStr}` : ''}... `;
+        });
+      } else {
+        script += 'Jadwal hari ini kosong... ';
+      }
+      if (urgentTodos.length > 0) {
+        script += `Daftar tugas penting ada ${urgentTodos.length} tugas... `;
+        urgentTodos.forEach((todo, idx) => {
+          script += `${idx + 1}. ${todo.title}... `;
+        });
+      } else {
+        script += 'Semua tugas penting sudah selesai... ';
+      }
+    } else if (category === 'stocks') {
+      script = 'Jax disini... Berikut pantauan saham IDX terkini... ';
+      if (stocks.length > 0) {
+        stocks.forEach((s) => {
+          const direction = s.changePercent >= 0 ? 'naik' : 'turun';
+          const absPercent = Math.abs(s.changePercent).toFixed(2);
+          script += `${s.ticker.replace('.JK', '')} di harga ${Math.round(s.price)} rupiah, ${direction} ${absPercent} persen... `;
+        });
+      } else {
+        script += 'Data saham belum tersedia... ';
+      }
+    } else if (category === 'news') {
+      script = 'Jax disini... Berikut berita utama hari ini... ';
+      if (news.length > 0) {
+        news.forEach((item, idx) => {
+          script += `${idx + 1}. ${item.title}... `;
+        });
+      } else {
+        script += 'Belum ada berita terbaru... ';
+      }
     } else {
-      script += 'Pertama, jadwal hari ini kosong... ';
-    }
-
-    // 2. To Do list
-    if (urgentTodos.length > 0) {
-      script += `Kedua, daftar tugas penting ada ${urgentTodos.length} tugas... `;
-      urgentTodos.forEach((todo, idx) => {
-        script += `${idx + 1}. ${todo.title}... `;
-      });
-    } else {
-      script += 'Kedua, semua tugas penting sudah selesai... ';
-    }
-
-    // 3. Hot News
-    if (news.length > 0) {
-      script += 'Ketiga, berita utama hari ini... ';
-      news.forEach((item, idx) => {
-        script += `${idx + 1}. ${item.title}... `;
-      });
-    }
-
-    // 4. IDX Watch
-    if (stocks.length > 0) {
-      script += 'Keempat, pantauan saham IDX terkini... ';
-      stocks.forEach((s) => {
-        const direction = s.changePercent >= 0 ? 'naik' : 'turun';
-        const absPercent = Math.abs(s.changePercent).toFixed(2);
-        script += `${s.ticker.replace('.JK', '')} di harga ${Math.round(s.price)} rupiah, ${direction} ${absPercent} persen... `;
-      });
+      script = 'Jax disini... Berikut data kesehatan kamu hari ini... ';
+      let data = fitbitData;
+      if (!data) {
+        try {
+          const res = await fetch('/api/fitbit/data');
+          const json = await res.json();
+          if (!json.error) {
+            data = json;
+            setFitbitData(json);
+          }
+        } catch {
+          /* handled below */
+        }
+      }
+      if (!data) {
+        script += 'Fitbit belum terhubung atau datanya belum bisa diambil... ';
+      } else {
+        if (data.sleep) {
+          const h = Math.floor(data.sleep.totalMinutesAsleep / 60);
+          const m = data.sleep.totalMinutesAsleep % 60;
+          script += `Tidur semalam ${h} jam ${m} menit... `;
+        } else {
+          script += 'Data tidur belum tersedia... ';
+        }
+        if (data.steps) script += `Langkah hari ini ${data.steps} langkah... `;
+        if (data.heartRate?.restingHeartRate) script += `Detak jantung terendah ${data.heartRate.restingHeartRate} bpm... `;
+      }
     }
 
     // Preferred: natural male Indonesian neural voice from the server (/api/tts).
@@ -344,7 +377,6 @@ export default function DashboardPage() {
       if (ok) return;
       speakWithBrowser(script, synth);
     });
-    return;
   };
 
   const speakWithBrowser = (script: string, synth: SpeechSynthesis) => {
@@ -522,581 +554,40 @@ export default function DashboardPage() {
     urgentTodos.filter(t => !t.is_completed && t.due_date).map(t => new Date(t.due_date!).getDate())
   );
 
+  const categories = [
+    { key: 'schedule' as const, label: 'Schedule', icon: Calendar },
+    { key: 'stocks' as const, label: 'Saham', icon: BarChart3 },
+    { key: 'health' as const, label: 'Health', icon: Moon },
+    { key: 'news' as const, label: 'News', icon: Newspaper },
+  ];
+
   return (
-    <div className="p-4 animate-fade-in pb-24 md:pb-6">
-
-      {/* JARVIS-style HUD core */}
-      <div className="relative rounded-[28px] p-4 mb-5 border border-cyan-400/20 bg-black overflow-hidden shadow-[0_0_40px_rgba(34,211,238,0.15)]">
+    <div className="flex flex-col h-[calc(100dvh-5.5rem)] md:h-[calc(100dvh-2rem)] p-3 animate-fade-in">
+      <div className="relative flex-1 min-h-0 rounded-[28px] bg-black border border-cyan-400/20 overflow-hidden shadow-[0_0_40px_rgba(34,211,238,0.15)]">
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.08),transparent_65%)]" />
-        <div className="relative grid grid-cols-3 gap-2 text-[10px] font-mono tracking-widest text-cyan-300/80">
-          <div>
-            <p className="text-cyan-200 text-lg font-bold">{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
-            <p>{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'short' }).toUpperCase()}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-cyan-200 text-lg font-bold">{todaySchedule.length}</p>
-            <p>AGENDA</p>
-          </div>
-          <div className="text-right">
-            <p className="text-orange-300 text-lg font-bold">{urgentTodos.length}</p>
-            <p>PENDING</p>
-          </div>
-        </div>
-        <JarvisCore speaking={isSpeaking} />
+        <JarvisCore speaking={isSpeaking} fill />
       </div>
 
-      {/* Hero Header */}
-      <div className="glass-card rounded-[28px] p-5 border border-white/15 bg-gradient-to-br from-blue-900/30 via-slate-900/40 to-cyan-900/20 shadow-xl flex items-center justify-between mb-5">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-[10px] font-bold uppercase tracking-wider mb-1.5">
-            <Sparkles size={12} /> Live Dashboard
-          </div>
-          <h1 className="text-lg font-bold text-white">Your Daily Brief</h1>
-        </div>
-        <button
-          onClick={handlePlayBrief}
-          className={`w-11 h-11 rounded-2xl border flex items-center justify-center transition-all active:scale-95 ${
-            isSpeaking
-              ? 'bg-red-500/20 border-red-400/40 text-red-400 animate-pulse'
-              : 'bg-blue-500/10 border-blue-400/20 text-blue-400 hover:bg-blue-500/20'
-          }`}
-          title={isSpeaking ? 'Stop Brief' : 'Play Morning Brief'}
-        >
-          {isSpeaking ? <VolumeX size={20} /> : <Volume2 size={20} />}
-        </button>
-      </div>
-
-      {/* ── MONTHLY CALENDAR ─────────────────────────────────────────── */}
-      <div className="glass-card rounded-2xl p-4 border border-white/10 mb-5">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-            {monthNames[calMonth]} {calYear}
-          </h2>
-          <Link href="/calendar" className="text-[10px] text-blue-400 font-semibold flex items-center gap-0.5 hover:underline">
-            Full Calendar <ChevronRight size={12} />
-          </Link>
-        </div>
-        <div className="grid grid-cols-7 gap-1">
-          {['S','M','T','W','T','F','S'].map((d, i) => (
-            <div key={i} className="text-center text-[9px] font-bold text-slate-500 uppercase py-0.5">{d}</div>
-          ))}
-          {Array.from({ length: calFirstDay }).map((_, i) => (
-            <div key={`empty-${i}`} className="aspect-square" />
-          ))}
-          {Array.from({ length: calDaysInMonth }).map((_, i) => {
-            const d = i + 1;
-            const isToday = d === calToday.getDate();
-            const hasEvent = scheduledDays.has(d);
-            const hasTodo = todoDueDays.has(d);
-            return (
-              <div
-                key={`d-${d}`}
-                className={`aspect-square rounded-lg flex flex-col items-center justify-center relative text-xs transition-all
-                  ${isToday
-                    ? 'bg-blue-600 text-white font-bold shadow-[0_0_12px_rgba(59,130,246,0.4)]'
-                    : 'text-slate-400 hover:bg-white/[0.04]'
-                  }`}
-              >
-                {d}
-                {(hasEvent || hasTodo) && !isToday && (
-                  <div className={`absolute bottom-0.5 w-1 h-1 rounded-full ${hasEvent ? 'bg-blue-400' : 'bg-emerald-400'}`} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── 3-TAB SWITCHER ───────────────────────────────────────────── */}
-      <div className="flex bg-white/[0.04] p-1 rounded-2xl border border-white/10 mb-5 gap-1">
-        <button
-          onClick={() => setBriefTab('productivity')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            briefTab === 'productivity'
-              ? 'bg-blue-600/40 text-blue-200 shadow-sm border border-blue-400/30'
-              : 'text-slate-400 hover:text-white hover:bg-white/[0.03]'
-          }`}
-        >
-          <Brain size={13} /> Productivity
-        </button>
-        <button
-          onClick={() => setBriefTab('health')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            briefTab === 'health'
-              ? 'bg-emerald-600/40 text-emerald-200 shadow-sm border border-emerald-400/30'
-              : 'text-slate-400 hover:text-white hover:bg-white/[0.03]'
-          }`}
-        >
-          <Heart size={13} /> Health
-        </button>
-        <button
-          onClick={() => setBriefTab('money')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-xl transition-all ${
-            briefTab === 'money'
-              ? 'bg-amber-600/40 text-amber-200 shadow-sm border border-amber-400/30'
-              : 'text-slate-400 hover:text-white hover:bg-white/[0.03]'
-          }`}
-        >
-          <DollarSign size={13} /> Money
-        </button>
-      </div>
-
-      {/* ══ PRODUCTIVITY TAB ════════════════════════════════════════════ */}
-      {briefTab === 'productivity' && (
-        <div className="space-y-6">
-          {/* TODAY'S SCHEDULE */}
-          <section>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <div className="flex items-center gap-2">
-                <Calendar size={16} className="text-blue-400" />
-                <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Today&apos;s Schedule</h2>
-              </div>
-              <Link href="/activities" className="text-xs text-blue-400 font-semibold flex items-center gap-0.5 hover:underline">
-                All Activities <ChevronRight size={14} />
-              </Link>
-            </div>
-            {todaySchedule.length === 0 ? (
-              <div className="glass-card rounded-[28px] p-6 text-center border border-white/10">
-                <Clock size={28} className="text-slate-500 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-white">Clear Calendar</p>
-                <p className="text-xs text-slate-400 mt-0.5">No activities scheduled for today.</p>
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {todaySchedule.map((activity) => (
-                  <div
-                    key={activity.id}
-                    onClick={() => openEditActivity(activity)}
-                    className="glass-card rounded-2xl p-3.5 flex items-center gap-3 border border-white/10 cursor-pointer hover:bg-white/[0.08] transition-all"
-                  >
-                    <div className="w-11 h-11 rounded-2xl bg-blue-500/15 border border-blue-400/25 flex items-center justify-center flex-shrink-0">
-                      <Calendar size={18} className="text-blue-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{activity.title}</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        {activity.activity_type} · {formatActivityTime(activity)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <AddToGoogleCalendar
-                        title={activity.title}
-                        description={activity.description}
-                        dateString={activity.scheduled_at}
-                        startTime={(activity.metadata as any)?.start_time || (activity.scheduled_at ? new Date(activity.scheduled_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : undefined)}
-                        endTime={(activity.metadata as any)?.end_time || (activity.deadline ? new Date(activity.deadline).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : undefined)}
-                      />
-                      <Badge variant={activity.status === 'in_progress' ? 'warning' : 'accent'} size="sm">
-                        {activity.status.replace('_', ' ')}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* TO DO LIST */}
-          <section>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-400" />
-                <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">To Do List</h2>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-medium">
-                  {urgentTodos.length} Pending
-                </span>
-                <Link href="/todos" className="text-xs text-blue-400 font-semibold flex items-center gap-0.5 hover:underline">
-                  All Tasks <ChevronRight size={14} />
-                </Link>
-              </div>
-            </div>
-            {urgentTodos.length === 0 ? (
-              <div className="glass-card rounded-[28px] p-6 text-center border border-white/10">
-                <CheckCircle2 size={28} className="text-emerald-400 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-white">All caught up!</p>
-                <p className="text-xs text-slate-400 mt-0.5">Your to-do list is clean.</p>
-              </div>
-            ) : (
-              <div className="max-h-[310px] overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
-                {urgentTodos.map((todo) => (
-                  <div
-                    key={todo.id}
-                    onClick={() => openEditTodo(todo)}
-                    className="glass-card rounded-2xl p-3.5 flex items-center gap-3 border border-white/10 hover:bg-white/[0.08] transition-all cursor-pointer"
-                  >
-                    <button
-                      type="button"
-                      onClick={(e) => handleToggleTodo(todo, e)}
-                      className="p-1 rounded-full hover:bg-white/10 transition-colors flex-shrink-0"
-                      title="Mark as completed"
-                    >
-                      <div className="w-4 h-4 rounded-full border-2 border-slate-400 hover:border-emerald-400 transition-colors" />
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate font-semibold text-white">
-                        {todo.title}
-                      </p>
-                      {todo.due_date && (
-                        <p className="text-[11px] text-slate-400 mt-0.5">
-                          Due: {new Date(todo.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </p>
-                      )}
-                    </div>
-                    <Badge variant={priorityVariant(todo.priority)} size="sm">{todo.priority}</Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* HOT NEWS */}
-          <section>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <div className="flex items-center gap-2">
-                <Newspaper size={16} className="text-amber-400" />
-                <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Hot News</h2>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-400 font-medium">Indonesia</span>
-            </div>
-            {newsLoading ? (
-              <div className="glow-card rounded-2xl p-4 border border-white/10 animate-pulse space-y-3">
-                {[0, 1, 2].map(i => (
-                  <div key={i} className="h-3.5 bg-white/10 rounded" style={{ width: `${85 - i * 10}%` }} />
-                ))}
-              </div>
-            ) : news.length === 0 ? (
-              <div className="glow-card rounded-2xl p-5 text-center border border-white/10">
-                <p className="text-xs text-slate-400">No news available right now.</p>
-              </div>
-            ) : (
-              <div className="glow-card rounded-2xl p-4 border border-white/10 space-y-2.5">
-                {news.map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5">
-                    <span className="text-[10px] font-bold text-amber-400 bg-amber-500/15 border border-amber-400/30 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      {idx + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-white leading-snug">{item.title}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">{item.source}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-      )}
-
-      {/* ══ HEALTH TAB ══════════════════════════════════════════════════ */}
-      {briefTab === 'health' && (
-        <div className="space-y-5">
-          
-          {/* Fitbit Live Data Section */}
-          <section>
-            <div className="flex items-center gap-2 mb-3 px-1">
-              <Activity size={16} className="text-cyan-400" />
-              <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Today's Vitals (Fitbit)</h2>
-            </div>
-            
-            {loadingFitbit ? (
-              <div className="glass-card rounded-2xl p-6 text-center border border-white/10 flex flex-col items-center justify-center gap-3">
-                <div className="w-8 h-8 rounded-full border-2 border-cyan-500/30 border-t-cyan-400 animate-spin"></div>
-                <p className="text-xs font-bold text-slate-400">Syncing with Fitbit...</p>
-              </div>
-            ) : !fitbitData ? (
-               <div className="glass-card rounded-2xl p-6 text-center border border-white/10 flex flex-col items-center gap-3">
-                 <Activity size={24} className="text-cyan-400" />
-                 <p className="text-xs text-slate-400 mb-2">Connect your Fitbit to sync live health stats</p>
-                 <button onClick={() => window.location.href = '/api/fitbit/auth'} className="px-5 py-2.5 rounded-xl bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 font-bold text-xs hover:bg-cyan-600/30 transition-colors cursor-pointer relative z-50">
-                   Connect Fitbit
-                 </button>
-               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {/* Steps & Activity */}
-                <div className="col-span-2 glass-card p-4 rounded-3xl border border-white/10 bg-gradient-to-br from-cyan-900/20 to-transparent relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-[50px] rounded-full"></div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                        <Footprints size={14} className="text-cyan-400" />
-                      </div>
-                      <span className="text-xs font-bold text-cyan-300 uppercase tracking-widest">Steps</span>
-                    </div>
-                    {fitbitData.distance > 0 && <span className="text-xs font-bold text-slate-400">{fitbitData.distance} km</span>}
-                  </div>
-                  <div className="flex items-end gap-2">
-                    <span className="text-4xl font-black text-white tracking-tight">{fitbitData.steps?.toLocaleString() || 0}</span>
-                  </div>
-                  <div className="mt-3 h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${Math.min((fitbitData.steps / 10000) * 100, 100)}%` }}></div>
-                  </div>
-                  <p className="text-[10px] font-bold text-slate-500 mt-2 text-right uppercase tracking-wider">Goal: 10,000</p>
-                </div>
-
-                {/* Heart Rate */}
-                <div className="glass-card p-4 rounded-3xl border border-white/10 bg-gradient-to-br from-rose-900/20 to-transparent">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-7 h-7 rounded-full bg-rose-500/20 flex items-center justify-center">
-                      <Heart size={14} className="text-rose-400" />
-                    </div>
-                    <span className="text-[10px] font-bold text-rose-300 uppercase tracking-widest">Heart</span>
-                  </div>
-                  <span className="text-2xl font-black text-white">{fitbitData.heartRate?.restingHeartRate || '--'} <span className="text-[10px] font-bold text-slate-500 uppercase">bpm</span></span>
-                  <p className="text-[10px] text-slate-400 font-medium mt-1">Resting HR</p>
-                </div>
-
-                {/* Sleep */}
-                <div className="glass-card p-4 rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-900/20 to-transparent">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-7 h-7 rounded-full bg-indigo-500/20 flex items-center justify-center">
-                      <Moon size={14} className="text-indigo-400" />
-                    </div>
-                    <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">Sleep</span>
-                  </div>
-                  <span className="text-2xl font-black text-white">
-                    {fitbitData.sleep ? Math.floor(fitbitData.sleep.totalMinutesAsleep / 60) : '-'}
-                    <span className="text-[10px] font-bold text-slate-500 uppercase mx-0.5">h</span>
-                    {fitbitData.sleep ? fitbitData.sleep.totalMinutesAsleep % 60 : '-'}
-                    <span className="text-[10px] font-bold text-slate-500 uppercase ml-0.5">m</span>
-                  </span>
-                  <p className="text-[10px] text-slate-400 font-medium mt-1">Total Asleep</p>
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* Spacer */}
-          <div className="h-1"></div>
-
-          <div className="flex items-center gap-2 mb-1 px-1">
-            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Body Composition Baseline</h2>
-          </div>
-
-          <div className="glass-card rounded-2xl p-5 border border-white/10 text-center">
-            <Heart size={32} className="text-rose-400 mx-auto mb-3" />
-            <p className="text-base font-bold text-white mb-1">Body Composition</p>
-            <p className="text-xs text-slate-400 mb-4">Your latest InBody scan — baseline data.</p>
-            <Link
-              href="/sports"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-600/30 border border-emerald-400/30 text-emerald-300 text-sm font-bold hover:bg-emerald-600/40 transition-all"
+      <div className="grid grid-cols-4 gap-2 mt-3">
+        {categories.map(({ key, label, icon: Icon }) => {
+          const active = activeCat === key && isSpeaking;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => handlePlayBrief(key)}
+              className={`flex flex-col items-center gap-1.5 py-3 rounded-2xl border text-[11px] font-bold tracking-wide transition-all active:scale-95 ${
+                active
+                  ? 'bg-orange-500/20 border-orange-400/50 text-orange-300 animate-pulse'
+                  : 'bg-cyan-500/10 border-cyan-400/25 text-cyan-300 hover:bg-cyan-500/20'
+              }`}
             >
-              <Activity size={14} /> Sports Dashboard <ChevronRight size={14} />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'Weight', value: '87.4', unit: 'kg', color: 'text-white' },
-              { label: 'Fat', value: '31', unit: '%', color: 'text-red-400' },
-              { label: 'Muscle', value: '65.3', unit: '%', color: 'text-emerald-400' },
-            ].map(stat => (
-              <div key={stat.label} className="glow-card p-3 text-center rounded-2xl">
-                <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">{stat.label}</p>
-                <p className={`text-lg font-extrabold ${stat.color}`}>{stat.value}</p>
-                <p className="text-[10px] text-slate-500">{stat.unit}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { label: 'BMI', value: '29.2', color: 'text-amber-400' },
-              { label: 'BMR', value: '1671 kcal', color: 'text-cyan-400' },
-              { label: 'Visceral Fat', value: '11', color: 'text-red-400' },
-              { label: 'Body Age', value: '50 yrs', color: 'text-slate-300' },
-            ].map(stat => (
-              <div key={stat.label} className="glow-card p-3 text-center rounded-2xl">
-                <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">{stat.label}</p>
-                <p className={`text-lg font-extrabold ${stat.color}`}>{stat.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ══ MONEY TAB ═══════════════════════════════════════════════════ */}
-      {briefTab === 'money' && (
-        <div className="space-y-6">
-          {/* Monthly Finance */}
-          <section>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">This Month Finance</h2>
-              <Link href="/finance" className="text-xs text-blue-400 font-semibold flex items-center gap-0.5 hover:underline">
-                Ledger <ChevronRight size={14} />
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-3.5 mb-3">
-              <div className="glow-card rounded-[28px] p-4 bg-gradient-to-br from-emerald-950/30 to-slate-900/50">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-9 h-9 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
-                    <TrendingUp size={16} className="text-emerald-400" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-300">Income</span>
-                </div>
-                <p className="text-base font-extrabold font-mono text-emerald-400 truncate">{formatCurrency(financeSummary.total_income)}</p>
-                <p className="text-[10px] text-slate-400 mt-1 truncate">Pro: {formatCurrency(financeSummary.professional_income)}</p>
-              </div>
-              <div className="glow-card rounded-[28px] p-4 bg-gradient-to-br from-red-950/30 to-slate-900/50 min-w-0">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-9 h-9 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center">
-                    <TrendingDown size={16} className="text-red-400" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-300">Expenses</span>
-                </div>
-                <p className="text-base font-extrabold font-mono text-red-400 truncate">{formatCurrency(financeSummary.total_expenses)}</p>
-                <p className="text-[10px] text-slate-400 mt-1 truncate">Personal: {formatCurrency(financeSummary.personal_expenses)}</p>
-              </div>
-            </div>
-            {(() => {
-              const net = financeSummary.total_income - financeSummary.total_expenses;
-              const pos = net >= 0;
-              return (
-                <div className={`glow-card rounded-2xl p-3.5 flex items-center justify-between border ${pos ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Net This Month</span>
-                  <span className={`text-base font-extrabold font-mono ${pos ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {pos ? '+' : ''}{formatCurrency(net)}
-                  </span>
-                </div>
-              );
-            })()}
-          </section>
-
-          {/* IDX Watchlist */}
-          <section>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <div className="flex items-center gap-2">
-                <BarChart3 size={16} className="text-cyan-400" />
-                <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">IDX Watchlist</h2>
-              </div>
-              <Link href="/investasi" className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
-                Portofolio <ChevronRight size={14} />
-              </Link>
-            </div>
-            {stocksLoading ? (
-              <div className="grid grid-cols-2 gap-3">
-                {[0, 1].map(i => (
-                  <div key={i} className="glow-card rounded-2xl p-4 border border-white/10 animate-pulse">
-                    <div className="h-3 bg-white/10 rounded w-16 mb-3" />
-                    <div className="h-5 bg-white/10 rounded w-24 mb-2" />
-                    <div className="h-3 bg-white/10 rounded w-14" />
-                  </div>
-                ))}
-              </div>
-            ) : stocks.length === 0 ? (
-              <div className="glow-card rounded-2xl p-5 text-center border border-white/10">
-                <p className="text-xs text-slate-400">Unable to load stock data. Try refreshing.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {stocks.map((s) => {
-                  const isUp = s.changePercent >= 0;
-                  const baseTicker = s.ticker.toUpperCase().replace('.JK', '');
-                  const portInfo = portfolioSummary[baseTicker];
-                  const pnlPercent = portInfo && portInfo.avgPrice > 0 && s.price > 0
-                    ? ((s.price - portInfo.avgPrice) / portInfo.avgPrice) * 100
-                    : null;
-                  return (
-                    <div key={s.ticker} className="glow-card rounded-2xl p-3.5 border border-white/15 bg-gradient-to-br from-slate-900/95 via-[#0d1829]/90 to-slate-900 shadow-xl hover:border-blue-400/40 transition-all flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <div className="flex items-baseline gap-0.5">
-                            <span className="text-sm font-extrabold text-white tracking-tight">{baseTicker}</span>
-                            <span className="text-[9px] text-slate-500 font-mono">.JK</span>
-                          </div>
-                          {portInfo && (
-                            <span className="px-2 py-0.5 rounded-md bg-blue-500/15 border border-blue-400/30 text-blue-300 text-[9px] font-bold">{portInfo.lots} Lot</span>
-                          )}
-                        </div>
-                        <p className="text-xl font-black text-white font-mono tracking-tight mt-1.5">
-                          Rp {Math.round(s.price).toLocaleString('id-ID')}
-                        </p>
-                        <div className="flex justify-end mt-1.5">
-                          <div className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-extrabold border ${isUp ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-red-500/15 text-red-400 border-red-500/30'}`}>
-                            {isUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                            <span>{isUp ? '+' : ''}{s.changePercent.toFixed(2)}%</span>
-                          </div>
-                        </div>
-                      </div>
-                      {portInfo && (
-                        <div className="mt-2.5 pt-2 border-t border-white/10 grid grid-cols-2 gap-1">
-                          <div>
-                            <p className="text-[9px] font-semibold text-slate-400 uppercase">Avg Price</p>
-                            <p className="text-[11px] font-bold text-slate-200 font-mono">Rp {portInfo.avgPrice.toLocaleString('id-ID')}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-[9px] font-semibold text-slate-400 uppercase">Return</p>
-                            {pnlPercent !== null ? (
-                              <p className={`text-[11px] font-extrabold font-mono ${pnlPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
-                              </p>
-                            ) : <p className="text-[11px] text-slate-400">-</p>}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-        </div>
-      )}
-
-      {/* ── EDIT MODAL ──────────────────────────────────────────────── */}
-      <Modal
-        isOpen={!!editingActivity || !!editingTodo}
-        onClose={() => { setEditingActivity(null); setEditingTodo(null); }}
-        title={editingActivity ? 'Edit Today Schedule' : 'Edit Urgent Task'}
-      >
-        <div className="space-y-4">
-          <Input label="Title" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} />
-
-          {editingActivity && (
-            <>
-              <Input label="Date" type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
-              <div className="grid grid-cols-2 gap-3">
-                <div className="w-full">
-                  <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Start Time</label>
-                  <select value={formStartTime} onChange={(e) => setFormStartTime(e.target.value)} className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 font-mono font-bold">
-                    {Array.from({ length: 48 }, (_, i) => { const h = Math.floor(i / 2); const m = i % 2 === 0 ? '00' : '30'; const t = `${String(h).padStart(2, '0')}:${m}`; return <option key={`start-${t}`} value={t} className="bg-slate-900">{t}</option>; })}
-                  </select>
-                </div>
-                <div className="w-full">
-                  <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">End Time</label>
-                  <select value={formEndTime} onChange={(e) => setFormEndTime(e.target.value)} className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-400/60 font-mono font-bold">
-                    {Array.from({ length: 48 }, (_, i) => { const h = Math.floor(i / 2); const m = i % 2 === 0 ? '00' : '30'; const t = `${String(h).padStart(2, '0')}:${m}`; return <option key={`end-${t}`} value={t} className="bg-slate-900">{t}</option>; })}
-                  </select>
-                </div>
-              </div>
-            </>
-          )}
-
-          {editingTodo && (
-            <>
-              <Input label="Due Date" type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
-              <div className="w-full">
-                <label className="block text-xs font-semibold text-slate-300 tracking-wide uppercase mb-1.5 ml-1">Priority</label>
-                <select value={formPriority} onChange={(e) => setFormPriority(e.target.value as any)} className="w-full bg-slate-900 border border-white/15 rounded-2xl px-4 py-3 text-sm text-white font-bold">
-                  <option value="low" className="bg-slate-900">Low</option>
-                  <option value="medium" className="bg-slate-900">Medium</option>
-                  <option value="high" className="bg-slate-900">High</option>
-                  <option value="urgent" className="bg-slate-900">Urgent</option>
-                </select>
-              </div>
-            </>
-          )}
-
-          <div className="flex justify-end gap-3 pt-3">
-            <button type="button" onClick={() => { setEditingActivity(null); setEditingTodo(null); }} className="px-5 py-2.5 rounded-2xl text-sm font-bold text-slate-400 hover:text-white transition-colors">Cancel</button>
-            <button type="button" disabled={saving} onClick={editingActivity ? handleSaveActivity : handleSaveTodo} className="px-6 py-2.5 rounded-2xl text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white transition-colors shadow-lg shadow-blue-500/25 disabled:opacity-50">
-              {saving ? 'Saving...' : 'Save Changes'}
+              <Icon size={20} />
+              {label}
             </button>
-          </div>
-        </div>
-      </Modal>
+          );
+        })}
+      </div>
     </div>
   );
 }

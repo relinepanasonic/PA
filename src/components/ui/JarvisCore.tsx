@@ -13,11 +13,12 @@ export const notifyVoiceWord = () => {
 interface Props {
   speaking: boolean;
   label?: string;
+  fill?: boolean;
 }
 
 const POINTS = 1600;
 
-export default function JarvisCore({ speaking, label = 'JAX' }: Props) {
+export default function JarvisCore({ speaking, label = 'JAX', fill = false }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const speakingRef = useRef(speaking);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -208,7 +209,7 @@ export default function JarvisCore({ speaking, label = 'JAX' }: Props) {
   useEffect(() => () => stopMic(), []);
 
   return (
-    <div className="relative w-full aspect-square max-h-[460px] mx-auto">
+    <div className={fill ? 'relative w-full h-full' : 'relative w-full aspect-square max-h-[460px] mx-auto'}>
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       <div className="absolute top-2 left-3 text-[10px] font-mono tracking-[0.3em] text-cyan-300/70">
         {label} // CORE {speaking ? 'SPEAKING' : micOn ? 'LISTENING' : 'IDLE'}
