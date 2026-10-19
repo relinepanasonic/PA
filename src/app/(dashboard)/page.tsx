@@ -32,6 +32,7 @@ interface NewsItem {
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import AddToGoogleCalendar from '@/components/ui/AddToGoogleCalendar';
+import JarvisCore, { notifyVoiceWord } from '@/components/ui/JarvisCore';
 
 const getLocalDateString = (d = new Date()) => {
   const year = d.getFullYear();
@@ -113,6 +114,7 @@ export default function DashboardPage() {
           .from('todos')
           .select('*')
           .eq('user_id', user.id)
+          .eq('is_completed', false)
           .limit(30),
         supabase
           .from('work_activities')
@@ -131,14 +133,13 @@ export default function DashboardPage() {
           .lte('transaction_date', today)
       ]);
 
-      const sortedTodos = (rawTodos || []).sort((a, b) => {
-        if (a.is_completed !== b.is_completed) {
-          return a.is_completed ? 1 : -1;
-        }
-        const dateA = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
-        const dateB = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
-        return dateA - dateB;
-      });
+      const sortedTodos = (rawTodos || [])
+        .filter((t) => !t.is_completed)
+        .sort((a, b) => {
+          const dateA = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+          const dateB = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+          return dateA - dateB;
+        });
 
       if (transactions) {
         const summary: FinanceSummary = {
@@ -281,24 +282,25 @@ export default function DashboardPage() {
     const utterance = new SpeechSynthesisUtterance(script);
     utterance.lang = 'id-ID';
 
-    // Score and select a soft, natural Indonesian female voice (e.g., Natural / Neural / Gadis / Siti / Google Bahasa Indonesia)
+    // Pick a natural Indonesian male voice: Edge's neural "Ardi" first, then
+    // Windows "Andika", then any male id-ID voice. Indonesian voices read the
+    // English words (news titles, tickers) with a natural Indonesian accent.
     const voices = synth.getVoices();
     let bestVoice: SpeechSynthesisVoice | null = null;
-    let bestScore = -1000;
+    let bestScore = 0;
 
     for (const v of voices) {
       let score = 0;
       const name = v.name.toLowerCase();
-      const lang = v.lang.toLowerCase();
+      const lang = v.lang.toLowerCase().replace('_', '-');
 
-      if (lang.includes('id')) score += 50;
-      if (name.includes('natural') || name.includes('online') || name.includes('neural')) score += 35;
-      // Prioritize Female / Gadis / Siti / Rani / Google Bahasa Indonesia
-      if (/female|woman|wanita|gadis|siti|rani/i.test(name)) score += 45;
-      // Penalize Male voices
-      if (/male|man|pria|ardi|andika|budi|dika/i.test(name)) score -= 50;
+      if (lang.startsWith('id') || lang.startsWith('in-')) score += 60;
+      if (/natural|online|neural/.test(name)) score += 40;
+      if (/ardi/.test(name)) score += 60;
+      if (/andika|pria|male|\bman\b/.test(name)) score += 40;
+      if (/female|woman|wanita|gadis|siti|rani|gadis|damayanti/.test(name)) score -= 80;
 
-      if (score > bestScore && score > 0) {
+      if (score > bestScore) {
         bestScore = score;
         bestVoice = v;
       }
@@ -308,10 +310,11 @@ export default function DashboardPage() {
       utterance.voice = bestVoice;
     }
 
-    // Soft, warm, calm female tone (0.96 pitch ensures smooth softness without sharp/high-pitched tones)
-    utterance.pitch = 0.96;
-    utterance.rate = 0.94;
+    // Deeper, calm, unhurried male delivery
+    utterance.pitch = bestVoice && /ardi|andika|male|pria/i.test(bestVoice.name) ? 0.95 : 0.8;
+    utterance.rate = 0.98;
 
+    utterance.onboundary = () => notifyVoiceWord();
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
 
@@ -391,7 +394,13 @@ export default function DashboardPage() {
   const handleToggleTodo = async (todo: Todo, e: React.MouseEvent) => {
     e.stopPropagation();
     const newStatus = !todo.is_completed;
-    await supabase.from('todos').update({ is_completed: newStatus }).eq('id', todo.id);
+    if (newStatus) {
+      setUrgentTodos((prev) => prev.filter((t) => t.id !== todo.id));
+    }
+    await supabase.from('todos').update({
+      is_completed: newStatus,
+      completed_at: newStatus ? new Date().toISOString() : null,
+    }).eq('id', todo.id);
     fetchDashboard();
   };
 
@@ -446,6 +455,26 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 animate-fade-in pb-24 md:pb-6">
+
+      {/* JARVIS-style HUD core */}
+      <div className="relative rounded-[28px] p-4 mb-5 border border-cyan-400/20 bg-black overflow-hidden shadow-[0_0_40px_rgba(34,211,238,0.15)]">
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.08),transparent_65%)]" />
+        <div className="relative grid grid-cols-3 gap-2 text-[10px] font-mono tracking-widest text-cyan-300/80">
+          <div>
+            <p className="text-cyan-200 text-lg font-bold">{new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
+            <p>{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'short' }).toUpperCase()}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-cyan-200 text-lg font-bold">{todaySchedule.length}</p>
+            <p>AGENDA</p>
+          </div>
+          <div className="text-right">
+            <p className="text-orange-300 text-lg font-bold">{urgentTodos.length}</p>
+            <p>PENDING</p>
+          </div>
+        </div>
+        <JarvisCore speaking={isSpeaking} />
+      </div>
 
       {/* Hero Header */}
       <div className="glass-card rounded-[28px] p-5 border border-white/15 bg-gradient-to-br from-blue-900/30 via-slate-900/40 to-cyan-900/20 shadow-xl flex items-center justify-between mb-5">
@@ -607,7 +636,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-medium">
-                  {urgentTodos.filter(t => !t.is_completed).length} Pending
+                  {urgentTodos.length} Pending
                 </span>
                 <Link href="/todos" className="text-xs text-blue-400 font-semibold flex items-center gap-0.5 hover:underline">
                   All Tasks <ChevronRight size={14} />
@@ -626,25 +655,18 @@ export default function DashboardPage() {
                   <div
                     key={todo.id}
                     onClick={() => openEditTodo(todo)}
-                    className={`glass-card rounded-2xl p-3.5 flex items-center gap-3 border transition-all cursor-pointer ${
-                      todo.is_completed
-                        ? 'border-white/5 bg-white/[0.02] opacity-70'
-                        : 'border-white/10 hover:bg-white/[0.08]'
-                    }`}
+                    className="glass-card rounded-2xl p-3.5 flex items-center gap-3 border border-white/10 hover:bg-white/[0.08] transition-all cursor-pointer"
                   >
                     <button
                       type="button"
                       onClick={(e) => handleToggleTodo(todo, e)}
                       className="p-1 rounded-full hover:bg-white/10 transition-colors flex-shrink-0"
+                      title="Mark as completed"
                     >
-                      {todo.is_completed ? (
-                        <CheckCircle2 size={18} className="text-emerald-400" />
-                      ) : (
-                        <div className="w-4 h-4 rounded-full border-2 border-slate-400 hover:border-emerald-400 transition-colors" />
-                      )}
+                      <div className="w-4 h-4 rounded-full border-2 border-slate-400 hover:border-emerald-400 transition-colors" />
                     </button>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm truncate ${todo.is_completed ? 'line-through text-slate-400 font-normal' : 'font-semibold text-white'}`}>
+                      <p className="text-sm truncate font-semibold text-white">
                         {todo.title}
                       </p>
                       {todo.due_date && (
@@ -653,11 +675,7 @@ export default function DashboardPage() {
                         </p>
                       )}
                     </div>
-                    {todo.is_completed ? (
-                      <Badge variant="success" size="sm">Done</Badge>
-                    ) : (
-                      <Badge variant={priorityVariant(todo.priority)} size="sm">{todo.priority}</Badge>
-                    )}
+                    <Badge variant={priorityVariant(todo.priority)} size="sm">{todo.priority}</Badge>
                   </div>
                 ))}
               </div>

@@ -2338,6 +2338,53 @@ export const EXERCISES: Exercise[] = [
     "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Butterfly/0.jpg"
   },
   {
+    "id": "Pectoral_Fly",
+    "name": "Pectoral Fly",
+    "muscleGroup": "Chest",
+    "targetMuscles": [
+      "chest",
+      "pectorals"
+    ],
+    "secondaryMuscles": [
+      "anterior deltoids",
+      "biceps"
+    ],
+    "equipment": "Shua Machine",
+    "difficulty": "beginner",
+    "instructions": [
+      "Sit upright with your back and head firmly against the machine backrest, feet flat on the floor.",
+      "Adjust the seat height so that the handles or arm pads align directly with your mid-chest level.",
+      "Grasp the vertical handles with a slight bend in your elbows and elbows held up.",
+      "Bring the handles together in a smooth, controlled hugging motion in front of your chest until they meet.",
+      "Squeeze your pectoral muscles tightly at the peak contraction for 1 second.",
+      "Slowly return your arms to the starting position until your chest is fully stretched, without letting the weight stack slam."
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Butterfly/0.jpg"
+  },
+  {
+    "id": "Hybrid_Pectoral_Fly",
+    "name": "Hybrid Pectoral Fly",
+    "muscleGroup": "Chest",
+    "targetMuscles": [
+      "chest",
+      "pectorals"
+    ],
+    "secondaryMuscles": [
+      "anterior deltoids"
+    ],
+    "equipment": "Shua Machine",
+    "difficulty": "beginner",
+    "instructions": [
+      "Adjust the seat height so the hybrid articulated handles align with your mid-to-lower chest level.",
+      "Sit back firmly against the pad with feet planted shoulder-width apart.",
+      "Grasp the dual articulating handles, maintaining a slight, fixed bend at your elbows throughout.",
+      "Engage your chest and guide both handles forward in a converging arc across the midline of your torso.",
+      "Hold the contracted position firmly for 1-2 seconds to maximize inner and overall chest activation.",
+      "Slowly reverse the movement along the guided converging path to the starting position under full muscular tension."
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Butterfly/1.jpg"
+  },
+  {
     "id": "Cable_Chest_Press",
     "name": "Cable Chest Press",
     "muscleGroup": "Chest",

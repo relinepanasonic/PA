@@ -25,6 +25,27 @@ const formatDuration = (seconds: number) => {
   return `${m}m ${s.toString().padStart(2, '0')}s`;
 };
 
+interface ParsedExerciseSet {
+  reps: string | number;
+  weight: string | number;
+  done?: boolean;
+}
+
+const parseExerciseSets = (notes: string | null | undefined): { sets: ParsedExerciseSet[] | null; userNote: string | null } => {
+  if (!notes) return { sets: null, userNote: null };
+  try {
+    const parsed = JSON.parse(notes);
+    if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object' && ('reps' in parsed[0] || 'weight' in parsed[0])) {
+      return { sets: parsed, userNote: null };
+    }
+    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.sets)) {
+      return { sets: parsed.sets, userNote: parsed.note || null };
+    }
+  } catch {
+    return { sets: null, userNote: notes };
+  }
+  return { sets: null, userNote: notes };
+};
 
 const MUSCLE_HEADS: Record<string, {name: string, filter: string}[]> = {
   Chest: [
@@ -145,6 +166,7 @@ export default function SportsPage() {
   const [trainTodayTab, setTrainTodayTab] = useState<'muscle' | 'library'>('muscle');
   const [trainTodayFilter, setTrainTodayFilter] = useState('');
   const [sessionExercises, setSessionExercises] = useState<GymSessionExercise[]>([]);
+  const [collapsedExercises, setCollapsedExercises] = useState<Record<string, boolean>>({});
   const [showGymModal, setShowGymModal] = useState(false);
   const [editingGym, setEditingGym] = useState<GymSession | null>(null);
   const [gymSaving, setGymSaving] = useState(false);
@@ -1286,27 +1308,94 @@ export default function SportsPage() {
 
               {/* Exercises in this session */}
               {sessionExercises.length > 0 && (
-                <div className="space-y-2">
-                  {sessionExercises.map((ex, i) => (
-                    <div key={ex.id} className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="text-xs font-bold text-slate-500 w-5">{i + 1}</span>
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-white truncate">{ex.exercise_name}</p>
-                          <p className="text-[11px] text-slate-400 font-mono">
-                            {ex.sets} sets × {ex.reps} reps × {ex.weight_kg} kg
-                            {ex.notes && <span className="text-slate-500"> — {ex.notes}</span>}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => removeExerciseFromSession(ex.id)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0"
+                <div className="space-y-2.5">
+                  {sessionExercises.map((ex, i) => {
+                    const { sets: setDetails, userNote } = parseExerciseSets(ex.notes);
+                    const isCollapsed = !!collapsedExercises[ex.id];
+
+                    return (
+                      <div
+                        key={ex.id}
+                        className="rounded-2xl bg-white/[0.04] border border-white/10 overflow-hidden transition-all shadow-sm"
                       >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
+                        {/* Exercise Card Header: Click to collapse / expand */}
+                        <div
+                          onClick={() => setCollapsedExercises(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}
+                          className="p-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/[0.02] transition-colors select-none"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="w-6 h-6 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                              {i + 1}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-white truncate">{ex.exercise_name}</p>
+                              <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                                {ex.sets} {ex.sets === 1 ? 'set' : 'sets'} × ~{ex.reps} reps × {ex.weight_kg} kg
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeExerciseFromSession(ex.id);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                              title="Delete exercise"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                            <div className="p-1 text-slate-400 hover:text-white transition-colors">
+                              {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Collapsible Sets Detail */}
+                        {!isCollapsed && (
+                          <div className="px-3.5 pb-3.5 pt-1 border-t border-white/5 space-y-2 bg-black/25">
+                            {setDetails && setDetails.length > 0 ? (
+                              <div className="space-y-1.5 pt-1">
+                                {setDetails.map((set, setIdx) => (
+                                  <div
+                                    key={setIdx}
+                                    className="flex items-center justify-between text-xs py-1.5 px-3 rounded-xl bg-white/[0.03] border border-white/5"
+                                  >
+                                    <div className="flex items-center gap-2 font-mono">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                                      <span className="text-slate-300 font-medium">Set {setIdx + 1}</span>
+                                      <span className="text-slate-600">—</span>
+                                      <span className="text-white font-bold">{set.reps} Reps</span>
+                                      <span className="text-slate-600">—</span>
+                                      <span className="text-cyan-300 font-bold">{set.weight} kg</span>
+                                    </div>
+                                    {set.done && (
+                                      <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                                        Done
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 text-xs py-1.5 px-3 text-slate-300">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                                <span>{ex.sets} sets — {ex.reps} reps — {ex.weight_kg} kg</span>
+                              </div>
+                            )}
+
+                            {userNote && (
+                              <p className="text-[11px] text-slate-400 italic px-2 pt-1">
+                                Note: {userNote}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -1514,16 +1603,42 @@ export default function SportsPage() {
                         </div>
                       </div>
                       {expandedSession === session.id && (
-                        <div className="px-3 pb-3 pt-1 border-t border-white/5 space-y-1.5 bg-white/[0.01]">
+                        <div className="px-3 pb-3 pt-1 border-t border-white/5 space-y-2 bg-white/[0.01]">
                           {expandedExercises.length === 0 ? (
                             <p className="text-xs text-slate-500 italic">No exercises logged.</p>
-                          ) : expandedExercises.map((ex, i) => (
-                            <div key={ex.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-white/[0.02]">
-                              <span className="text-[10px] font-bold text-slate-500 w-4">{i + 1}</span>
-                              <span className="text-xs font-semibold text-white flex-1 truncate">{ex.exercise_name}</span>
-                              <span className="text-[11px] font-mono text-blue-400">{ex.sets}×{ex.reps} @ {ex.weight_kg}kg</span>
-                            </div>
-                          ))}
+                          ) : expandedExercises.map((ex, i) => {
+                            const { sets: setDetails, userNote } = parseExerciseSets(ex.notes);
+                            return (
+                              <div key={ex.id} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className="text-[10px] font-bold text-slate-500 w-4">{i + 1}</span>
+                                    <span className="text-xs font-semibold text-white truncate">{ex.exercise_name}</span>
+                                  </div>
+                                  <span className="text-[11px] font-mono text-blue-400">{ex.sets}×{ex.reps} @ {ex.weight_kg}kg</span>
+                                </div>
+                                {setDetails && setDetails.length > 0 && (
+                                  <div className="pl-6 space-y-1 pt-1 border-t border-white/5 mt-1">
+                                    {setDetails.map((set, sIdx) => (
+                                      <div key={sIdx} className="text-[11px] text-slate-300 font-mono flex items-center gap-2">
+                                        <span className="w-1 h-1 rounded-full bg-blue-400/70 flex-shrink-0" />
+                                        <span>Set {sIdx + 1}</span>
+                                        <span className="text-slate-600">—</span>
+                                        <span className="text-white font-semibold">{set.reps} Reps</span>
+                                        <span className="text-slate-600">—</span>
+                                        <span className="text-cyan-300 font-semibold">{set.weight} kg</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {userNote && (
+                                  <p className="text-[10px] text-slate-400 italic pl-6 pt-0.5">
+                                    Note: {userNote}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
