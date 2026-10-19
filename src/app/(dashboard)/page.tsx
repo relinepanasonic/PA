@@ -250,10 +250,16 @@ export default function DashboardPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text }),
         });
-        if (!res.ok) return null;
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          setVoiceError(`Server voice failed (${res.status}) ${j.detail || j.error || ''}`.trim());
+          return null;
+        }
+        setVoiceError(null);
         const blob = await res.blob();
         return URL.createObjectURL(blob);
-      } catch {
+      } catch (e) {
+        setVoiceError('Server voice unreachable: ' + String((e as Error)?.message || e).slice(0, 80));
         return null;
       }
     };
@@ -283,6 +289,7 @@ export default function DashboardPage() {
   const [activeCat, setActiveCat] = useState<'schedule' | 'stocks' | 'health' | 'news' | null>(null);
 
   const [chatOpen, setChatOpen] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const [clock, setClock] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setClock(new Date()), 1000);
@@ -617,6 +624,10 @@ export default function DashboardPage() {
       <Link href="/ai-office" className="absolute top-[7.5rem] left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 text-cyan-200 text-[10px] font-mono uppercase tracking-widest">
         <Bot size={12} /> Agents
       </Link>
+
+      {voiceError && (
+        <p className="absolute inset-x-4 bottom-[15rem] md:bottom-[11rem] z-10 text-center text-[10px] font-mono text-amber-300/90">{voiceError} · using phone voice</p>
+      )}
 
       {/* Jax AI agent chat */}
       {chatOpen ? (

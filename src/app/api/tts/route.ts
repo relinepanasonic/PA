@@ -65,6 +65,6 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error('TTS failed', err);
-    return NextResponse.json({ error: 'TTS failed' }, { status: 502 });
+    return NextResponse.json({ error: 'TTS failed', detail: String((err as Error)?.message || err).slice(0, 200) }, { status: 502 });
   }
 }
