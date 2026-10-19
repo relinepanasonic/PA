@@ -30,7 +30,7 @@ export default function Header({ displayName = 'User' }: HeaderProps) {
           <div className="relative w-10 h-10 rounded-2xl overflow-hidden glass-card p-0.5 border border-white/20 shadow-[0_0_20px_rgba(59,130,246,0.35)] flex items-center justify-center">
             <Image
               src="/logo.png"
-              alt="PersonalAssist Logo"
+              alt="Jax Logo"
               width={38}
               height={38}
               className="object-contain"

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'PersonalAssist — AI Dashboard',
+  title: 'Jax — AI Personal Assistant',
   description: 'Your personal assistant dashboard for tasks, finances, and activities.',
   manifest: '/manifest.json',
   icons: {
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'PersonalAssist',
+    title: 'Jax',
   },
 };
 

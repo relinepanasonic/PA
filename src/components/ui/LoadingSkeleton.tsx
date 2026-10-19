@@ -30,7 +30,7 @@ export function SkeletonDashboard() {
       <div className="relative w-24 h-24 mb-3 animate-pulse drop-shadow-[0_15px_35px_rgba(59,130,246,0.65)]">
         <Image
           src="/logo.png"
-          alt="Loading PersonalAssist..."
+          alt="Loading Jax..."
           width={96}
           height={96}
           className="object-contain"

@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Personal Assistant AI",
-  "short_name": "PersonalAssist",
+  "name": "Jax",
+  "short_name": "Jax",
   "description": "AI Personal Assistant Dashboard for tasks, finances, and activities.",
   "start_url": "/",
   "scope": "/",

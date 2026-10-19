@@ -45,7 +45,7 @@ export default function SignupPage() {
         <div className="w-18 h-18 mx-auto mb-3 drop-shadow-[0_15px_30px_rgba(59,130,246,0.6)]">
           <img
             src="/logo.png"
-            alt="PersonalAssist Logo"
+            alt="Jax Logo"
             className="w-16 h-16 mx-auto object-contain"
           />
         </div>

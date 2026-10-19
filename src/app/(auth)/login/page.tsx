@@ -38,12 +38,12 @@ export default function LoginPage() {
         <div className="w-20 h-20 mx-auto mb-4 drop-shadow-[0_15px_30px_rgba(59,130,246,0.6)]">
           <img
             src="/logo.png"
-            alt="PersonalAssist Logo"
+            alt="Jax Logo"
             className="w-full h-full object-contain"
           />
         </div>
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">
-          <Sparkles size={14} /> Personal Assistant AI
+          <Sparkles size={14} /> Jax AI Assistant
         </div>
         <h1 className="text-3xl font-extrabold text-white tracking-tight">
           Welcome Back
