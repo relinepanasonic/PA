@@ -1,9 +1,9 @@
 {
-  "id": "/",
+  "id": "/?app=jax",
   "name": "Jax",
   "short_name": "Jax",
   "description": "AI Personal Assistant Dashboard for tasks, finances, and activities.",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "background_color": "#040814",

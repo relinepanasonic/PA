@@ -1,5 +1,5 @@
-// PersonalAssist AI Service Worker for native Android WebAPK PWA installation
-const CACHE_NAME = 'personalassist-v1';
+// Jax Service Worker for native Android WebAPK PWA installation
+const CACHE_NAME = 'jax-v1';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
