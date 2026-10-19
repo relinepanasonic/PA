@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { createGoal, runGoal, TEAM_PROFILES } from '@/lib/ai/office-engine';
+import { createGoal, ensureTeams, runGoal, TEAM_PROFILES } from '@/lib/ai/office-engine';
 import { runTool as libRunTool, toolsFor, type Supa } from '@/lib/ai/tools';
 
 export const runtime = 'nodejs';
@@ -34,6 +34,7 @@ const TOOLS = [
 async function runTool(name: string, input: any, supabase: Supa, userId: string): Promise<unknown> {
   switch (name) {
     case 'ask_team': {
+      await ensureTeams(supabase, userId); // syncs the enabled flags with the code
       const { data: team } = await supabase.from('ai_teams').select('id').eq('user_id', userId).eq('slug', input.team).single();
       if (!team) return { error: 'Team not set up yet. Ask Nico to open the Agents page once.' };
       const g = await createGoal(supabase, userId, team.id, String(input.brief));
