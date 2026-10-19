@@ -99,6 +99,46 @@ export function technicals(ch: Chart) {
   };
 }
 
+// Yahoo only serves fundamentals (PER, PBV...) with a cookie + crumb pair; keep one for 30 minutes.
+let session: { cookie: string; crumb: string; at: number } | null = null;
+
+async function yahooSession() {
+  if (session && Date.now() - session.at < 30 * 60 * 1000) return session;
+  const c = await fetch('https://fc.yahoo.com', { headers: { 'User-Agent': UA }, redirect: 'manual', cache: 'no-store' });
+  const cookie = (c.headers.getSetCookie?.() ?? []).map((x) => x.split(';')[0]).join('; ');
+  const cr = await fetch('https://query1.finance.yahoo.com/v1/test/getcrumb', { headers: { 'User-Agent': UA, Cookie: cookie }, cache: 'no-store' });
+  const crumb = await cr.text();
+  if (!cr.ok || !crumb || crumb.includes('<')) throw new Error('no crumb');
+  session = { cookie, crumb, at: Date.now() };
+  return session;
+}
+
+export interface Fundamentals { per: number | null; forwardPer: number | null; pbv: number | null; dividendYieldPct: number | null; roePct: number | null; eps: number | null }
+
+export async function fetchFundamentals(ticker: string): Promise<Fundamentals | null> {
+  try {
+    const s = await yahooSession();
+    const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(toJK(ticker))}?modules=summaryDetail,defaultKeyStatistics,financialData&crumb=${encodeURIComponent(s.crumb)}`;
+    const res = await fetch(url, { headers: { 'User-Agent': UA, Cookie: s.cookie }, cache: 'no-store' });
+    if (!res.ok) { if (res.status === 401) session = null; return null; }
+    const r = (await res.json())?.quoteSummary?.result?.[0];
+    if (!r) return null;
+    const pct = (n?: number) => (typeof n === 'number' ? Math.round(n * 1000) / 10 : null);
+    const num = (n?: number) => (typeof n === 'number' ? Math.round(n * 100) / 100 : null);
+    return {
+      per: num(r.summaryDetail?.trailingPE?.raw),
+      forwardPer: num(r.summaryDetail?.forwardPE?.raw),
+      pbv: num(r.defaultKeyStatistics?.priceToBook?.raw),
+      dividendYieldPct: pct(r.summaryDetail?.dividendYield?.raw),
+      roePct: pct(r.financialData?.returnOnEquity?.raw),
+      eps: num(r.defaultKeyStatistics?.trailingEps?.raw),
+    };
+  } catch (e) {
+    console.error('fetchFundamentals', ticker, e);
+    return null;
+  }
+}
+
 export async function marketOverview() {
   const [ihsg, usd] = await Promise.all([fetchChart('^JKSE', '1mo'), fetchChart('IDR=X', '1mo')]);
   const row = (c: Chart | null) => c && { price: r0(c.price), changeTodayPct: r1((c.price / c.prevClose - 1) * 100), change1mPct: r1(c.candles.length > 20 ? (c.price / c.candles[c.candles.length - 21].c - 1) * 100 : null) };

@@ -2,7 +2,7 @@
 import type { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createCalendarEvent, listCalendarEvents } from '@/lib/google-calendar';
 import { getHealthDay, wibDate } from '@/lib/health';
-import { fetchChart, marketOverview, screenWatchlist, stockNews, technicals, toJK } from '@/lib/stocks';
+import { fetchChart, fetchFundamentals, marketOverview, screenWatchlist, stockNews, technicals, toJK } from '@/lib/stocks';
 
 export type Supa = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 
@@ -120,7 +120,7 @@ export const TOOL_DEFS: Record<string, ToolDef> = {
   },
   stock_technicals: {
     name: 'stock_technicals',
-    description: 'Live price and technical indicators for specific IDX tickers (e.g. BBCA, TLKM): trend, SMA20/50, RSI14, support, resistance, 52-week range, volume vs average.',
+    description: 'Live price, technical indicators and fundamentals for specific IDX tickers (e.g. BBCA, TLKM): trend, SMA20/50, RSI14, support, resistance, 52-week range, volume vs average, plus PER, forward PER, PBV, dividend yield, ROE and EPS when available.',
     input_schema: { type: 'object', properties: { tickers: { type: 'array', items: { type: 'string' }, maxItems: 6 } }, required: ['tickers'] },
   },
   stock_news: {
@@ -236,8 +236,8 @@ export async function runTool(name: string, input: any, supabase: Supa, userId: 
       return screenWatchlist();
     case 'stock_technicals': {
       const list = (Array.isArray(input.tickers) ? input.tickers : []).slice(0, 6) as string[];
-      const charts = await Promise.all(list.map((t) => fetchChart(t)));
-      return charts.map((c, i) => (c ? technicals(c) : { ticker: list[i], error: 'no data' }));
+      const [charts, funds] = await Promise.all([Promise.all(list.map((t) => fetchChart(t))), Promise.all(list.map((t) => fetchFundamentals(t)))]);
+      return charts.map((c, i) => (c ? { ...technicals(c), fundamentals: funds[i] ?? 'not available' } : { ticker: list[i], error: 'no data' }));
     }
     case 'stock_news':
       return stockNews(String(input.query).slice(0, 100));
