@@ -33,6 +33,7 @@ import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import AddToGoogleCalendar from '@/components/ui/AddToGoogleCalendar';
 import JarvisCore, { notifyVoiceWord } from '@/components/ui/JarvisCore';
+import JaxChat from '@/components/ui/JaxChat';
 
 const getLocalDateString = (d = new Date()) => {
   const year = d.getFullYear();
@@ -281,6 +282,7 @@ export default function DashboardPage() {
 
   const [activeCat, setActiveCat] = useState<'schedule' | 'stocks' | 'health' | 'news' | null>(null);
 
+  const [chatOpen, setChatOpen] = useState(false);
   const [clock, setClock] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setClock(new Date()), 1000);
@@ -611,6 +613,35 @@ export default function DashboardPage() {
       <div className="absolute inset-0 pb-44">
         <JarvisCore speaking={isSpeaking} fill />
       </div>
+
+      {/* Jax AI agent chat */}
+      {chatOpen ? (
+        <JaxChat
+          onClose={() => setChatOpen(false)}
+          onStopSpeak={() => {
+            window.speechSynthesis?.cancel();
+            stopCloudVoice();
+            setIsSpeaking(false);
+          }}
+          onSpeak={(text) => {
+            setActiveCat(null);
+            setIsSpeaking(true);
+            playCloudVoice(text).then((ok) => {
+              if (!ok && window.speechSynthesis) speakWithBrowser(text, window.speechSynthesis);
+            });
+          }}
+        />
+      ) : (
+        <div className="absolute inset-x-0 bottom-[11.5rem] md:bottom-[8.5rem] flex justify-center z-10">
+          <button
+            type="button"
+            onClick={() => setChatOpen(true)}
+            className="px-6 py-2 rounded-full border border-cyan-400/40 bg-cyan-500/10 text-cyan-200 text-[11px] font-mono uppercase tracking-[0.3em] shadow-[0_0_18px_rgba(34,211,238,0.35)] active:scale-95 transition-transform"
+          >
+            Ask Jax
+          </button>
+        </div>
+      )}
 
       {/* HUD round buttons */}
       <div className="absolute inset-x-0 bottom-24 md:bottom-8 flex justify-center gap-5 sm:gap-8 px-4 z-10">
