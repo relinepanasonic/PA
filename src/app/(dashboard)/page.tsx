@@ -222,6 +222,63 @@ export default function DashboardPage() {
     setNewsLoading(false);
   };
 
+  const cloudAudioRef = useRef<HTMLAudioElement | null>(null);
+  const cloudStopRef = useRef(false);
+
+  const stopCloudVoice = () => {
+    cloudStopRef.current = true;
+    cloudAudioRef.current?.pause();
+    cloudAudioRef.current = null;
+  };
+
+  // Split into <=~800 char chunks on "..." / sentence ends, fetch each as MP3, play in order.
+  const playCloudVoice = async (script: string): Promise<boolean> => {
+    const parts = script.split(/(?<=\.\.\.|[.!?])\s+/);
+    const chunks: string[] = [];
+    let cur = '';
+    for (const p of parts) {
+      if ((cur + ' ' + p).length > 800 && cur) { chunks.push(cur); cur = p; }
+      else cur = cur ? cur + ' ' + p : p;
+    }
+    if (cur) chunks.push(cur);
+
+    const fetchChunk = async (text: string): Promise<string | null> => {
+      try {
+        const res = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        return URL.createObjectURL(blob);
+      } catch {
+        return null;
+      }
+    };
+
+    cloudStopRef.current = false;
+    let next: Promise<string | null> = fetchChunk(chunks[0]);
+    for (let i = 0; i < chunks.length; i++) {
+      const url = await next;
+      if (cloudStopRef.current) return true;
+      if (!url) return i > 0; // nothing played yet -> let the browser voice take over
+      if (i + 1 < chunks.length) next = fetchChunk(chunks[i + 1]);
+      await new Promise<void>((resolve) => {
+        const audio = new Audio(url);
+        cloudAudioRef.current = audio;
+        // Pulse the HUD orb while the voice plays
+        const pulse = setInterval(() => notifyVoiceWord(), 160);
+        const done = () => { clearInterval(pulse); URL.revokeObjectURL(url); resolve(); };
+        audio.onended = done;
+        audio.onerror = done;
+        audio.play().catch(done);
+      });
+    }
+    if (!cloudStopRef.current) setIsSpeaking(false);
+    return true;
+  };
+
   const handlePlayBrief = () => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
     const synth = window.speechSynthesis;
@@ -230,6 +287,7 @@ export default function DashboardPage() {
     // If already speaking, stop it
     if (isSpeaking) {
       synth.cancel();
+      stopCloudVoice();
       setIsSpeaking(false);
       return;
     }
@@ -279,6 +337,17 @@ export default function DashboardPage() {
       });
     }
 
+    // Preferred: natural male Indonesian neural voice from the server (/api/tts).
+    // Falls back to the browser voice below if it isn't configured or fails.
+    setIsSpeaking(true);
+    playCloudVoice(script).then((ok) => {
+      if (ok) return;
+      speakWithBrowser(script, synth);
+    });
+    return;
+  };
+
+  const speakWithBrowser = (script: string, synth: SpeechSynthesis) => {
     const utterance = new SpeechSynthesisUtterance(script);
     utterance.lang = 'id-ID';
 
