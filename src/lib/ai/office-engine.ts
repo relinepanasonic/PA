@@ -238,7 +238,7 @@ async function planGoal(db: Supa, userId: string, goal: OfficeTask, profile: Tea
   const workers = agents.filter((a) => a.kind === 'worker' && a.enabled);
   const r = await claude({
     system: `${lead.job_desk}\n${profile.plannerGuide}\nYour agents:\n${workers.map((w) => `- ${w.name}: ${w.title}`).join('\n')}\n${baseRules()}`,
-    messages: [{ role: 'user', content: `Brief:\n${goal.instructions}\n\nPlan the work with the make_plan tool.` }],
+    messages: [{ role: 'user', content: `Brief:\n${goal.instructions}\n\nRespond by calling the make_plan tool now. Do not write any other text.` }],
     tools: [{
       name: 'make_plan',
       description: 'Split the brief into subtasks (max 3), each given to one agent.',
@@ -261,7 +261,6 @@ async function planGoal(db: Supa, userId: string, goal: OfficeTask, profile: Tea
         required: ['subtasks'],
       },
     }],
-    toolChoice: { type: 'tool', name: 'make_plan' },
   });
   const plan = r.content.find((b: any) => b.type === 'tool_use')?.input?.subtasks as { agent: string; title: string; instructions: string }[] | undefined;
   if (!plan?.length) throw new Error('The lead produced no subtasks.');
