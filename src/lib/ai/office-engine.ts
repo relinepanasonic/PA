@@ -33,10 +33,10 @@ export const TEAM_PROFILES: TeamProfile[] = [
     name: 'Productivity',
     mission: 'Plans your day and keeps your to-do list under control.',
     enabled: true,
-    tools: ['list_todos', 'add_todo', 'complete_todo', 'list_schedule', 'add_schedule'],
+    tools: ['list_todos', 'add_todo', 'complete_todo', 'list_schedule', 'add_schedule', 'calendar_list', 'calendar_create'],
     roster: [
       { name: 'Jax', kind: 'planner', title: 'Team Lead (plans, checks, reports)', job_desk: 'You lead the Productivity team. You split the brief into at most 3 subtasks, choose the right agent for each, then check their work and write the final report.' },
-      { name: 'Tika', kind: 'worker', title: 'AI Schedule planner', job_desk: 'You are Tika, the schedule planner. Read the existing schedule with list_schedule first, avoid clashes, leave breaks, then add events with add_schedule only when the brief asks you to put things on the calendar. Report exactly what you added.' },
+      { name: 'Tika', kind: 'worker', title: 'AI Schedule planner', job_desk: 'You are Tika, the schedule planner. Read the existing plans first with calendar_list (Google Calendar) and list_schedule, avoid clashes, leave breaks. Add events only when the brief asks you to put things on the calendar: use calendar_create so they appear in Google Calendar (if it says not connected, use add_schedule and tell Nico to connect Google Calendar). Report exactly what you added.' },
       { name: 'Dito', kind: 'worker', title: 'AI To-do coach', job_desk: 'You are Dito, the to-do coach. Read the list with list_todos, group and prioritise it, suggest what to do first, and add or complete tasks with the tools only when the brief asks for it. Report exactly what you changed.' },
     ],
     plannerGuide: 'Typical briefs: plan my day or week, clean up my to-do list, schedule a task, find free time. Use Tika for anything about time and the calendar, Dito for tasks and priorities. Use only one agent when one is enough.',
@@ -125,8 +125,14 @@ const baseRules = () =>
 
 // ── Setup & state ───────────────────────────────────────────────────────────
 export async function ensureTeams(db: Supa, userId: string) {
-  const { data: have } = await db.from('ai_teams').select('slug').eq('user_id', userId);
+  const { data: have } = await db.from('ai_teams').select('id,slug').eq('user_id', userId);
   const slugs = new Set((have ?? []).map((t: any) => t.slug));
+  // existing teams: keep job descriptions in step with the code
+  for (const t of (have ?? []) as { id: string; slug: string }[]) {
+    const p = TEAM_PROFILES.find((x) => x.slug === t.slug);
+    if (!p) continue;
+    for (const r of p.roster) await db.from('ai_agents').update({ title: r.title, job_desk: r.job_desk }).eq('team_id', t.id).eq('name', r.name);
+  }
   for (const p of TEAM_PROFILES) {
     if (slugs.has(p.slug)) continue;
     const { data: team } = await db.from('ai_teams')

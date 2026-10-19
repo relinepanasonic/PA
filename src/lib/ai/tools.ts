@@ -1,5 +1,6 @@
 // Tools Jax agents can call. Server-side only; every query is scoped to the signed-in user.
 import type { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createCalendarEvent, listCalendarEvents } from '@/lib/google-calendar';
 
 export type Supa = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 
@@ -51,6 +52,26 @@ export const TOOL_DEFS: Record<string, ToolDef> = {
       required: ['title', 'date', 'start_time'],
     },
   },
+  calendar_list: {
+    name: 'calendar_list',
+    description: "List events on the user's Google Calendar between two dates (inclusive). Prefer this over list_schedule for real appointments.",
+    input_schema: range,
+  },
+  calendar_create: {
+    name: 'calendar_create',
+    description: "Create an event on the user's Google Calendar. Times are WIB.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        date: { type: 'string', description: 'YYYY-MM-DD' },
+        start_time: { type: 'string', description: 'HH:MM, 24h' },
+        end_time: { type: 'string', description: 'HH:MM, 24h, optional (default 1 hour)' },
+        description: { type: 'string' },
+      },
+      required: ['title', 'date', 'start_time'],
+    },
+  },
   finance_summary: { name: 'finance_summary', description: 'Total income and expenses between two dates (inclusive).', input_schema: range },
 };
 
@@ -94,6 +115,17 @@ export async function runTool(name: string, input: any, supabase: Supa, userId: 
         deadline: input.end_time ? `${input.date}T${input.end_time}:00+07:00` : null,
       }).select('id,title,scheduled_at,deadline').single();
       return error ? { error: error.message } : data;
+    }
+    case 'calendar_list': {
+      return listCalendarEvents(supabase, userId, `${input.from}T00:00:00+07:00`, `${input.to}T23:59:59+07:00`);
+    }
+    case 'calendar_create': {
+      return createCalendarEvent(supabase, userId, {
+        title: String(input.title).slice(0, 200),
+        startISO: `${input.date}T${input.start_time}:00+07:00`,
+        endISO: input.end_time ? `${input.date}T${input.end_time}:00+07:00` : undefined,
+        description: input.description ? String(input.description).slice(0, 1000) : undefined,
+      });
     }
     case 'finance_summary': {
       const { data } = await supabase.from('finance_transactions').select('amount,type')

@@ -2,8 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { ArrowLeft, Briefcase, Wallet, HeartPulse, TrendingUp, Send, Loader2, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 import type { OfficeTeam, OfficeTask, OfficeEvent } from '@/lib/ai/office-engine';
+import type { RobotView, RobotState } from '@/components/ai-office/Office3D';
+
+const Office3D = dynamic(() => import('@/components/ai-office/Office3D'), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 flex items-center justify-center text-xs font-mono text-cyan-300/70">Loading office...</div>,
+});
 
 interface State {
   teams: OfficeTeam[];
@@ -29,6 +36,7 @@ export default function AiOfficePage() {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const running = useRef(false);
+  const [selectedRobot, setSelectedRobot] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch('/api/ai-office/state', { cache: 'no-store' });
@@ -81,6 +89,29 @@ export default function AiOfficePage() {
     pump();
   };
 
+  // Robots for the 3D office: busy while their team has an open goal.
+  const robots: RobotView[] = (state?.teams ?? []).flatMap((t) => {
+    const goal = (state?.tasks ?? []).find((g) => g.kind === 'goal' && g.team_id === t.id && OPEN.includes(g.status));
+    const subs = goal ? (state?.tasks ?? []).filter((x) => x.parent_id === goal.id) : [];
+    return t.agents.map((a) => {
+      let robotState: RobotState = 'idle';
+      let task: string | null = null;
+      if (goal) {
+        if (a.kind === 'planner') {
+          robotState = goal.status === 'planning' || goal.status === 'reporting' || goal.status === 'queued' ? 'working' : 'waiting';
+          task = goal.status === 'reporting' ? 'Checking and writing the report' : goal.status === 'running' ? 'Waiting for the team' : 'Planning';
+        } else {
+          const mine = subs.filter((x) => x.agent_id === a.id);
+          const running = mine.find((x) => x.status === 'running');
+          const queued = mine.find((x) => x.status === 'queued');
+          if (running) { robotState = 'working'; task = running.title; }
+          else if (queued) { robotState = 'waiting'; task = queued.title; }
+        }
+      }
+      return { id: a.id, teamId: t.id, name: a.name, title: a.title, floor: a.kind === 'planner' ? 3 : 1, kind: a.kind, state: robotState, task, brain: a.model } as RobotView;
+    });
+  });
+
   const team = state?.teams.find((t) => t.id === teamId);
   const goals = (state?.tasks ?? []).filter((t) => t.kind === 'goal' && t.team_id === teamId);
   const busy = goals.some((g) => OPEN.includes(g.status));
@@ -98,6 +129,31 @@ export default function AiOfficePage() {
           Add <b>ANTHROPIC_API_KEY</b> in Vercel to switch the agents on.
         </div>
       )}
+
+      <a
+        href="/api/google-calendar/auth"
+        className="inline-flex items-center gap-1.5 mb-3 px-3 py-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 text-cyan-200 text-[10px] font-mono uppercase tracking-widest"
+      >
+        Connect Google Calendar
+      </a>
+
+      {/* 3D office */}
+      <div className="relative h-[340px] sm:h-[420px] rounded-2xl overflow-hidden border border-cyan-400/20 mb-4 bg-black">
+        {state && (
+          <Office3D
+            robots={robots}
+            teams={state.teams.map((t) => ({ id: t.id, name: t.name }))}
+            focusTeamId={teamId}
+            selectedId={selectedRobot}
+            onSelect={(id) => {
+              setSelectedRobot(id);
+              const r = robots.find((x) => x.id === id);
+              if (r?.teamId) setTeamId(r.teamId);
+            }}
+            onFocusTeam={(id) => setTeamId(id)}
+          />
+        )}
+      </div>
 
       {/* Team picker */}
       <div className="grid grid-cols-2 gap-2.5 mb-5">
