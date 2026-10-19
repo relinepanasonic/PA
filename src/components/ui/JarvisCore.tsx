@@ -211,13 +211,13 @@ export default function JarvisCore({ speaking, label = 'JAX', fill = false }: Pr
   return (
     <div className={fill ? 'relative w-full h-full' : 'relative w-full aspect-square max-h-[460px] mx-auto'}>
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-      <div className="absolute top-2 left-3 text-[10px] font-mono tracking-[0.3em] text-cyan-300/70">
+      <div className={`absolute left-3 top-2 text-[10px] font-mono tracking-[0.3em] text-cyan-300/70 ${fill ? "hidden" : ""}`}>
         {label} // CORE {speaking ? 'SPEAKING' : micOn ? 'LISTENING' : 'IDLE'}
       </div>
       <button
         type="button"
         onClick={toggleMic}
-        className={`absolute bottom-2 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-mono tracking-widest transition-all ${
+        className={`absolute ${fill ? "top-[7.5rem] right-3" : "bottom-2 right-3"} flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-mono tracking-widest transition-all ${
           micOn
             ? 'border-cyan-300/60 bg-cyan-400/15 text-cyan-200'
             : 'border-white/15 bg-white/5 text-slate-400 hover:text-cyan-200'

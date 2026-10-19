@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Todo, WorkActivity } from '@/lib/types/database';
 import { AlertTriangle, Moon, Footprints, Flame,  TrendingUp, TrendingDown, Calendar, CheckCircle2, Clock, ChevronRight, Sparkles, Activity, Volume2, VolumeX, Newspaper, BarChart3, Brain, Heart, DollarSign } from 'lucide-react';
@@ -281,6 +281,26 @@ export default function DashboardPage() {
 
   const [activeCat, setActiveCat] = useState<'schedule' | 'stocks' | 'health' | 'news' | null>(null);
 
+  const [clock, setClock] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setClock(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Fixed-seed star field so the sky is identical on every render
+  const stars = useMemo(() => {
+    let seed = 42;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    return Array.from({ length: 110 }, () => ({
+      x: rnd() * 100,
+      y: rnd() * 100,
+      size: 1 + rnd() * 2,
+      o: 0.3 + rnd() * 0.7,
+      d: rnd() * 5,
+      t: 2 + rnd() * 4,
+    }));
+  }, []);
+
   // Read one category aloud. Tapping the active category again stops it.
   const handlePlayBrief = async (category: 'schedule' | 'stocks' | 'health' | 'news') => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
@@ -561,29 +581,59 @@ export default function DashboardPage() {
     { key: 'news' as const, label: 'News', icon: Newspaper },
   ];
 
+  const timeStr = clock.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace('.', ':');
+  const secStr = String(clock.getSeconds()).padStart(2, '0');
+  const dateStr = clock.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
   return (
-    <div className="flex flex-col h-[calc(100dvh-5.5rem)] md:h-[calc(100dvh-2rem)] p-3 animate-fade-in">
-      <div className="relative flex-1 min-h-0 rounded-[28px] bg-black border border-cyan-400/20 overflow-hidden shadow-[0_0_40px_rgba(34,211,238,0.15)]">
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.08),transparent_65%)]" />
+    <div className="fixed inset-0 md:left-[260px] z-40 overflow-hidden bg-gradient-to-b from-[#01030d] via-[#050a24] to-[#0b1233]">
+      {/* Night sky */}
+      <div className="absolute inset-0 pointer-events-none">
+        {stars.map((s, i) => (
+          <span
+            key={i}
+            className="absolute rounded-full bg-white animate-pulse"
+            style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size, opacity: s.o, animationDelay: `${s.d}s`, animationDuration: `${s.t}s` }}
+          />
+        ))}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[radial-gradient(ellipse_at_bottom,rgba(56,120,255,0.18),transparent_70%)]" />
+      </div>
+
+      {/* Date & time */}
+      <div className="absolute top-0 inset-x-0 pt-[max(1.25rem,env(safe-area-inset-top))] text-center pointer-events-none z-10">
+        <p className="font-mono text-5xl sm:text-6xl font-light tracking-[0.12em] text-cyan-100 drop-shadow-[0_0_14px_rgba(34,211,238,0.7)]">
+          {timeStr}<span className="text-2xl text-cyan-400/70 ml-1.5">{secStr}</span>
+        </p>
+        <p className="mt-1 text-[11px] sm:text-xs font-mono uppercase tracking-[0.3em] text-cyan-300/80">{dateStr}</p>
+      </div>
+
+      {/* Jax, no frame */}
+      <div className="absolute inset-0 pb-44">
         <JarvisCore speaking={isSpeaking} fill />
       </div>
 
-      <div className="grid grid-cols-4 gap-2 mt-3">
+      {/* HUD round buttons */}
+      <div className="absolute inset-x-0 bottom-24 md:bottom-8 flex justify-center gap-5 sm:gap-8 px-4 z-10">
         {categories.map(({ key, label, icon: Icon }) => {
           const active = activeCat === key && isSpeaking;
+          const tone = active ? '#fb923c' : '#22d3ee';
           return (
             <button
               key={key}
               type="button"
               onClick={() => handlePlayBrief(key)}
-              className={`flex flex-col items-center gap-1.5 py-3 rounded-2xl border text-[11px] font-bold tracking-wide transition-all active:scale-95 ${
-                active
-                  ? 'bg-orange-500/20 border-orange-400/50 text-orange-300 animate-pulse'
-                  : 'bg-cyan-500/10 border-cyan-400/25 text-cyan-300 hover:bg-cyan-500/20'
-              }`}
+              className="group flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
             >
-              <Icon size={20} />
-              {label}
+              <span className="relative w-16 h-16 sm:w-[72px] sm:h-[72px] flex items-center justify-center">
+                <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full" style={{ filter: `drop-shadow(0 0 6px ${tone})` }}>
+                  <circle cx="50" cy="50" r="46" fill="rgba(2,8,30,0.75)" stroke={tone} strokeWidth="3" />
+                  <circle cx="50" cy="50" r="38" fill="none" stroke={tone} strokeOpacity="0.55" strokeWidth="1.5" strokeDasharray="4 5"
+                    className={active ? 'origin-center animate-spin' : 'origin-center'} style={{ animationDuration: '4s' }} />
+                  <circle cx="50" cy="50" r="31" fill="none" stroke={tone} strokeOpacity="0.9" strokeWidth="2" strokeDasharray="60 135" strokeLinecap="round" />
+                </svg>
+                <Icon size={24} color={tone} className="relative" />
+              </span>
+              <span className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: tone }}>{label}</span>
             </button>
           );
         })}
