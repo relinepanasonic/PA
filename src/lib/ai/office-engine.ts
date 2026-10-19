@@ -159,7 +159,12 @@ export async function getOfficeState(db: Supa, userId: string) {
   const teamViews: OfficeTeam[] = ((teams ?? []) as any[])
     .sort((a, b) => order.indexOf(a.slug) - order.indexOf(b.slug))
     .map((t) => ({ ...t, agents: ((agents ?? []) as OfficeAgent[]).filter((a) => a.team_id === t.id) }));
-  return { teams: teamViews, tasks: (tasks ?? []) as OfficeTask[], events: (events ?? []) as OfficeEvent[], keyConfigured: !!process.env.ANTHROPIC_API_KEY };
+  const { data: prof } = await db.from('profiles').select('gcal_refresh_token').eq('id', userId).single();
+  return {
+    teams: teamViews, tasks: (tasks ?? []) as OfficeTask[], events: (events ?? []) as OfficeEvent[],
+    keyConfigured: !!process.env.ANTHROPIC_API_KEY,
+    calendarConnected: !!(prof as any)?.gcal_refresh_token,
+  };
 }
 
 async function log(db: Supa, userId: string, goalId: string | null, agentId: string | null, message: string) {

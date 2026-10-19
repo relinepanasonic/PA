@@ -17,6 +17,7 @@ interface State {
   tasks: OfficeTask[];
   events: OfficeEvent[];
   keyConfigured: boolean;
+  calendarConnected?: boolean;
 }
 
 const ICONS: Record<string, typeof Briefcase> = { productivity: Briefcase, finance: Wallet, health: HeartPulse, stocks: TrendingUp };
@@ -37,6 +38,13 @@ export default function AiOfficePage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const running = useRef(false);
   const [selectedRobot, setSelectedRobot] = useState<string | null>(null);
+  const [gcalMsg, setGcalMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('gcal') === 'connected') setGcalMsg({ ok: true, text: 'Google Calendar connected.' });
+    else if (q.get('gcal_error')) setGcalMsg({ ok: false, text: 'Google Calendar failed: ' + q.get('gcal_error') });
+  }, []);
 
   const load = useCallback(async () => {
     const res = await fetch('/api/ai-office/state', { cache: 'no-store' });
@@ -134,8 +142,11 @@ export default function AiOfficePage() {
         href="/api/google-calendar/auth"
         className="inline-flex items-center gap-1.5 mb-3 px-3 py-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 text-cyan-200 text-[10px] font-mono uppercase tracking-widest"
       >
-        Connect Google Calendar
+        {state?.calendarConnected ? 'Google Calendar connected (reconnect)' : 'Connect Google Calendar'}
       </a>
+      {gcalMsg && (
+        <p className={`mb-3 text-xs ${gcalMsg.ok ? 'text-emerald-300' : 'text-red-400'}`}>{gcalMsg.text}</p>
+      )}
 
       {/* 3D office */}
       <div className="relative h-[340px] sm:h-[420px] rounded-2xl overflow-hidden border border-cyan-400/20 mb-4 bg-black">

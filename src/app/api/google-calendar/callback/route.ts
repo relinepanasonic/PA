@@ -6,8 +6,9 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
   const error = searchParams.get('error');
-  if (error) return NextResponse.redirect(new URL('/?error=' + error, request.url));
-  if (!code) return NextResponse.redirect(new URL('/?error=no_code', request.url));
+  const back = (q: string) => NextResponse.redirect(new URL('/ai-office?' + q, request.url));
+  if (error) return back('gcal_error=' + encodeURIComponent(error));
+  if (!code) return back('gcal_error=no_code');
 
   const c = googleClient();
   try {
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
     const t = await tokenResponse.json();
     if (t.error) {
       console.error('Calendar token error:', t);
-      return NextResponse.redirect(new URL('/?error=token_exchange_failed', request.url));
+      return back('gcal_error=' + encodeURIComponent('token: ' + (t.error_description || t.error)));
     }
     const supabase = await createServerSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -32,11 +33,16 @@ export async function GET(request: Request) {
         gcal_refresh_token: t.refresh_token,
         gcal_token_expires_at: new Date(Date.now() + t.expires_in * 1000).toISOString(),
       }).eq('id', user.id);
-      if (upErr) console.error('Failed to save calendar tokens:', upErr);
+      if (upErr) {
+        console.error('Failed to save calendar tokens:', upErr);
+        return back('gcal_error=' + encodeURIComponent('save: ' + upErr.message));
+      }
+    } else {
+      return back('gcal_error=not_logged_in');
     }
-    return NextResponse.redirect(new URL('/?gcal=connected', request.url));
+    return back('gcal=connected');
   } catch (err) {
     console.error('Calendar callback error:', err);
-    return NextResponse.redirect(new URL('/?error=server_error', request.url));
+    return back('gcal_error=server_error');
   }
 }
