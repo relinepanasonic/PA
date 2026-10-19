@@ -1,6 +1,7 @@
 // Tools Jax agents can call. Server-side only; every query is scoped to the signed-in user.
 import type { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createCalendarEvent, listCalendarEvents } from '@/lib/google-calendar';
+import { getHealthDay, wibDate } from '@/lib/health';
 
 export type Supa = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 
@@ -72,6 +73,40 @@ export const TOOL_DEFS: Record<string, ToolDef> = {
       required: ['title', 'date', 'start_time'],
     },
   },
+  fitbit_day: {
+    name: 'fitbit_day',
+    description: "Fitbit data for one day: steps, lowest heart rate and sleep (sleep counts on the day the user woke up). Default is today (WIB).",
+    input_schema: { type: 'object', properties: { date: { type: 'string', description: 'YYYY-MM-DD, optional' } } },
+  },
+  fitbit_recent: {
+    name: 'fitbit_recent',
+    description: 'Fitbit steps, lowest heart rate and sleep for each of the last N days (max 7), newest first, to see a trend.',
+    input_schema: { type: 'object', properties: { days: { type: 'number' } } },
+  },
+  gym_recent: {
+    name: 'gym_recent',
+    description: "The user's recent gym sessions with exercises, sets, reps and weight, for the last N days (default 14).",
+    input_schema: { type: 'object', properties: { days: { type: 'number' } } },
+  },
+  list_meals: {
+    name: 'list_meals',
+    description: 'Meals the user logged between two dates (inclusive).',
+    input_schema: range,
+  },
+  add_meal: {
+    name: 'add_meal',
+    description: 'Log a meal the user ate. Estimate calories/protein only if the user asked for an estimate.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        description: { type: 'string' },
+        meal_type: { type: 'string', enum: ['breakfast', 'lunch', 'dinner', 'snack', 'meal'] },
+        calories: { type: 'number' },
+        protein_g: { type: 'number' },
+      },
+      required: ['description'],
+    },
+  },
   finance_summary: { name: 'finance_summary', description: 'Total income and expenses between two dates (inclusive).', input_schema: range },
 };
 
@@ -112,6 +147,41 @@ export async function runTool(name: string, input: any, supabase: Supa, userId: 
       return addScheduleEverywhere(input, supabase, userId);
     case 'calendar_list': {
       return listCalendarEvents(supabase, userId, `${input.from}T00:00:00+07:00`, `${input.to}T23:59:59+07:00`);
+    }
+    case 'fitbit_day':
+      return getHealthDay(supabase, userId, typeof input.date === 'string' && input.date ? input.date : undefined);
+    case 'fitbit_recent': {
+      const n = Math.min(Math.max(Number(input.days) || 5, 1), 7);
+      const out = [];
+      for (let i = 0; i < n; i++) out.push(await getHealthDay(supabase, userId, wibDate(new Date(Date.now() - i * 86400000))));
+      return out;
+    }
+    case 'gym_recent': {
+      const since = new Date(Date.now() - (Number(input.days) || 14) * 86400000).toISOString();
+      const { data: sessions } = await supabase.from('gym_sessions')
+        .select('id,started_at,duration_minutes,notes').eq('user_id', userId).gte('started_at', since).order('started_at', { ascending: false }).limit(20);
+      const ids = (sessions ?? []).map((s: any) => s.id);
+      const { data: ex } = ids.length
+        ? await supabase.from('gym_session_exercises').select('session_id,exercise_name,sets,reps,weight_kg').in('session_id', ids).order('order_index')
+        : { data: [] as any[] };
+      return (sessions ?? []).map((s: any) => ({ ...s, exercises: (ex ?? []).filter((e: any) => e.session_id === s.id).map(({ session_id, ...rest }: any) => rest) }));
+    }
+    case 'list_meals': {
+      const { data } = await supabase.from('meal_logs').select('id,eaten_at,meal_type,description,calories,protein_g')
+        .eq('user_id', userId)
+        .gte('eaten_at', `${input.from}T00:00:00+07:00`).lte('eaten_at', `${input.to}T23:59:59+07:00`)
+        .order('eaten_at').limit(60);
+      return data ?? [];
+    }
+    case 'add_meal': {
+      const { data, error } = await supabase.from('meal_logs').insert({
+        user_id: userId,
+        description: String(input.description).slice(0, 300),
+        meal_type: ['breakfast', 'lunch', 'dinner', 'snack', 'meal'].includes(input.meal_type) ? input.meal_type : 'meal',
+        calories: Number.isFinite(Number(input.calories)) && input.calories != null ? Math.round(Number(input.calories)) : null,
+        protein_g: Number.isFinite(Number(input.protein_g)) && input.protein_g != null ? Number(input.protein_g) : null,
+      }).select('id,eaten_at,meal_type,description,calories').single();
+      return error ? { error: error.message } : data;
     }
     case 'finance_summary': {
       const { data } = await supabase.from('finance_transactions').select('amount,type')

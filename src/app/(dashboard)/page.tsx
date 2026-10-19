@@ -371,8 +371,17 @@ export default function DashboardPage() {
       }
     } else {
       script = 'Jax disini... Berikut data kesehatan kamu hari ini... ';
+      let morning: string | null = null;
+      try {
+        const r = await fetch('/api/health/latest');
+        if (r.ok) morning = (await r.json()).report || null;
+      } catch {
+        /* no morning report: fall back to live data below */
+      }
       let data = fitbitData;
-      if (!data) {
+      if (morning) {
+        script = 'Jax disini... Berikut laporan kesehatan pagi ini dari tim Health... ' + morning;
+      } else if (!data) {
         try {
           const res = await fetch('/api/fitbit/data');
           const json = await res.json();
@@ -384,7 +393,9 @@ export default function DashboardPage() {
           /* handled below */
         }
       }
-      if (!data) {
+      if (morning) {
+        /* the team report above is the whole script */
+      } else if (!data) {
         script += 'Fitbit belum terhubung atau datanya belum bisa diambil... ';
       } else {
         if (data.sleep) {
