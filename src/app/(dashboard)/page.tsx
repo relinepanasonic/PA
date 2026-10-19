@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Todo, WorkActivity } from '@/lib/types/database';
-import { AlertTriangle, Moon, Footprints, Flame,  TrendingUp, TrendingDown, Calendar, CheckCircle2, Clock, ChevronRight, Sparkles, Activity, Volume2, VolumeX, Newspaper, BarChart3, Brain, Heart, DollarSign } from 'lucide-react';
+import { AlertTriangle, Moon, Footprints, Flame,  TrendingUp, TrendingDown, Calendar, CheckCircle2, Clock, ChevronRight, Sparkles, Activity, Volume2, VolumeX, Newspaper, BarChart3, Brain, Heart, DollarSign, Bot } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { SkeletonDashboard } from '@/components/ui/LoadingSkeleton';
 import Link from 'next/link';
@@ -613,6 +613,10 @@ export default function DashboardPage() {
       <div className="absolute inset-0 pb-44">
         <JarvisCore speaking={isSpeaking} fill />
       </div>
+
+      <Link href="/ai-office" className="absolute top-[7.5rem] left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 text-cyan-200 text-[10px] font-mono uppercase tracking-widest">
+        <Bot size={12} /> Agents
+      </Link>
 
       {/* Jax AI agent chat */}
       {chatOpen ? (
