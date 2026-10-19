@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 // Jax: Claude as the in-app agent. Needs ANTHROPIC_API_KEY (optional ANTHROPIC_MODEL).
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-5-5';
+const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
 
 const TOOLS = [
   {
