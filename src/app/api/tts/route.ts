@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     if (!audio) audio = await edgeSpeech(text);
     if (!audio) throw new Error('empty audio');
 
-    return new NextResponse(audio, {
+    return new NextResponse(new Uint8Array(audio), {
       headers: { 'Content-Type': 'audio/mpeg', 'Cache-Control': 'private, max-age=3600' },
     });
   } catch (err) {
