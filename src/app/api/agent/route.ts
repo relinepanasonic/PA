@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createGoal, runGoal, TEAM_PROFILES } from '@/lib/ai/office-engine';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -7,7 +8,24 @@ export const maxDuration = 60;
 // Jax: Claude as the in-app agent. Needs ANTHROPIC_API_KEY (optional ANTHROPIC_MODEL).
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
 
+const enabledTeams = TEAM_PROFILES.filter((t) => t.enabled);
+
 const TOOLS = [
+  {
+    name: 'ask_team',
+    description:
+      'Delegate a bigger job to one of your AI teams and get their finished report back. ' +
+      enabledTeams.map((t) => `${t.slug}: ${t.mission}`).join(' | ') + ' ' +
+      'Include every fact the team needs in the brief. Use it for planning, reviews and multi-step work; do simple single actions yourself with the other tools.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        team: { type: 'string', enum: enabledTeams.map((t) => t.slug) },
+        brief: { type: 'string', description: 'The complete job description for the team.' },
+      },
+      required: ['team', 'brief'],
+    },
+  },
   {
     name: 'list_todos',
     description: 'List the user\'s open (not completed) to-do tasks, earliest due date first.',
@@ -69,6 +87,15 @@ type Supa = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 
 async function runTool(name: string, input: any, supabase: Supa, userId: string): Promise<unknown> {
   switch (name) {
+    case 'ask_team': {
+      const { data: team } = await supabase.from('ai_teams').select('id').eq('user_id', userId).eq('slug', input.team).single();
+      if (!team) return { error: 'Team not set up yet. Ask Nico to open the Agents page once.' };
+      const g = await createGoal(supabase, userId, team.id, String(input.brief));
+      if ('error' in g) return g;
+      const r = await runGoal(supabase, userId, g.id as string, 40_000);
+      if (!r.done) return { status: 'still working', note: 'The team is still busy. Tell Nico the report will be on the Agents page shortly.' };
+      return r.error ? { error: r.error } : { report: r.report };
+    }
     case 'list_todos': {
       const { data } = await supabase.from('todos').select('id,title,due_date,priority')
         .eq('user_id', userId).eq('is_completed', false).order('due_date', { nullsFirst: false }).limit(50);
@@ -146,7 +173,7 @@ export async function POST(request: Request) {
     `The user is Nico. Reply in the language the user uses (Indonesian by default), in a calm, friendly, concise way: ` +
     `your replies are read aloud, so use short plain sentences and no markdown, tables or emoji. ` +
     `Current date and time (WIB): ${now}. Today is ${today}. ` +
-    `Use the tools to read or change the user's to-dos, schedule and finances. Never invent data; if a tool returns nothing, say so. ` +
+    `You are the boss of the AI office: the teams ask_team can reach (${enabledTeams.map((t) => t.name).join(', ')}) work for you. Delegate planning, reviews and multi-step jobs to the right team with ask_team and then tell Nico the result in your own short words; do quick single actions yourself. Use the tools to read or change the user's to-dos, schedule and finances. Never invent data; if a tool returns nothing, say so. ` +
     `Before adding or completing something, do it only if the user clearly asked.`;
 
   const convo: any[] = messages.map((m: any) => ({

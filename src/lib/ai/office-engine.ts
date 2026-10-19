@@ -190,10 +190,11 @@ async function setTask(db: Supa, id: string, patch: Record<string, unknown>) {
 }
 
 // ── One step of work ────────────────────────────────────────────────────────
-export async function tickOffice(db: Supa, userId: string): Promise<{ worked: boolean }> {
-  const { data: open } = await db.from('ai_tasks').select('*')
-    .eq('user_id', userId).eq('kind', 'goal').in('status', ['queued', 'planning', 'running', 'reporting'])
-    .order('created_at').limit(1);
+export async function tickOffice(db: Supa, userId: string, goalId?: string): Promise<{ worked: boolean }> {
+  let q = db.from('ai_tasks').select('*')
+    .eq('user_id', userId).eq('kind', 'goal').in('status', ['queued', 'planning', 'running', 'reporting']);
+  if (goalId) q = q.eq('id', goalId);
+  const { data: open } = await q.order('created_at').limit(1);
   const goal = open?.[0] as OfficeTask | undefined;
   if (!goal) return { worked: false };
 
@@ -216,6 +217,19 @@ export async function tickOffice(db: Supa, userId: string): Promise<{ worked: bo
     await log(db, userId, goal.id, lead.id, `Failed: ${msg}`);
   }
   return { worked: true };
+}
+
+/** Runs one goal step by step until it is done or the time budget runs out (used when Jax delegates from chat). */
+export async function runGoal(db: Supa, userId: string, goalId: string, budgetMs: number): Promise<{ done: boolean; report?: string | null; error?: string | null }> {
+  const start = Date.now();
+  while (Date.now() - start < budgetMs) {
+    const { data: g } = await db.from('ai_tasks').select('status,result,error').eq('id', goalId).single();
+    if (!g) return { done: true, error: 'Goal not found' };
+    if (g.status === 'done') return { done: true, report: g.result };
+    if (g.status === 'failed') return { done: true, error: g.error };
+    await tickOffice(db, userId, goalId);
+  }
+  return { done: false };
 }
 
 async function planGoal(db: Supa, userId: string, goal: OfficeTask, profile: TeamProfile, agents: OfficeAgent[], lead: OfficeAgent) {
