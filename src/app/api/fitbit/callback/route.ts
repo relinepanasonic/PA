@@ -21,14 +21,14 @@ export async function GET(request: Request) {
 
   try {
     // Exchange code for tokens
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    const tokenResponse = await fetch('https://api.fitbit.com/oauth2/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
       },
       body: new URLSearchParams({
         client_id: clientId!,
-        client_secret: clientSecret!,
         code,
         grant_type: 'authorization_code',
         redirect_uri: redirectUri,
