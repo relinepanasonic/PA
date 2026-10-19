@@ -2,6 +2,7 @@
 import type { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createCalendarEvent, listCalendarEvents } from '@/lib/google-calendar';
 import { getHealthDay, wibDate } from '@/lib/health';
+import { fetchChart, marketOverview, screenWatchlist, stockNews, technicals, toJK } from '@/lib/stocks';
 
 export type Supa = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 
@@ -107,6 +108,52 @@ export const TOOL_DEFS: Record<string, ToolDef> = {
       required: ['description'],
     },
   },
+  market_overview: {
+    name: 'market_overview',
+    description: 'IHSG (Jakarta Composite) and USD/IDR: price, change today and over one month.',
+    input_schema: noArgs,
+  },
+  stock_screen: {
+    name: 'stock_screen',
+    description: 'Technical scan of 20 liquid IDX stocks (LQ45 names). Returns the most bullish and the weakest with trend, RSI, support, resistance and volume.',
+    input_schema: noArgs,
+  },
+  stock_technicals: {
+    name: 'stock_technicals',
+    description: 'Live price and technical indicators for specific IDX tickers (e.g. BBCA, TLKM): trend, SMA20/50, RSI14, support, resistance, 52-week range, volume vs average.',
+    input_schema: { type: 'object', properties: { tickers: { type: 'array', items: { type: 'string' }, maxItems: 6 } }, required: ['tickers'] },
+  },
+  stock_news: {
+    name: 'stock_news',
+    description: 'Latest news headlines (Google News Indonesia) for a stock, sector or topic. Example: "BBCA saham" or "harga batubara".',
+    input_schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
+  },
+  portfolio_list: {
+    name: 'portfolio_list',
+    description: "The user's stock portfolio with buy price, lots, current price and profit/loss. 1 lot = 100 shares.",
+    input_schema: noArgs,
+  },
+  past_picks: {
+    name: 'past_picks',
+    description: 'Recent BUY/SELL/HOLD ideas saved earlier with their entry price and the current price, to check the track record.',
+    input_schema: noArgs,
+  },
+  save_pick: {
+    name: 'save_pick',
+    description: 'Save one final BUY, SELL or HOLD recommendation (with entry, target and stop prices in rupiah) to the track record.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        ticker: { type: 'string' },
+        action: { type: 'string', enum: ['BUY', 'SELL', 'HOLD'] },
+        entry_price: { type: 'number' },
+        target_price: { type: 'number' },
+        stop_price: { type: 'number' },
+        rationale: { type: 'string', description: 'One or two sentences.' },
+      },
+      required: ['ticker', 'action', 'entry_price', 'rationale'],
+    },
+  },
   finance_summary: { name: 'finance_summary', description: 'Total income and expenses between two dates (inclusive).', input_schema: range },
 };
 
@@ -182,6 +229,52 @@ export async function runTool(name: string, input: any, supabase: Supa, userId: 
         protein_g: Number.isFinite(Number(input.protein_g)) && input.protein_g != null ? Number(input.protein_g) : null,
       }).select('id,eaten_at,meal_type,description,calories').single();
       return error ? { error: error.message } : data;
+    }
+    case 'market_overview':
+      return marketOverview();
+    case 'stock_screen':
+      return screenWatchlist();
+    case 'stock_technicals': {
+      const list = (Array.isArray(input.tickers) ? input.tickers : []).slice(0, 6) as string[];
+      const charts = await Promise.all(list.map((t) => fetchChart(t)));
+      return charts.map((c, i) => (c ? technicals(c) : { ticker: list[i], error: 'no data' }));
+    }
+    case 'stock_news':
+      return stockNews(String(input.query).slice(0, 100));
+    case 'portfolio_list': {
+      const { data } = await supabase.from('portfolio_stocks').select('ticker,buy_price,lots').eq('user_id', userId);
+      const rows = (data ?? []) as { ticker: string; buy_price: number; lots: number }[];
+      const charts = await Promise.all(rows.map((r) => fetchChart(r.ticker, '5d')));
+      return rows.map((r, i) => {
+        const price = charts[i]?.price ?? null;
+        const cost = Number(r.buy_price) * Number(r.lots) * 100;
+        return {
+          ticker: r.ticker.replace('.JK', ''), lots: r.lots, buyPrice: Number(r.buy_price), price: price ? Math.round(price) : null,
+          profitLossPct: price ? Math.round((price / Number(r.buy_price) - 1) * 1000) / 10 : null,
+          profitLossRp: price ? Math.round(price * Number(r.lots) * 100 - cost) : null,
+        };
+      });
+    }
+    case 'past_picks': {
+      const { data } = await supabase.from('stock_picks').select('pick_date,ticker,action,entry_price,target_price,stop_price,rationale')
+        .eq('user_id', userId).order('pick_date', { ascending: false }).limit(15);
+      const rows = (data ?? []) as any[];
+      const charts = await Promise.all(rows.map((r) => fetchChart(r.ticker, '5d')));
+      return rows.map((r, i) => ({ ...r, currentPrice: charts[i] ? Math.round(charts[i]!.price) : null,
+        sinceEntryPct: charts[i] ? Math.round((charts[i]!.price / Number(r.entry_price) - 1) * 1000) / 10 : null }));
+    }
+    case 'save_pick': {
+      const today = wibDate();
+      const ticker = toJK(String(input.ticker)).replace('.JK', '');
+      const { data: dup } = await supabase.from('stock_picks').select('id').eq('user_id', userId).eq('pick_date', today).eq('ticker', ticker).eq('action', input.action).limit(1);
+      if (dup?.length) return { ok: true, note: 'already saved today' };
+      const { error } = await supabase.from('stock_picks').insert({
+        user_id: userId, pick_date: today, ticker, action: input.action, entry_price: Number(input.entry_price),
+        target_price: input.target_price ? Number(input.target_price) : null,
+        stop_price: input.stop_price ? Number(input.stop_price) : null,
+        rationale: String(input.rationale).slice(0, 400),
+      });
+      return error ? { error: error.message } : { ok: true };
     }
     case 'finance_summary': {
       const { data } = await supabase.from('finance_transactions').select('amount,type')

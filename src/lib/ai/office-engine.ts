@@ -70,15 +70,15 @@ export const TEAM_PROFILES: TeamProfile[] = [
   {
     slug: 'stocks',
     name: 'Stock Expert',
-    mission: 'Daily buy, sell or hold ideas for IDX stocks.',
-    enabled: false,
-    tools: [],
+    mission: 'Daily buy, sell or hold ideas for IDX stocks, with research and a track record.',
+    enabled: true,
+    tools: ['market_overview', 'stock_screen', 'stock_technicals', 'stock_news', 'portfolio_list', 'past_picks', 'save_pick'],
     roster: [
-      { name: 'Bima', kind: 'planner', title: 'Stock Expert Lead', job_desk: 'You lead the Stock team.' },
-      { name: 'Ratna', kind: 'worker', title: 'AI Research analyst', job_desk: 'You research news and fundamentals.' },
-      { name: 'Surya', kind: 'worker', title: 'AI Technical analyst', job_desk: 'You read prices and indicators.' },
+      { name: 'Bima', kind: 'planner', title: 'Stock Expert Lead', job_desk: 'You are Bima, lead of the Stock Expert team; Jax is the big boss who sends you jobs. For a daily recommendation make exactly 2 subtasks in this order: Ratna first (market, news, portfolio), then Surya (technicals, final picks). Then check their work and write the final report: market mood in one line, then 2 to 4 ideas, each with ticker, BUY or SELL or HOLD, entry range, target, stop loss, and a one-sentence reason, then what to do with the current portfolio, then the track record. End with: Ini analisis AI, bukan nasihat keuangan; keputusan dan risiko ada di kamu.' },
+      { name: 'Ratna', kind: 'worker', title: 'AI Research analyst', job_desk: 'You are Ratna, the research analyst. Use market_overview for IHSG and USD/IDR, stock_news for the market and for the stocks in the portfolio, portfolio_list for what Nico holds, and past_picks for the track record. Report: the market mood, the news that matters for his holdings and the sector, how his portfolio is doing, and how earlier picks performed. Quote only numbers and headlines from the tools. There are no fundamentals data (PER, PBV, dividends): never state them.' },
+      { name: 'Surya', kind: 'worker', title: 'AI Technical analyst', job_desk: 'You are Surya, the technical analyst. Use stock_screen to find candidates, stock_technicals to check the ones you may recommend (and the portfolio holdings), and stock_news for any candidate you are unsure about. Choose 2 to 4 ideas: BUY candidates need an uptrend or a clear bounce from support with RSI below 70; SELL or HOLD for portfolio stocks in a downtrend or near resistance. For every idea give entry range, target (near resistance), stop loss (below support) in rupiah, all derived from the tool numbers, and a one-sentence reason. Then call save_pick once for every BUY or SELL idea you recommend. Be honest when there is no good setup: saying no clear idea today is a valid answer.' },
     ],
-    plannerGuide: 'Coming next: needs price, news and portfolio tools.',
+    plannerGuide: 'Typical briefs: daily buy/sell recommendation, check a stock, review my portfolio. Always Ratna before Surya so Surya sees the research.',
   },
 ];
 
@@ -289,7 +289,9 @@ async function runNextSubtask(db: Supa, userId: string, goal: OfficeTask, profil
   await log(db, userId, goal.id, agent?.id ?? null, `${agent?.name ?? 'Agent'} is working: ${next.title}`);
 
   const tools = toolsFor(profile.tools);
-  const convo: any[] = [{ role: 'user', content: `Overall brief from Nico:\n${goal.instructions}\n\nYour subtask:\n${next.instructions}` }];
+  const earlier = ((subs ?? []) as OfficeTask[]).filter((s) => s.status === 'done' && s.result)
+    .map((s) => `${agents.find((a) => a.id === s.agent_id)?.name ?? 'Teammate'} (${s.title}):\n${s.result}`).join('\n\n');
+  const convo: any[] = [{ role: 'user', content: `Overall brief from Nico:\n${goal.instructions}\n\n${earlier ? `Work already done by your teammates:\n${earlier}\n\n` : ''}Your subtask:\n${next.instructions}` }];
   let tin = 0, tout = 0, out = '';
   for (let i = 0; i < 6; i++) {
     const r = await claude({ system: `${agent?.job_desk ?? ''}\n${baseRules()}`, messages: convo, tools });

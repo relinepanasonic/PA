@@ -351,7 +351,16 @@ export default function DashboardPage() {
       }
     } else if (category === 'stocks') {
       script = 'Jax disini... Berikut pantauan saham IDX terkini... ';
-      if (stocks.length > 0) {
+      let stockReport: string | null = null;
+      try {
+        const r = await fetch('/api/ai-office/latest?team=stocks');
+        if (r.ok) stockReport = (await r.json()).report || null;
+      } catch {
+        /* no team report today: read live prices below */
+      }
+      if (stockReport) {
+        script = 'Jax disini... Berikut rekomendasi saham hari ini dari tim Stock Expert... ' + stockReport;
+      } else if (stocks.length > 0) {
         stocks.forEach((s) => {
           const direction = s.changePercent >= 0 ? 'naik' : 'turun';
           const absPercent = Math.abs(s.changePercent).toFixed(2);
