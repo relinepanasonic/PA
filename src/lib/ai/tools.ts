@@ -107,25 +107,11 @@ export async function runTool(name: string, input: any, supabase: Supa, userId: 
         .order('scheduled_at').limit(60);
       return data ?? [];
     }
-    case 'add_schedule': {
-      const { data, error } = await supabase.from('work_activities').insert({
-        user_id: userId,
-        title: String(input.title).slice(0, 200),
-        scheduled_at: `${input.date}T${input.start_time}:00+07:00`,
-        deadline: input.end_time ? `${input.date}T${input.end_time}:00+07:00` : null,
-      }).select('id,title,scheduled_at,deadline').single();
-      return error ? { error: error.message } : data;
-    }
+    case 'add_schedule':
+    case 'calendar_create':
+      return addScheduleEverywhere(input, supabase, userId);
     case 'calendar_list': {
       return listCalendarEvents(supabase, userId, `${input.from}T00:00:00+07:00`, `${input.to}T23:59:59+07:00`);
-    }
-    case 'calendar_create': {
-      return createCalendarEvent(supabase, userId, {
-        title: String(input.title).slice(0, 200),
-        startISO: `${input.date}T${input.start_time}:00+07:00`,
-        endISO: input.end_time ? `${input.date}T${input.end_time}:00+07:00` : undefined,
-        description: input.description ? String(input.description).slice(0, 1000) : undefined,
-      });
     }
     case 'finance_summary': {
       const { data } = await supabase.from('finance_transactions').select('amount,type')
@@ -140,4 +126,28 @@ export async function runTool(name: string, input: any, supabase: Supa, userId: 
     default:
       return { error: 'unknown tool' };
   }
+}
+
+/** One call puts the event in the app's own schedule AND on Google Calendar (when connected), without duplicates. */
+async function addScheduleEverywhere(input: any, supabase: Supa, userId: string) {
+  const title = String(input.title).slice(0, 200);
+  const startISO = `${input.date}T${input.start_time}:00+07:00`;
+  const endISO = input.end_time ? `${input.date}T${input.end_time}:00+07:00` : null;
+
+  let app: unknown;
+  const { data: dup } = await supabase.from('work_activities').select('id,title,scheduled_at,deadline')
+    .eq('user_id', userId).eq('title', title).eq('scheduled_at', startISO).limit(1);
+  if (dup?.length) app = { ...dup[0], note: 'already in the app' };
+  else {
+    const { data, error } = await supabase.from('work_activities').insert({
+      user_id: userId, title, scheduled_at: startISO, deadline: endISO,
+    }).select('id,title,scheduled_at,deadline').single();
+    app = error ? { error: error.message } : data;
+  }
+
+  const google = await createCalendarEvent(supabase, userId, {
+    title, startISO, endISO: endISO ?? undefined,
+    description: input.description ? String(input.description).slice(0, 1000) : undefined,
+  });
+  return { app, google: 'error' in google ? { skipped: google.error } : google };
 }

@@ -35,8 +35,8 @@ export const TEAM_PROFILES: TeamProfile[] = [
     enabled: true,
     tools: ['list_todos', 'add_todo', 'complete_todo', 'list_schedule', 'add_schedule', 'calendar_list', 'calendar_create'],
     roster: [
-      { name: 'Jax', kind: 'planner', title: 'Team Lead (plans, checks, reports)', job_desk: 'You lead the Productivity team. You split the brief into at most 3 subtasks, choose the right agent for each, then check their work and write the final report.' },
-      { name: 'Tika', kind: 'worker', title: 'AI Schedule planner', job_desk: 'You are Tika, the schedule planner. Read the existing plans first with calendar_list (Google Calendar) and list_schedule, avoid clashes, leave breaks. Add events only when the brief asks you to put things on the calendar: use calendar_create so they appear in Google Calendar (if it says not connected, use add_schedule and tell Nico to connect Google Calendar). Report exactly what you added.' },
+      { name: 'Sela', kind: 'planner', title: 'Team Lead (plans, checks, reports)', job_desk: 'You are Sela, lead of the Productivity team; Jax is the big boss who sends you jobs. You split the brief into at most 3 subtasks, choose the right agent for each, then check their work and write the final report.' },
+      { name: 'Tika', kind: 'worker', title: 'AI Schedule planner', job_desk: 'You are Tika, the schedule planner. Read the existing plans first with calendar_list (Google Calendar) and list_schedule, avoid clashes, leave breaks. Add events only when the brief asks you to put things on the calendar: call add_schedule ONCE per event: it saves the event in the app AND on Google Calendar at the same time (if the google part says skipped, tell Nico to connect Google Calendar). Never call both add_schedule and calendar_create for the same event. Report exactly what you added.' },
       { name: 'Dito', kind: 'worker', title: 'AI To-do coach', job_desk: 'You are Dito, the to-do coach. Read the list with list_todos, group and prioritise it, suggest what to do first, and add or complete tasks with the tools only when the brief asks for it. Report exactly what you changed.' },
     ],
     plannerGuide: 'Typical briefs: plan my day or week, clean up my to-do list, schedule a task, find free time. Use Tika for anything about time and the calendar, Dito for tasks and priorities. Use only one agent when one is enough.',
@@ -127,6 +127,10 @@ const baseRules = () =>
 export async function ensureTeams(db: Supa, userId: string) {
   const { data: have } = await db.from('ai_teams').select('id,slug').eq('user_id', userId);
   const slugs = new Set((have ?? []).map((t: any) => t.slug));
+  // rename: the old Productivity lead was called Jax; Jax is the big boss now
+  for (const t of (have ?? []) as { id: string; slug: string }[]) {
+    if (t.slug === 'productivity') await db.from('ai_agents').update({ name: 'Sela' }).eq('team_id', t.id).eq('name', 'Jax');
+  }
   // existing teams: keep job descriptions in step with the code
   for (const t of (have ?? []) as { id: string; slug: string }[]) {
     const p = TEAM_PROFILES.find((x) => x.slug === t.slug);
