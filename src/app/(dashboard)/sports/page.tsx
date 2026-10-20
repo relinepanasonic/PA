@@ -288,10 +288,29 @@ export default function SportsPage() {
       return;
     }
 
-    setGymSessions(sessions || []);
+    // A session left open for more than 12 hours was forgotten (the timer would show thousands of minutes):
+    // close it at its last logged exercise instead of resuming it.
+    const STALE_MS = 12 * 60 * 60 * 1000;
+    let list = sessions || [];
+    for (const stale of list.filter(x => !x.ended_at && Date.now() - new Date(x.started_at).getTime() > STALE_MS)) {
+      const { data: lastEx } = await supabase
+        .from('gym_session_exercises')
+        .select('created_at')
+        .eq('session_id', stale.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      const startMs = new Date(stale.started_at).getTime();
+      const lastMs = lastEx?.[0] ? new Date(lastEx[0].created_at).getTime() : startMs;
+      const mins = Math.max(1, Math.min(240, Math.round((Math.max(startMs, lastMs) - startMs) / 60000)));
+      const endedAt = new Date(startMs + mins * 60000).toISOString();
+      await supabase.from('gym_sessions').update({ ended_at: endedAt, duration_minutes: mins }).eq('id', stale.id);
+      list = list.map(x => (x.id === stale.id ? { ...x, ended_at: endedAt, duration_minutes: mins } : x));
+    }
+
+    setGymSessions(list);
 
     // Check for active session (no ended_at)
-    const active = (sessions || []).find(s => !s.ended_at);
+    const active = list.find(s => !s.ended_at);
     if (active) {
       setActiveSession(active);
       let parsedNotes: any = { textNotes: '' };
@@ -314,7 +333,7 @@ export default function SportsPage() {
     }
 
     // Compute stats
-    const completedSessions = (sessions || []).filter(s => s.ended_at);
+    const completedSessions = list.filter(s => s.ended_at);
     const now = new Date();
     const weekStart = new Date(now);
     weekStart.setDate(now.getDate() - now.getDay());
