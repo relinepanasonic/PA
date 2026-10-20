@@ -27,7 +27,7 @@ const TOOLS = [
       required: ['team', 'brief'],
     },
   },
-  ...toolsFor(['list_todos', 'add_todo', 'complete_todo', 'list_schedule', 'add_schedule', 'calendar_list', 'finance_summary']),
+  ...toolsFor(['list_todos', 'add_todo', 'complete_todo', 'list_schedule', 'add_schedule', 'calendar_list', 'finance_summary', 'finance_categories', 'add_transaction', 'list_transactions', 'delete_transaction']),
 ];
 
 
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return NextResponse.json({ error: 'agent-disabled' }, { status: 501 });
 
-  const { messages } = await request.json();
+  const { messages, image } = await request.json();
   if (!Array.isArray(messages) || !messages.length || messages.length > 30) {
     return NextResponse.json({ error: 'Bad messages' }, { status: 400 });
   }
@@ -71,13 +71,24 @@ export async function POST(request: Request) {
     `The user is Nico. Reply in the language the user uses (Indonesian by default), in a calm, friendly, concise way: ` +
     `your replies are read aloud, so use short plain sentences and no markdown, tables or emoji. ` +
     `Current date and time (WIB): ${now}. Today is ${today}. ` +
-    `You are the boss of the AI office: the teams ask_team can reach (${enabledTeams.map((t) => t.name).join(', ')}) work for you. Delegate planning, reviews and multi-step jobs to the right team with ask_team and then tell Nico the result in your own short words; do quick single actions yourself. Use the tools to read or change the user's to-dos, schedule and finances. Never invent data; if a tool returns nothing, say so. ` +
+    `You are the boss of the AI office: the teams ask_team can reach (${enabledTeams.map((t) => t.name).join(', ')}) work for you. Delegate planning, reviews and multi-step jobs to the right team with ask_team and then tell Nico the result in your own short words; do quick single actions yourself. Use the tools to read or change the user's to-dos, schedule and finances. When Nico tells you (by text, voice or a picture of a receipt, transfer or e-wallet screenshot) about money he spent or received, record it yourself with add_transaction without asking first, then confirm in one short sentence: type, amount in words, category, date. Ask a question only when the amount or whether it is income or expense is truly unclear. If he asks to undo, find it with list_transactions and delete_transaction. Never record the same item twice in one conversation. Never invent data; if a tool returns nothing, say so. ` +
     `Before adding or completing something, do it only if the user clearly asked.`;
 
   const convo: any[] = messages.map((m: any) => ({
     role: m.role === 'assistant' ? 'assistant' : 'user',
     content: String(m.content).slice(0, 4000),
   }));
+
+  // A picture (receipt, transfer screenshot...) belongs to the newest user message only.
+  if (image && typeof image.data === 'string' && image.data.length < 5_500_000 && ['image/jpeg', 'image/png', 'image/webp'].includes(image.mediaType)) {
+    const last = convo[convo.length - 1];
+    if (last?.role === 'user') {
+      last.content = [
+        { type: 'image', source: { type: 'base64', media_type: image.mediaType, data: image.data } },
+        { type: 'text', text: last.content || 'Catat transaksi dari gambar ini.' },
+      ];
+    }
+  }
 
   try {
     for (let i = 0; i < 6; i++) {

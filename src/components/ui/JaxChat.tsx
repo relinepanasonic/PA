@@ -1,11 +1,24 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Mic, Send, X } from 'lucide-react';
+import { ImagePlus, Mic, Send, X } from 'lucide-react';
 
 interface Msg {
   role: 'user' | 'assistant';
   content: string;
+  picture?: string; // thumbnail shown in the chat
+}
+
+// Shrinks a photo so the upload stays small.
+async function toJpeg(file: File): Promise<{ data: string; preview: string }> {
+  const bmp = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bmp.width * scale);
+  canvas.height = Math.round(bmp.height * scale);
+  canvas.getContext('2d')!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+  const url = canvas.toDataURL('image/jpeg', 0.85);
+  return { data: url.split(',')[1], preview: url };
 }
 
 interface Props {
@@ -22,6 +35,8 @@ export default function JaxChat({ onClose, onSpeak, onStopSpeak }: Props) {
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [pending, setPending] = useState<{ data: string; preview: string } | null>(null);
   const recRef = useRef<any>(null);
 
   useEffect(() => {
@@ -31,10 +46,12 @@ export default function JaxChat({ onClose, onSpeak, onStopSpeak }: Props) {
   useEffect(() => () => recRef.current?.abort?.(), []);
 
   const send = async (text: string) => {
-    const content = text.trim();
+    const content = text.trim() || (pending ? 'Catat transaksi dari gambar ini.' : '');
     if (!content || busy) return;
     onStopSpeak();
-    const next: Msg[] = [...messages, { role: 'user', content }];
+    const sentImage = pending;
+    setPending(null);
+    const next: Msg[] = [...messages, { role: 'user', content, picture: sentImage?.preview }];
     setMessages(next);
     setInput('');
     setBusy(true);
@@ -42,7 +59,10 @@ export default function JaxChat({ onClose, onSpeak, onStopSpeak }: Props) {
       const res = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next.slice(1) }), // drop the local greeting
+        body: JSON.stringify({
+          messages: next.slice(1).map(({ role, content }) => ({ role, content })), // drop the local greeting
+          image: sentImage ? { data: sentImage.data, mediaType: 'image/jpeg' } : undefined,
+        }),
       });
       const json = await res.json();
       let reply: string;
@@ -98,6 +118,7 @@ export default function JaxChat({ onClose, onSpeak, onStopSpeak }: Props) {
                   : 'bg-white/5 border border-white/10 text-slate-100'
               }`}
             >
+              {m.picture && <img src={m.picture} alt="" className="mb-1.5 max-h-40 rounded-xl" />}
               {m.content}
             </div>
           </div>
@@ -113,6 +134,25 @@ export default function JaxChat({ onClose, onSpeak, onStopSpeak }: Props) {
         }}
         className="flex items-center gap-2 p-3 border-t border-cyan-400/20"
       >
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            if (f) setPending(await toJpeg(f).catch(() => null));
+            e.target.value = '';
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className={`w-10 h-10 shrink-0 rounded-full border flex items-center justify-center ${pending ? 'border-emerald-400/60 bg-emerald-500/20 text-emerald-300' : 'border-cyan-400/30 bg-cyan-500/10 text-cyan-300'}`}
+          aria-label="Attach picture"
+        >
+          <ImagePlus size={18} />
+        </button>
         <button
           type="button"
           onClick={toggleMic}
@@ -128,12 +168,12 @@ export default function JaxChat({ onClose, onSpeak, onStopSpeak }: Props) {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Tanya atau perintah Jax..."
+          placeholder={pending ? 'Foto siap. Tambah catatan (opsional)...' : 'Tanya atau perintah Jax...'}
           className="flex-1 min-w-0 h-10 rounded-full bg-white/5 border border-white/10 px-4 text-sm text-white placeholder:text-slate-500 outline-none focus:border-cyan-400/50"
         />
         <button
           type="submit"
-          disabled={busy || !input.trim()}
+          disabled={busy || (!input.trim() && !pending)}
           className="w-10 h-10 shrink-0 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 flex items-center justify-center disabled:opacity-40"
           aria-label="Send"
         >

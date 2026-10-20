@@ -154,6 +154,40 @@ export const TOOL_DEFS: Record<string, ToolDef> = {
       required: ['ticker', 'action', 'entry_price', 'rationale'],
     },
   },
+  finance_categories: {
+    name: 'finance_categories',
+    description: "List the user's income and expense categories (name, type, tag). Call this before add_transaction if you are unsure which category fits.",
+    input_schema: noArgs,
+  },
+  add_transaction: {
+    name: 'add_transaction',
+    description:
+      'Record ONE income or expense. amount is in rupiah as a plain number (50rb = 50000, 1,5jt = 1500000). For a receipt record the total as one transaction. ' +
+      'Pick the closest category name from finance_categories; if none fits use Other. Default date is today (WIB).',
+    input_schema: {
+      type: 'object',
+      properties: {
+        type: { type: 'string', enum: ['income', 'expense'] },
+        amount: { type: 'number' },
+        description: { type: 'string', description: 'Short, e.g. "Makan siang di Warteg" or "Gaji Oktober".' },
+        category: { type: 'string', description: 'A category name, optional.' },
+        date: { type: 'string', description: 'YYYY-MM-DD, optional' },
+        account: { type: 'string', description: 'Bank or wallet name, e.g. "Blu by BCA" or "Cash". Optional.' },
+        tag: { type: 'string', enum: ['personal', 'professional'], description: 'Optional, default personal.' },
+      },
+      required: ['type', 'amount', 'description'],
+    },
+  },
+  list_transactions: {
+    name: 'list_transactions',
+    description: 'List recent transactions between two dates (inclusive), newest first, with their ids.',
+    input_schema: range,
+  },
+  delete_transaction: {
+    name: 'delete_transaction',
+    description: 'Delete one transaction by id (use to undo a wrong entry the user asked to remove).',
+    input_schema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
+  },
   finance_summary: { name: 'finance_summary', description: 'Total income and expenses between two dates (inclusive).', input_schema: range },
 };
 
@@ -274,6 +308,42 @@ export async function runTool(name: string, input: any, supabase: Supa, userId: 
         stop_price: input.stop_price ? Number(input.stop_price) : null,
         rationale: String(input.rationale).slice(0, 400),
       });
+      return error ? { error: error.message } : { ok: true };
+    }
+    case 'finance_categories': {
+      const { data } = await supabase.from('finance_categories').select('name,type,tag').eq('user_id', userId).order('name');
+      return data ?? [];
+    }
+    case 'add_transaction': {
+      const amount = Number(input.amount);
+      if (!Number.isFinite(amount) || amount <= 0) return { error: 'amount must be a positive number' };
+      const type = input.type === 'income' ? 'income' : 'expense';
+      const { data: cats } = await supabase.from('finance_categories').select('id,name,type,tag').eq('user_id', userId).eq('type', type);
+      const want = String(input.category || '').toLowerCase().trim();
+      const cat = (cats ?? []).find((c: any) => c.name.toLowerCase() === want)
+        ?? (want ? (cats ?? []).find((c: any) => c.name.toLowerCase().includes(want) || want.includes(c.name.toLowerCase())) : undefined)
+        ?? (cats ?? []).find((c: any) => c.name.toLowerCase().includes('other'));
+      const account = String(input.account || 'Blu by BCA').slice(0, 40);
+      const desc = String(input.description).replace(/^\[.*?\]\s*/, '').slice(0, 200);
+      const { data, error } = await supabase.from('finance_transactions').insert({
+        user_id: userId,
+        type,
+        amount,
+        tag: input.tag === 'professional' ? 'professional' : (cat?.tag === 'professional' ? 'professional' : 'personal'),
+        category_id: cat?.id ?? null,
+        description: `[${account}] ${desc}`,
+        transaction_date: typeof input.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input.date) ? input.date : wibDate(),
+      }).select('id,type,amount,description,transaction_date').single();
+      return error ? { error: error.message } : { saved: data, category: cat?.name ?? '(none)' };
+    }
+    case 'list_transactions': {
+      const { data } = await supabase.from('finance_transactions').select('id,type,amount,description,transaction_date,finance_categories(name)')
+        .eq('user_id', userId).gte('transaction_date', input.from).lte('transaction_date', input.to)
+        .order('transaction_date', { ascending: false }).order('created_at', { ascending: false }).limit(40);
+      return data ?? [];
+    }
+    case 'delete_transaction': {
+      const { error } = await supabase.from('finance_transactions').delete().eq('id', input.id).eq('user_id', userId);
       return error ? { error: error.message } : { ok: true };
     }
     case 'finance_summary': {
