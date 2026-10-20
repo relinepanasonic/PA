@@ -238,30 +238,33 @@ export default function DashboardPage() {
     const chunks: string[] = [];
     let cur = '';
     for (const p of parts) {
-      if ((cur + ' ' + p).length > 800 && cur) { chunks.push(cur); cur = p; }
+      if ((cur + ' ' + p).length > 500 && cur) { chunks.push(cur); cur = p; }
       else cur = cur ? cur + ' ' + p : p;
     }
     if (cur) chunks.push(cur);
 
+    // The server voice can fail now and then: retry a couple of times before using the phone voice.
     const fetchChunk = async (text: string): Promise<string | null> => {
-      try {
-        const res = await fetch('/api/tts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text }),
-        });
-        if (!res.ok) {
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const res = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }),
+          });
+          if (res.ok) {
+            setVoiceError(null);
+            return URL.createObjectURL(await res.blob());
+          }
           const j = await res.json().catch(() => ({}));
           setVoiceError(`Server voice failed (${res.status}) ${j.detail || j.error || ''}`.trim());
-          return null;
+          if (res.status < 500) return null; // 401/400: retrying will not help
+        } catch (e) {
+          setVoiceError('Server voice unreachable: ' + String((e as Error)?.message || e).slice(0, 80));
         }
-        setVoiceError(null);
-        const blob = await res.blob();
-        return URL.createObjectURL(blob);
-      } catch (e) {
-        setVoiceError('Server voice unreachable: ' + String((e as Error)?.message || e).slice(0, 80));
-        return null;
+        await new Promise((r) => setTimeout(r, 500 * attempt));
       }
+      return null;
     };
 
     cloudStopRef.current = false;

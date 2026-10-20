@@ -29,8 +29,8 @@ async function azureSpeech(text: string, key: string, region: string): Promise<B
 }
 
 // 2) Free fallback: same Ardi voice through the Edge read-aloud service (no key).
-async function edgeSpeech(text: string): Promise<Buffer | null> {
-  const tts = new MsEdgeTTS();
+async function edgeOnce(text: string): Promise<Buffer | null> {
+  const tts = new MsEdgeTTS({ connectionTimeoutMs: 6000, synthesisTimeoutMs: 15000 });
   await tts.setMetadata(VOICE, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
   const { audioStream } = tts.toStream(text, { rate: '-4%' });
   const chunks: Buffer[] = [];
@@ -41,6 +41,23 @@ async function edgeSpeech(text: string): Promise<Buffer | null> {
   });
   const audio = Buffer.concat(chunks);
   return audio.length ? audio : null;
+}
+
+// The free service sometimes drops a connection: try up to 3 times with a fresh connection each time.
+async function edgeSpeech(text: string): Promise<Buffer | null> {
+  let lastErr: unknown = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const audio = await edgeOnce(text);
+      if (audio) return audio;
+    } catch (e) {
+      lastErr = e;
+      console.error(`Edge TTS attempt ${attempt} failed`, e);
+    }
+    await new Promise((r) => setTimeout(r, 300 * attempt));
+  }
+  if (lastErr) throw lastErr;
+  return null;
 }
 
 export async function POST(request: Request) {
