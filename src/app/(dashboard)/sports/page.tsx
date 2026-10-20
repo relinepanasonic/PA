@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import type { SportActivity, GymSession, GymSessionExercise, BodyMeasurement } from '@/lib/types/database';
 import { Plus, Trophy, Flame, Timer, Calendar, Clock, MapPin, Users, Trash2, Target, Zap, Dumbbell, Play, Square, Search, Filter, ChevronDown, ChevronUp, BookOpen, Activity, Scale, ChevronRight, Check } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import FitScanUpload from '@/components/ui/FitScanUpload';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
@@ -828,6 +829,8 @@ export default function SportsPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-white flex items-center gap-2"><Scale size={16} className="text-indigo-400"/> Dashboard</h2>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+            <FitScanUpload onSaved={fetchBodyMeasurements} />
             <Button size="sm" onClick={() => {
               setBDate(new Date().toISOString().split('T')[0]);
               setBWeight(''); setBSkeletalMuscle(''); setBFatMass(''); setBBodyWater('');
@@ -836,6 +839,7 @@ export default function SportsPage() {
             }}>
               <Plus size={14} /> Log Data
             </Button>
+            </div>
           </div>
 
           <div className="flex gap-4 border-b border-white/10 pb-0">
@@ -865,7 +869,7 @@ export default function SportsPage() {
             <EmptyState 
               icon={Scale} 
               title="No data yet" 
-              description="Add your first InBody scan result to start tracking!" 
+              description="Tap Upload scan and pick your FitScan picture from your gallery, or log the numbers by hand." 
               actionLabel={bodySaving ? "Importing..." : "Import FTL GYM Baseline (Sep 7)"}
               onAction={importBaseline}
             />
