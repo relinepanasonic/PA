@@ -36,6 +36,7 @@ export function transferDescription(account: string, info: TransferInfo, directi
 export function guessCategory(desc: string, direction: 'in' | 'out'): string | null {
   const d = desc.toLowerCase();
   if (direction === 'in') return /gaji|salary/.test(d) ? 'Salary' : null;
+  if (/kredivo|cicilan|pinjam|loan|akulaku|adira|\bfif\b|\bbfi\b|home credit|atome/.test(d)) return 'Loan';
   if (/kai|kcic|gojek|grab|driver|tol|parkir|pertamina|bensin|krl|mrt|transjakarta/.test(d)) return 'Transport';
   if (/tiket|tix|cinema|xxi|netflix|spotify|steam|game/.test(d)) return 'Entertainment';
   if (/coffee|kopi|cafe|resto|food|makan|nasi|mie|bakpau|sushi|bebek|ayam|bakmi|roti|starbucks|sbux|tomoro|fore|foodhall|kitchen|warung|waroeng|rm\.|rumah makan|gofood|grabfood|shopeefood|burger|pizza|bakery|canteen/.test(d)) return 'Makan';

@@ -91,6 +91,8 @@ const DEFAULT_INCOME_CATEGORIES = [
   { name: 'Salary', icon: '💰', color: '#10b981', type: 'income' as const, tag: 'personal' as const },
   { name: 'Project', icon: '💻', color: '#3b82f6', type: 'income' as const, tag: 'professional' as const },
   { name: 'Transfer from other', icon: '🔄', color: '#8b5cf6', type: 'income' as const, tag: 'personal' as const },
+  { name: 'Loan', icon: '🏦', color: '#f59e0b', type: 'income' as const, tag: 'personal' as const },
+  { name: 'Transfer Banks', icon: '🔁', color: '#06b6d4', type: 'income' as const, tag: 'personal' as const },
   { name: 'Others', icon: '💵', color: '#64748b', type: 'income' as const, tag: 'personal' as const },
 ];
 
@@ -101,6 +103,8 @@ const DEFAULT_EXPENSE_CATEGORIES = [
   { name: 'Work', icon: '💼', color: '#0ea5e9', type: 'expense' as const, tag: 'professional' as const },
   { name: 'Gadget', icon: '📱', color: '#06b6d4', type: 'expense' as const, tag: 'personal' as const },
   { name: 'Personal', icon: '👤', color: '#8b5cf6', type: 'expense' as const, tag: 'personal' as const },
+  { name: 'Loan', icon: '🏦', color: '#f59e0b', type: 'expense' as const, tag: 'personal' as const },
+  { name: 'Transfer Banks', icon: '🔁', color: '#06b6d4', type: 'expense' as const, tag: 'personal' as const },
   { name: 'Other', icon: '📦', color: '#64748b', type: 'expense' as const, tag: 'personal' as const },
 ];
 
@@ -248,9 +252,9 @@ export default function FinancePage() {
 
     const allDefaults = [...DEFAULT_INCOME_CATEGORIES, ...DEFAULT_EXPENSE_CATEGORIES];
     const allowedNames = new Set(allDefaults.map(d => d.name.toLowerCase()));
-    const existingMap = new Map((data || []).map(c => [c.name.toLowerCase(), c]));
+    const existingMap = new Map((data || []).map(c => [`${c.name.toLowerCase()}|${c.type}`, c]));
 
-    const missing = allDefaults.filter(def => !existingMap.has(def.name.toLowerCase()));
+    const missing = allDefaults.filter(def => !existingMap.has(`${def.name.toLowerCase()}|${def.type}`));
     if (missing.length > 0) {
       const inserts = missing.map(def => ({
         user_id: user.id,

@@ -234,7 +234,7 @@ export default function BukuBankPage() {
     const catList = (cats ?? []) as any[];
 
     // Blu pocket moves and transfers to your own other bank are NOT income or spending: store them as transfers.
-    const transferCat0 = catList.find((c) => c.name.toLowerCase() === 'transfer from other');
+    const transferCat0 = catList.find((c) => ['transfer banks', 'transfer from other'].includes(c.name.toLowerCase()));
     const selfLines = todo.map((l) => ({ l, info: classifyTransfer(l.description) })).filter((x): x is { l: BankLine; info: NonNullable<ReturnType<typeof classifyTransfer>> } => !!x.info);
     let selfDone = 0;
     for (let k = 0; k < selfLines.length; k += 100) {
@@ -253,7 +253,7 @@ export default function BukuBankPage() {
     todo = todo.filter((l) => !selfIds.has(l.id));
 
     const HINT = /trsf|transfer|\btf\b|pindah|bi-?fast|top ?-?up|topup|ovo|gopay|dana|linkaja|shopeepay/i;
-    const transferCat = catList.find((c) => c.name.toLowerCase() === 'transfer from other');
+    const transferCat = catList.find((c) => ['transfer banks', 'transfer from other'].includes(c.name.toLowerCase()));
     const usedIn = new Set<string>();
     const done = new Set<string>();
     let transfers = 0;
@@ -313,7 +313,7 @@ export default function BukuBankPage() {
       const total = found.reduce((s, x) => s + Number(x.t.amount), 0);
       if (!confirm(`${found.length} older transactions (total ${rp(total)}) are moves between your own Blu pockets or your own banks. Mark them as transfers so they stop counting as income and spending?`)) { setTidying(false); return; }
       const { data: cats } = await supabase.from('finance_categories').select('id,name');
-      const tcat = (cats ?? []).find((c: any) => c.name.toLowerCase() === 'transfer from other');
+      const tcat = (cats ?? []).find((c: any) => ['transfer banks', 'transfer from other'].includes(c.name.toLowerCase()));
       for (let i = 0; i < found.length; i += 20) {
         await Promise.all(found.slice(i, i + 20).map(({ t, account: acc, rest, info }) =>
           supabase.from('finance_transactions').update({
