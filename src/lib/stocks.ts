@@ -113,7 +113,11 @@ async function yahooSession() {
   return session;
 }
 
-export interface Fundamentals { per: number | null; forwardPer: number | null; pbv: number | null; dividendYieldPct: number | null; roePct: number | null; eps: number | null }
+export interface Fundamentals {
+  per: number | null; forwardPer: number | null; pbv: number | null; dividendYieldPct: number | null; roePct: number | null; eps: number | null;
+  profitMarginPct: number | null; debtToEquityPct: number | null; currentRatio: number | null;
+  revenueGrowthPct: number | null; earningsGrowthPct: number | null; payoutRatioPct: number | null; beta: number | null;
+}
 
 export async function fetchFundamentals(ticker: string): Promise<Fundamentals | null> {
   try {
@@ -132,6 +136,13 @@ export async function fetchFundamentals(ticker: string): Promise<Fundamentals | 
       dividendYieldPct: pct(r.summaryDetail?.dividendYield?.raw),
       roePct: pct(r.financialData?.returnOnEquity?.raw),
       eps: num(r.defaultKeyStatistics?.trailingEps?.raw),
+      profitMarginPct: pct(r.financialData?.profitMargins?.raw),
+      debtToEquityPct: num(r.financialData?.debtToEquity?.raw),
+      currentRatio: num(r.financialData?.currentRatio?.raw),
+      revenueGrowthPct: pct(r.financialData?.revenueGrowth?.raw),
+      earningsGrowthPct: pct(r.financialData?.earningsGrowth?.raw),
+      payoutRatioPct: pct(r.summaryDetail?.payoutRatio?.raw),
+      beta: num(r.summaryDetail?.beta?.raw ?? r.defaultKeyStatistics?.beta?.raw),
     };
   } catch (e) {
     console.error('fetchFundamentals', ticker, e);

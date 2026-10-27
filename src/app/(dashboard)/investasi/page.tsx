@@ -24,6 +24,7 @@ import CurrencyInput from '@/components/ui/CurrencyInput';
 import Badge from '@/components/ui/Badge';
 import { PortfolioStock } from '@/lib/types/database';
 import { LQ45StockItem } from '@/app/api/stocks/lq45/route';
+import TheoryView, { THEORIES, type TheoryId } from '@/components/investasi/TheoryView';
 
 interface HistoryPoint {
   date: string;
@@ -69,7 +70,7 @@ function MiniSparkline({ data, isUp }: { data: number[]; isUp: boolean }) {
   );
 }
 
-export default function InvestasiPage() {
+function PortfolioView() {
   const [portfolio, setPortfolio] = useState<PortfolioStock[]>([]);
   const [livePortfolioQuotes, setLivePortfolioQuotes] = useState<Record<string, { price: number; change: number; changePercent: number }>>({});
   const [lq45Stocks, setLq45Stocks] = useState<LQ45StockItem[]>([]);
@@ -921,6 +922,37 @@ export default function InvestasiPage() {
           </div>
         </form>
       </Modal>
+    </div>
+  );
+}
+
+type ViewId = 'portfolio' | TheoryId;
+
+// Toggle bar: Portfolio first, then one sub page per analysis theory.
+export default function InvestasiPage() {
+  const [view, setView] = useState<ViewId>('portfolio');
+  const tabs: { id: ViewId; label: string }[] = [{ id: 'portfolio', label: 'Portfolio' }, ...THEORIES];
+  return (
+    <div className="space-y-4">
+      <div className="sticky top-0 z-20 -mx-4 px-4 py-2 bg-[#040814]/90 backdrop-blur-md border-b border-white/5">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setView(t.id)}
+              className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                view === t.id
+                  ? 'bg-gradient-to-r from-blue-600/60 to-cyan-500/50 border-cyan-400/60 text-white shadow-[0_0_14px_rgba(34,211,238,0.35)]'
+                  : 'bg-white/5 border-white/10 text-slate-300'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {view === 'portfolio' ? <PortfolioView /> : <TheoryView theory={view} />}
     </div>
   );
 }
