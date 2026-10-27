@@ -223,6 +223,21 @@ export const TOOL_DEFS: Record<string, ToolDef> = {
       required: ['ticker', 'lots', 'price'],
     },
   },
+  set_stock_holding: {
+    name: 'set_stock_holding',
+    description:
+      'CORRECT what the user holds of one stock: replaces all existing rows of that ticker with a single holding of exactly this many lots at this average buy price. ' +
+      'Use it when the user says to change, fix or set his holding ("ubah BBCA jadi 21 lot rata-rata 6.760,48"). lots 0 removes the holding. It is a correction, not a trade, so it is not logged as buy or sell.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        ticker: { type: 'string' },
+        lots: { type: 'number' },
+        avg_price: { type: 'number', description: 'average buy price per share in rupiah, decimals allowed' },
+      },
+      required: ['ticker', 'lots'],
+    },
+  },
   list_trades: {
     name: 'list_trades',
     description: 'Recent stock buys and sells with the total realized profit or loss.',
@@ -464,6 +479,20 @@ export async function runTool(name: string, input: any, supabase: Supa, userId: 
         side: 'sell', price, lots, fee, realized_pl: Math.round(realized),
       });
       return { ok: true, sold: `${lots} lot ${ticker.replace('.JK', '')} at ${price}`, proceedsRp: lots * 100 * price, realizedProfitOrLossRp: Math.round(realized), remainingLots: held - lots, ...(tr.error ? { note: 'Portfolio updated, but the trade history is not saved yet: run 10_stock_trades.sql in Supabase.' } : {}) };
+    }
+    case 'set_stock_holding': {
+      const ticker = toJK(String(input.ticker));
+      const lots = Math.floor(Number(input.lots)), price = Number(input.avg_price);
+      if (!(lots >= 0)) return { error: 'lots must be zero or more' };
+      if (lots > 0 && !(price > 0)) return { error: 'avg_price is needed' };
+      const { data: before } = await supabase.from('portfolio_stocks').select('id,lots,buy_price').eq('user_id', userId).eq('ticker', ticker);
+      const { error: delErr } = await supabase.from('portfolio_stocks').delete().eq('user_id', userId).eq('ticker', ticker);
+      if (delErr) return { error: delErr.message };
+      if (lots > 0) {
+        const { error } = await supabase.from('portfolio_stocks').insert({ user_id: userId, ticker, buy_price: price, lots });
+        if (error) return { error: error.message, note: 'The old rows were removed; tell Nico so he can re-add them.' };
+      }
+      return { ok: true, stock: ticker.replace('.JK', ''), now: lots > 0 ? { lots, avgPrice: price, costRp: Math.round(lots * 100 * price) } : 'removed', before: (before ?? []).map((r: any) => ({ lots: Number(r.lots), buyPrice: Number(r.buy_price) })) };
     }
     case 'list_trades': {
       const { data, error } = await supabase.from('stock_trades').select('trade_date,ticker,side,price,lots,fee,realized_pl').eq('user_id', userId).order('trade_date', { ascending: false }).order('created_at', { ascending: false }).limit(20);
