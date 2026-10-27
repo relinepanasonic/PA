@@ -89,7 +89,7 @@ const ChartBox = ({ children, h = 240 }: { children: React.ReactNode; h?: number
 );
 
 const axis = { stroke: '#64748b', fontSize: 10 };
-const tip = { contentStyle: { background: '#0b1226', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, fontSize: 11 }, labelStyle: { color: '#94a3b8' } };
+const tip = { contentStyle: { background: '#0b1226', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, fontSize: 11 }, labelStyle: { color: '#94a3b8' }, itemStyle: { color: '#f1f5f9' }, cursor: { fill: 'rgba(148,163,184,0.12)' } };
 
 // cached so switching between theory pages does not refetch
 const cache = new Map<string, { at: number; stocks: Stock[]; ihsg: Candle[] }>();
