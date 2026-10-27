@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const TABS = [
-  { href: '/finance', label: 'Transaksi' },
+  { href: '/finance', label: 'Dashboard' },
+  { href: '/finance/transaksi', label: 'Transaksi' },
   { href: '/finance/buku-bank', label: 'Buku Bank' },
-  { href: '/finance/dashboard', label: 'Dashboard' },
 ];
 
-// Finance has three sub pages: Transaksi (the ledger), Buku Bank (bank statements) and Dashboard (self accounting).
+// Finance has three sub pages: Dashboard (self accounting, the default), Transaksi (the ledger) and Buku Bank (bank statements).
 export default function FinanceLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   return (

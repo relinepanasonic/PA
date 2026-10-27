@@ -1,1652 +1,244 @@
 'use client';
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+
+import { useEffect, useMemo, useState } from 'react';
+import { Bar, CartesianGrid, Cell, ComposedChart, Legend, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { createClient } from '@/lib/supabase/client';
-import type { FinanceTransaction, FinanceCategory, FinanceType, FinanceTag } from '@/lib/types/database';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line } from 'recharts';
-import { BookOpen, Plus, Wallet, TrendingUp, TrendingDown, DollarSign, Tag, Trash2, Edit3, Calendar, Camera, UploadCloud, CheckCircle2, FileSpreadsheet, Sparkles, Building2, Settings } from 'lucide-react';
-import Link from 'next/link';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import CurrencyInput from '@/components/ui/CurrencyInput';
-import Select from '@/components/ui/Select';
-import Modal from '@/components/ui/Modal';
-import Badge from '@/components/ui/Badge';
-import Pagination from '@/components/ui/Pagination';
-import EmptyState from '@/components/ui/EmptyState';
-import { SkeletonList } from '@/components/ui/LoadingSkeleton';
 
-const PAGE_SIZE = 25;
-
-interface BankAccount {
-  id: string;
-  label: string;
-  icon: string;
-  color: string;
+interface Tx {
+  amount: number;
+  type: 'income' | 'expense';
+  tag: string;
+  description: string;
+  transaction_date: string;
+  cat: string;
 }
 
-export const ACCOUNT_ICON_PRESETS = [
-  { icon: '📱', label: 'Digital Bank (Blu, Jenius...)', defaultName: 'Blu by BCA' },
-  { icon: '🏦', label: 'Bank Account (BCA, Mandiri...)', defaultName: 'Bank BCA' },
-  { icon: '💵', label: 'Cash / Tunai', defaultName: 'Dompet Cash' },
-  { icon: '📲', label: 'E-Money (Gopay, OVO, DANA)', defaultName: 'E-Wallet / Gopay' },
-  { icon: '💳', label: 'Credit Card / Paylater', defaultName: 'Kartu Kredit' },
-  { icon: '🪙', label: 'Crypto / Investment', defaultName: 'Akun Investasi' },
-  { icon: '🏢', label: 'Business Account', defaultName: 'Rekening Bisnis' },
-  { icon: '💎', label: 'Savings / Deposito', defaultName: 'Tabungan Utama' },
-];
+const COLORS = ['#38bdf8', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#fb923c', '#f87171', '#2dd4bf', '#60a5fa', '#c084fc'];
+const rp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+const rpShort = (n: number) => (Math.abs(n) >= 1e6 ? `${(n / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 })} jt` : Math.abs(n) >= 1e3 ? `${Math.round(n / 1e3)} rb` : String(Math.round(n)));
+const monthKey = (d: string) => d.slice(0, 7);
+const monthLabel = (m: string) => new Date(`${m}-01T00:00:00`).toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
+const isTransfer = (t: Tx) => t.description.includes('___TRANSFER___');
+const axis = { stroke: '#64748b', fontSize: 10 };
+const tip = { contentStyle: { background: '#0b1226', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, fontSize: 11 }, labelStyle: { color: '#94a3b8' }, itemStyle: { color: '#f1f5f9' }, cursor: { fill: 'rgba(148,163,184,0.12)' } };
 
-const DEFAULT_BANK_ACCOUNTS: BankAccount[] = [
-  { id: 'all', label: 'All Accounts', icon: '🏦', color: 'bg-slate-800 text-slate-200 border-white/20' },
-  { id: 'Blu by BCA', label: 'Blu by BCA', icon: '📱', color: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40' },
-  { id: 'BCA Utama', label: 'BCA Utama', icon: '💳', color: 'bg-blue-500/20 text-blue-300 border-blue-400/40' },
-  { id: 'Mandiri Bisnis', label: 'Mandiri Bisnis', icon: '🏛️', color: 'bg-amber-500/20 text-amber-300 border-amber-400/40' },
-  { id: 'Jenius Digital', label: 'Jenius Digital', icon: '📱', color: 'bg-teal-500/20 text-teal-300 border-teal-400/40' },
-  { id: 'Kartu Kredit', label: 'Kartu Kredit', icon: '💳', color: 'bg-purple-500/20 text-purple-300 border-purple-400/40' },
-  { id: 'Dompet Cash', label: 'Dompet Cash', icon: '💵', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40' },
-  { id: 'E-Money / Gopay', label: 'E-Money / Gopay', icon: '📲', color: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/40' },
-];
-
-const parseAccountFromDesc = (desc: string) => {
-  if (!desc) return { account: 'Blu by BCA', cleanDesc: '', isTransfer: false, targetAccount: '' };
-  const transferMatch = desc.match(/^\[([^\]]+?)\s*(?:→|->|-to-|\bto\b)\s*([^\]]+?)\]\s*(.*)$/i);
-  if (transferMatch) {
-    return {
-      account: transferMatch[1].trim(),
-      targetAccount: transferMatch[2].trim(),
-      cleanDesc: transferMatch[3].replace(/___TRANSFER___/g, '').trim(),
-      isTransfer: true,
-    };
-  }
-  const match = desc.match(/^\[([^\]]+)\]\s*(.*)$/);
-  if (match) {
-    return {
-      account: match[1].trim(),
-      cleanDesc: match[2].replace(/___TRANSFER___/g, '').trim(),
-      isTransfer: desc.includes('___TRANSFER___'),
-      targetAccount: '',
-    };
-  }
-  return {
-    account: 'Blu by BCA',
-    cleanDesc: desc.replace(/___TRANSFER___/g, '').trim(),
-    isTransfer: desc.includes('___TRANSFER___'),
-    targetAccount: '',
-  };
+const todayMonth = () => new Date().toISOString().slice(0, 7);
+const shiftMonth = (m: string, delta: number) => {
+  const d = new Date(`${m}-01T00:00:00`);
+  d.setMonth(d.getMonth() + delta);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const matchAccount = (parsedAccName: string, filterId: string, allAccounts: BankAccount[]) => {
-  if (!parsedAccName || filterId === 'all') return false;
-  const cleanParsed = parsedAccName.trim().toLowerCase();
-  const cleanFilter = filterId.trim().toLowerCase();
-  if (cleanParsed === cleanFilter) return true;
-  const accObj = allAccounts.find(a => a.id.trim().toLowerCase() === cleanFilter || a.label.trim().toLowerCase() === cleanFilter);
-  if (accObj && (accObj.id.trim().toLowerCase() === cleanParsed || accObj.label.trim().toLowerCase() === cleanParsed)) {
-    return true;
-  }
-  return false;
-};
-
-const DEFAULT_INCOME_CATEGORIES = [
-  { name: 'Salary', icon: '💰', color: '#10b981', type: 'income' as const, tag: 'personal' as const },
-  { name: 'Project', icon: '💻', color: '#3b82f6', type: 'income' as const, tag: 'professional' as const },
-  { name: 'Transfer from other', icon: '🔄', color: '#8b5cf6', type: 'income' as const, tag: 'personal' as const },
-  { name: 'Others', icon: '💵', color: '#64748b', type: 'income' as const, tag: 'personal' as const },
-];
-
-const DEFAULT_EXPENSE_CATEGORIES = [
-  { name: 'Makan', icon: '🍽️', color: '#f97316', type: 'expense' as const, tag: 'personal' as const },
-  { name: 'Transport', icon: '🚗', color: '#3b82f6', type: 'expense' as const, tag: 'personal' as const },
-  { name: 'Entertainment', icon: '🎬', color: '#ec4899', type: 'expense' as const, tag: 'personal' as const },
-  { name: 'Work', icon: '💼', color: '#0ea5e9', type: 'expense' as const, tag: 'professional' as const },
-  { name: 'Gadget', icon: '📱', color: '#06b6d4', type: 'expense' as const, tag: 'personal' as const },
-  { name: 'Personal', icon: '👤', color: '#8b5cf6', type: 'expense' as const, tag: 'personal' as const },
-  { name: 'Other', icon: '📦', color: '#64748b', type: 'expense' as const, tag: 'personal' as const },
-];
-
-interface ParsedReceipt {
-  amount: number | null;
-  merchant: string;
-  categoryName: string;
+function Card({ title, children, hint }: { title: string; children: React.ReactNode; hint?: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3.5">
+      <p className="text-sm font-bold text-white">{title}</p>
+      {hint && <p className="text-[11px] text-slate-400 mb-2.5 leading-snug">{hint}</p>}
+      {children}
+    </div>
+  );
 }
 
-const parseReceiptText = (text: string): ParsedReceipt => {
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  
-  let detectedAmount: number | null = null;
-  const totalKeywords = /(grand\s*total|total|edc|bayar|tagihan|amount|subtotal)/i;
-  const candidateAmounts: number[] = [];
-
-  for (const line of lines) {
-    if (totalKeywords.test(line)) {
-      const matches = line.match(/\b\d{1,3}([.,]\d{3})+(?:[.,]\d{2})?\b|\b\d{4,9}\b/g);
-      if (matches) {
-        for (const m of matches) {
-          const cleanNum = Number(m.replace(/[.,]/g, ''));
-          if (!isNaN(cleanNum) && cleanNum >= 1000 && cleanNum <= 500000000) {
-            candidateAmounts.push(cleanNum);
-          }
-        }
-      }
-    }
-  }
-
-  if (candidateAmounts.length > 0) {
-    detectedAmount = Math.max(...candidateAmounts);
-  } else {
-    const allNumbers: number[] = [];
-    const numRegex = /\b\d{1,3}([.,]\d{3})+\b/g;
-    let match;
-    while ((match = numRegex.exec(text)) !== null) {
-      const val = Number(match[0].replace(/[.,]/g, ''));
-      if (!isNaN(val) && val >= 5000 && val <= 500000000) {
-        allNumbers.push(val);
-      }
-    }
-    if (allNumbers.length > 0) {
-      detectedAmount = Math.max(...allNumbers);
-    }
-  }
-
-  let detectedMerchant = 'Merchant Receipt';
-  for (const line of lines.slice(0, 8)) {
-    if (line.length > 3 && !/^\d+$/.test(line) && !/^\d{2}[-/.]\d{2}/.test(line)) {
-      const cleaned = line.replace(/[^a-zA-Z0-9\s&.-]/g, '').trim();
-      if (cleaned.length >= 3) {
-        detectedMerchant = cleaned.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-        break;
-      }
-    }
-  }
-
-  const upperText = text.toUpperCase();
-  if (upperText.includes('STARBUCKS')) detectedMerchant = 'Starbucks Coffee';
-  else if (upperText.includes('SUSHI TEI')) detectedMerchant = 'Sushi Tei';
-  else if (upperText.includes('INDOMARET')) detectedMerchant = 'Indomaret';
-  else if (upperText.includes('ALFAMART')) detectedMerchant = 'Alfamart';
-  else if (upperText.includes('MCDONALD')) detectedMerchant = "McDonald's";
-  else if (upperText.includes('KFC')) detectedMerchant = 'KFC';
-
-  let detectedCategory = 'Makan';
-  if (/starbucks|sushi|coffee|kopi|cafe|resto|makan|food|bakmi|pizza|burger|tea|kfc|mcd|bread|roti/i.test(text)) {
-    detectedCategory = 'Makan';
-  } else if (/grab|gojek|gocar|goride|uber|parkir|parking|bensin|pertamina|shell|toll|transport/i.test(text)) {
-    detectedCategory = 'Transport';
-  } else if (/cinema|xxi|cgv|netflix|spotify|entertainment|nonton/i.test(text)) {
-    detectedCategory = 'Entertainment';
-  } else if (/apple|samsung|ibox|gadget|tokopedia|shopee|electronic|hobby|game|toy/i.test(text)) {
-    detectedCategory = 'Hobby';
-  }
-
-  return {
-    amount: detectedAmount,
-    merchant: detectedMerchant,
-    categoryName: detectedCategory,
-  };
-};
-
-export default function FinancePage() {
-  const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
-  const [categories, setCategories] = useState<FinanceCategory[]>([]);
+export default function FinanceDashboardPage() {
+  const supabase = useMemo(() => createClient(), []);
+  const [txs, setTxs] = useState<Tx[]>([]);
+  const [balances, setBalances] = useState<{ account: string; balance: number; date: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [typeFilter, setTypeFilter] = useState<'all' | FinanceType>('all');
-  const [tagFilter, setTagFilter] = useState<'all' | FinanceTag>('all');
-  const [monthFilter, setMonthFilter] = useState<string>(new Date().toISOString().substring(0, 7));
-  const [accountFilter, setAccountFilter] = useState<string>('all');
-  const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
-  const [showModal, setShowModal] = useState(false);
-  const [editingTx, setEditingTx] = useState<FinanceTransaction | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
-  const [activeTab, setActiveTab] = useState<'transactions' | 'dashboard'>('transactions');
+  const [month, setMonth] = useState(todayMonth());
 
-  const toggleDate = (date: string) => {
-    setExpandedDates(prev => ({ ...prev, [date]: !prev[date] }));
-  };
-
-  // Dynamic Bank Accounts state
-  const [accounts, setAccounts] = useState<BankAccount[]>(DEFAULT_BANK_ACCOUNTS);
-  const [showAccountModal, setShowAccountModal] = useState(false);
-  const [newAccountName, setNewAccountName] = useState('');
-  const [newAccountIcon, setNewAccountIcon] = useState('💳');
-
-  // E-Statement & Receipt AI Simulation state
-  const [showStatementModal, setShowStatementModal] = useState(false);
-  const [statementAccount, setStatementAccount] = useState('Blu by BCA');
-  const [importingStatement, setImportingStatement] = useState(false);
-  const [statementRows, setStatementRows] = useState<any[]>([]);
-  const [scanningReceipt, setScanningReceipt] = useState(false);
-  const [ocrStatus, setOcrStatus] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  // Summary state
-  const [allSummaryTx, setAllSummaryTx] = useState<any[]>([]);
-  const [totalIncome, setTotalIncome] = useState(0);
-  const [totalExpenses, setTotalExpenses] = useState(0);
-
-  // Form state
-  const [formAmount, setFormAmount] = useState('');
-  const [formType, setFormType] = useState<FinanceType>('expense');
-  const [formTag, setFormTag] = useState<FinanceTag>('personal');
-  const [formAccount, setFormAccount] = useState<string>('Blu by BCA');
-  const [formTransferTo, setFormTransferTo] = useState<string>('BCA Utama');
-  const [formCategoryId, setFormCategoryId] = useState('');
-  const [formDescription, setFormDescription] = useState('');
-  const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
-
-  const supabase = createClient();
-
-  const fetchCategories = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data } = await supabase
-      .from('finance_categories')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('name');
-
-    const allDefaults = [...DEFAULT_INCOME_CATEGORIES, ...DEFAULT_EXPENSE_CATEGORIES];
-    const allowedNames = new Set(allDefaults.map(d => d.name.toLowerCase()));
-    const existingMap = new Map((data || []).map(c => [c.name.toLowerCase(), c]));
-
-    const missing = allDefaults.filter(def => !existingMap.has(def.name.toLowerCase()));
-    if (missing.length > 0) {
-      const inserts = missing.map(def => ({
-        user_id: user.id,
-        name: def.name,
-        type: def.type,
-        tag: def.tag,
-        color: def.color,
-        icon: def.icon,
-      }));
-      await supabase.from('finance_categories').insert(inserts);
-    }
-
-    const unwanted = (data || []).filter(c => !allowedNames.has(c.name.toLowerCase()));
-    if (unwanted.length > 0) {
-      const unwantedIds = unwanted.map(u => u.id);
-      const otherExpenseCat = (data || []).find(c => c.name.toLowerCase() === 'other');
-      if (otherExpenseCat) {
-        await supabase
-          .from('finance_transactions')
-          .update({ category_id: otherExpenseCat.id })
-          .in('category_id', unwantedIds);
-      } else {
-        await supabase
-          .from('finance_transactions')
-          .update({ category_id: null })
-          .in('category_id', unwantedIds);
-      }
-      await supabase.from('finance_categories').delete().in('id', unwantedIds);
-    }
-
-    const { data: refreshed } = await supabase
-      .from('finance_categories')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('name');
-    setCategories(refreshed || []);
-  }, []);
-
-  const fetchSummary = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: allTx } = await supabase
-      .from('finance_transactions')
-      .select('amount, type, description, transaction_date, finance_categories(name, color, icon)')
-      .eq('user_id', user.id);
-
-    setAllSummaryTx(allTx || []);
-  }, []);
-
-  const fetchTransactions = useCallback(async () => {
-    setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    let query = supabase
-      .from('finance_transactions')
-      .select('*, finance_categories(*)', { count: 'exact' })
-      .eq('user_id', user.id)
-      .order('transaction_date', { ascending: false });
-
-    if (monthFilter !== 'all') {
-      const startOfMonth = `${monthFilter}-01`;
-      const endOfMonthDate = new Date(new Date(startOfMonth).getFullYear(), new Date(startOfMonth).getMonth() + 1, 0);
-      const endOfMonth = endOfMonthDate.toISOString().split('T')[0];
-      query = query.gte('transaction_date', startOfMonth).lte('transaction_date', endOfMonth);
-    }
-
-    if (typeFilter === 'transfer') {
-      query = query.ilike('description', '%___TRANSFER___%');
-    } else if (typeFilter !== 'all') {
-      query = query.eq('type', typeFilter).not('description', 'ilike', '%___TRANSFER___%');
-    }
-    if (tagFilter !== 'all') query = query.eq('tag', tagFilter);
-
-    const { data, count } = await query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-    setTransactions(data || []);
-    setTotalCount(count || 0);
-    setLoading(false);
-  }, [typeFilter, tagFilter, monthFilter, page]);
-
-  useEffect(() => { fetchCategories(); fetchSummary(); }, [fetchCategories, fetchSummary]);
   useEffect(() => {
-    fetchTransactions();
-    const stored = localStorage.getItem('pa_custom_bank_accounts');
-    if (stored) {
-      try {
-        setAccounts(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse accounts:', e);
-      }
-    }
-  }, [fetchTransactions]);
+    (async () => {
+      const from = `${shiftMonth(todayMonth(), -12)}-01`;
+      const [{ data: t }, { data: b }] = await Promise.all([
+        supabase.from('finance_transactions').select('amount,type,tag,description,transaction_date,finance_categories(name)')
+          .gte('transaction_date', from).order('transaction_date', { ascending: false }).limit(6000),
+        supabase.from('bank_statement_lines').select('account,balance,tx_date').not('balance', 'is', null)
+          .order('tx_date', { ascending: false }).order('created_at', { ascending: false }).limit(1500),
+      ]);
+      setTxs(((t ?? []) as any[]).map((r) => ({
+        amount: Number(r.amount), type: r.type, tag: r.tag, description: r.description ?? '', transaction_date: r.transaction_date,
+        cat: (Array.isArray(r.finance_categories) ? r.finance_categories[0]?.name : r.finance_categories?.name) || 'Lainnya',
+      })));
+      const seen = new Map<string, { account: string; balance: number; date: string }>();
+      for (const r of (b ?? []) as any[]) if (!seen.has(r.account)) seen.set(r.account, { account: r.account, balance: Number(r.balance), date: r.tx_date });
+      setBalances(Array.from(seen.values()));
+      setLoading(false);
+    })();
+  }, [supabase]);
 
-  const handleAddAccount = () => {
-    if (!newAccountName.trim()) return;
-    const colors = [
-      'bg-blue-500/20 text-blue-300 border-blue-400/40',
-      'bg-amber-500/20 text-amber-300 border-amber-400/40',
-      'bg-cyan-500/20 text-cyan-300 border-cyan-400/40',
-      'bg-purple-500/20 text-purple-300 border-purple-400/40',
-      'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
-      'bg-rose-500/20 text-rose-300 border-rose-400/40',
-    ];
-    const randColor = colors[Math.floor(Math.random() * colors.length)];
-    const newAcc: BankAccount = {
-      id: newAccountName.trim(),
-      label: newAccountName.trim(),
-      icon: newAccountIcon || '💳',
-      color: randColor,
-    };
-    const updated = [...accounts, newAcc];
-    setAccounts(updated);
-    localStorage.setItem('pa_custom_bank_accounts', JSON.stringify(updated));
-    setNewAccountName('');
-  };
+  const real = useMemo(() => txs.filter((t) => !isTransfer(t)), [txs]);
+  const inMonth = (m: string) => real.filter((t) => monthKey(t.transaction_date) === m);
+  const sum = (a: Tx[], type: 'income' | 'expense') => a.filter((t) => t.type === type).reduce((s, t) => s + t.amount, 0);
 
-  const handleDeleteAccount = (id: string) => {
-    if (id === 'all') return;
-    const updated = accounts.filter(a => a.id !== id);
-    setAccounts(updated);
-    localStorage.setItem('pa_custom_bank_accounts', JSON.stringify(updated));
-    if (accountFilter === id) setAccountFilter('all');
-  };
+  const cur = inMonth(month), prev = inMonth(shiftMonth(month, -1));
+  const income = sum(cur, 'income'), expense = sum(cur, 'expense'), net = income - expense;
+  const pIncome = sum(prev, 'income'), pExpense = sum(prev, 'expense');
+  const savingRate = income > 0 ? (net / income) * 100 : null;
 
-  const handleTypeSwitch = (newType: FinanceType | 'transfer') => {
-    setFormType(newType);
-    if (newType === 'transfer') {
-      const transferCat = categories.find(c => c.name.toLowerCase() === 'transfer from other');
-      if (transferCat) setFormCategoryId(transferCat.id);
-      const validAccs = accounts.filter(a => a.id !== 'all');
-      if (!validAccs.some(a => a.id === formTransferTo) || formTransferTo === formAccount) {
-        const targetAcc = validAccs.find(a => a.id !== formAccount)?.id || validAccs[0]?.id || 'BCA Utama';
-        setFormTransferTo(targetAcc);
-      }
-    } else {
-      const currentCat = categories.find(c => c.id === formCategoryId);
-      if (!currentCat || currentCat.type !== newType) {
-        if (newType === 'income') {
-          const salCat = categories.find(c => c.name.toLowerCase() === 'salary') || categories.find(c => c.type === 'income');
-          if (salCat) {
-            setFormCategoryId(salCat.id);
-            if (salCat.tag) setFormTag(salCat.tag);
-          }
-        } else if (newType === 'expense') {
-          const makCat = categories.find(c => c.name.toLowerCase() === 'makan') || categories.find(c => c.type === 'expense');
-          if (makCat) {
-            setFormCategoryId(makCat.id);
-            if (makCat.tag) setFormTag(makCat.tag);
-          }
-        }
-      }
-    }
-  };
-
-  const openCreate = () => {
-    setEditingTx(null);
-    setOcrStatus(null);
-    setFormAmount('');
-    setFormType('expense');
-    setFormTag('personal');
-    const validAccs = accounts.filter(a => a.id !== 'all');
-    const sourceAcc = accountFilter !== 'all' ? accountFilter : (validAccs[0]?.id || 'Blu by BCA');
-    const targetAcc = validAccs.find(a => a.id !== sourceAcc)?.id || validAccs[0]?.id || 'BCA Utama';
-    setFormAccount(sourceAcc);
-    setFormTransferTo(targetAcc);
-    const makCat = categories.find(c => c.name.toLowerCase() === 'makan') || categories.find(c => c.type === 'expense');
-    setFormCategoryId(makCat?.id || '');
-    if (makCat?.tag) setFormTag(makCat.tag);
-    setFormDescription('');
-    setFormDate(new Date().toISOString().split('T')[0]);
-    setShowModal(true);
-  };
-
-  const openEdit = (tx: FinanceTransaction) => {
-    setEditingTx(tx);
-    setOcrStatus(null);
-    const parsed = parseAccountFromDesc(tx.description || '');
-    const validAccs = accounts.filter(a => a.id !== 'all');
-    const sourceAcc = parsed.account || validAccs[0]?.id || 'Blu by BCA';
-    setFormAccount(sourceAcc);
-    if (parsed.targetAccount) {
-      setFormTransferTo(parsed.targetAccount);
-    } else {
-      const targetAcc = validAccs.find(a => a.id !== sourceAcc)?.id || validAccs[0]?.id || 'BCA Utama';
-      setFormTransferTo(targetAcc);
-    }
-    setFormAmount(String(tx.amount));
-    setFormType(parsed.isTransfer ? 'transfer' : tx.type);
-    setFormTag(tx.tag);
-    setFormCategoryId(tx.category_id || '');
-    setFormDescription(parsed.cleanDesc);
-    setFormDate(tx.transaction_date);
-    setShowModal(true);
-  };
-
-  const handleScanReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setScanningReceipt(true);
-    setOcrStatus('Scanning receipt image with Tesseract AI...');
-
-    try {
-      const Tesseract = (await import('tesseract.js')).default;
-      const result = await Tesseract.recognize(file, 'eng');
-      const text = result.data.text || '';
-      
-      const parsed = parseReceiptText(text);
-
-      if (parsed.amount) {
-        setFormAmount(String(parsed.amount));
-      }
-      setFormType('expense');
-      setFormTag('personal');
-      setFormDescription(`${parsed.merchant} (Verified OCR Receipt)`);
-
-      const matchedCat = categories.find(
-        c => c.name.toLowerCase() === parsed.categoryName.toLowerCase()
-      );
-      if (matchedCat) {
-        setFormCategoryId(matchedCat.id);
-      }
-
-      setOcrStatus(`✨ OCR Result: ${parsed.merchant} — ${parsed.amount ? 'Rp ' + parsed.amount.toLocaleString('id-ID') : 'Detected'} (${parsed.categoryName})`);
-    } catch (err) {
-      console.error('OCR scan failed:', err);
-      setOcrStatus('⚠️ Could not auto-read text from image. Please verify amount.');
-    } finally {
-      setScanningReceipt(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const cleanDesc = formDescription.replace(/^\[.*?\]\s*/, '').replace(/___TRANSFER___/g, '').trim();
-    const finalDesc = formType === 'transfer'
-      ? `[${formAccount} → ${formTransferTo}] ${cleanDesc || 'Transfer Antar Bank'}___TRANSFER___`
-      : `[${formAccount}] ${cleanDesc || 'Transaction'}`;
-
-    const payload = {
-      amount: parseFloat(formAmount),
-      type: formType === 'transfer' ? 'expense' : formType,
-      tag: formTag,
-      category_id: formType === 'transfer'
-        ? (categories.find(c => c.name.toLowerCase() === 'transfer from other')?.id || null)
-        : (formCategoryId || null),
-      description: finalDesc,
-      transaction_date: formDate,
-    };
-
-    if (editingTx) {
-      await supabase.from('finance_transactions').update(payload).eq('id', editingTx.id);
-    } else {
-      await supabase.from('finance_transactions').insert({ ...payload, user_id: user.id });
-    }
-
-    setSaving(false);
-    setShowModal(false);
-    fetchTransactions();
-    fetchSummary();
-  };
-
-  const deleteTx = async (id: string) => {
-    await supabase.from('finance_transactions').delete().eq('id', id);
-    fetchTransactions();
-    fetchSummary();
-  };
-
-  const parseCsvLine = (text: string) => {
-    const result = [];
-    let current = '';
-    let inQuotes = false;
-    for (let i = 0; i < text.length; i++) {
-      const c = text[i];
-      if (c === '"') {
-        inQuotes = !inQuotes;
-      } else if (c === ',' && !inQuotes) {
-        result.push(current.trim());
-        current = '';
-      } else {
-        current += c;
-      }
-    }
-    result.push(current.trim());
-    return result;
-  };
-
-  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      const lines = text.split(/\r?\n/);
-      const parsedRows = [];
-      let isData = false;
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (line.startsWith('Tanggal / Date')) {
-          isData = true;
-          continue;
-        }
-        if (line.startsWith('Saldo Awal') || line === ',,,,') {
-          isData = false;
-          continue;
-        }
-
-        if (isData && line.trim()) {
-          const parts = parseCsvLine(line);
-          if (parts.length >= 4) {
-            const [DD, MM, YYYY] = parts[0].split('/');
-            const isoDate = `${YYYY}-${MM}-${DD}`;
-
-            const desc = parts[1];
-            const amount = Math.abs(parseFloat(parts[2]));
-            const typeStr = parts[3];
-            const txType: FinanceType = typeStr.toLowerCase() === 'pemasukan' ? 'income' : 'expense';
-
-            let catName = 'Other';
-            let tag: FinanceTag = 'personal';
-
-            const dLower = desc.toLowerCase();
-            if (dLower.includes('qris') || dLower.includes('food') || dLower.includes('makan') || dLower.includes('cafe') || dLower.includes('kopi') || dLower.includes('resto') || dLower.includes('burger')) {
-              catName = 'Makan';
-            } else if (dLower.includes('transport') || dLower.includes('gojek') || dLower.includes('grab') || dLower.includes('kcic')) {
-              catName = 'Transport';
-            } else if (dLower.includes('gaji') || dLower.includes('salary')) {
-              catName = 'Salary';
-            } else if (dLower.includes('tiket') || dLower.includes('tix')) {
-              catName = 'Entertainment';
-            }
-
-            parsedRows.push({
-              date: isoDate,
-              desc: desc,
-              amount: amount,
-              type: txType,
-              tag: tag,
-              catName: catName,
-            });
-          }
-        }
-      }
-      setStatementRows(parsedRows);
-    };
-    reader.readAsText(file);
-    e.target.value = ''; // Reset input
-  };
-
-  const handleImportStatement = async () => {
-    if (statementRows.length === 0) return;
-    setImportingStatement(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const inserts = [];
-    for (const row of statementRows) {
-      const fullDesc = `[${statementAccount}] ${row.desc}`;
-      
-      // Check for exact duplicates in current transactions
-      const isDuplicate = allSummaryTx.some(tx => 
-        tx.transaction_date === row.date && 
-        tx.description === fullDesc && 
-        Math.abs(Number(tx.amount)) === row.amount
-      );
-
-      if (!isDuplicate) {
-        const matchedCat = categories.find(c => c.name.toLowerCase() === row.catName.toLowerCase());
-        inserts.push({
-          user_id: user.id,
-          amount: row.amount,
-          type: row.type,
-          tag: row.tag,
-          category_id: matchedCat?.id || null,
-          description: fullDesc,
-          transaction_date: row.date,
-        });
-      }
-    }
-
-    if (inserts.length > 0) {
-      await supabase.from('finance_transactions').insert(inserts);
-    }
-    setImportingStatement(false);
-    setShowStatementModal(false);
-    setStatementRows([]);
-    fetchTransactions();
-    fetchSummary();
-  };
-
-  const formatCurrency = (amount: number) => {
-    const formatted = new Intl.NumberFormat('id-ID', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-    return `Rp ${formatted}`;
-  };
-
-  const { filteredSaldo, filteredIncome, filteredExpenses, topExpenses, balanceHistory, allExpenses, cashflowHistory } = useMemo(() => {
-    let inc = 0;
-    let exp = 0;
-    let saldo = 0;
-    const categoryTotals: Record<string, { total: number, name: string, color: string, icon: string }> = {};
-
-    allSummaryTx.forEach(t => {
-      const parsed = parseAccountFromDesc(t.description || '');
-      const amt = Number(t.amount) || 0;
-      const isInMonth = monthFilter === 'all' || (t.transaction_date && t.transaction_date.startsWith(monthFilter));
-
-      if (accountFilter === 'all') {
-        if (!parsed.isTransfer) {
-          if (t.type === 'income') {
-            saldo += amt;
-            if (isInMonth) inc += amt;
-          } else if (t.type === 'expense') {
-            saldo -= amt;
-            if (isInMonth) exp += amt;
-            
-            if (isInMonth && t.finance_categories) {
-              const catName = t.finance_categories.name;
-              if (!categoryTotals[catName]) {
-                categoryTotals[catName] = { total: 0, name: catName, color: t.finance_categories.color, icon: t.finance_categories.icon };
-              }
-              categoryTotals[catName].total += amt;
-            }
-          }
-        }
-      } else {
-        if (parsed.isTransfer) {
-          if (matchAccount(parsed.account, accountFilter, accounts)) {
-            saldo -= amt;
-            if (isInMonth) exp += amt;
-          }
-          if (matchAccount(parsed.targetAccount, accountFilter, accounts)) {
-            saldo += amt;
-            if (isInMonth) inc += amt;
-          }
-        } else {
-          if (matchAccount(parsed.account, accountFilter, accounts)) {
-            if (t.type === 'income') {
-              saldo += amt;
-              if (isInMonth) inc += amt;
-            } else if (t.type === 'expense') {
-              saldo -= amt;
-              if (isInMonth) exp += amt;
-              
-              if (isInMonth && t.finance_categories) {
-                const catName = t.finance_categories.name;
-                if (!categoryTotals[catName]) {
-                  categoryTotals[catName] = { total: 0, name: catName, color: t.finance_categories.color, icon: t.finance_categories.icon };
-                }
-                categoryTotals[catName].total += amt;
-              }
-            }
-          }
-        }
-      }
-    });
-
-    const sortedExpenses = Object.values(categoryTotals).sort((a, b) => b.total - a.total).slice(0, 5);
-    const allExpenses = Object.values(categoryTotals).sort((a, b) => b.total - a.total);
-
-    // Group cashflow historically by Day for the Line Chart
-    const cashflowByDay: Record<string, { date: string, income: number, expense: number }> = {};
-    
-    // Create a chronological sorted copy for historical tracking
-    const chronoTx = [...allSummaryTx].sort((a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime());
-    let cumulativeBalance = 0;
-    const balanceHistory: { date: string, balance: number }[] = [];
-
-    chronoTx.forEach(t => {
-      const parsed = parseAccountFromDesc(t.description || '');
-      let amt = t.amount;
-      
-      // Calculate cumulative balance (simplified without tracking exact starting point, tracks relative change)
-      if (!parsed.isTransfer) {
-        if (t.type === 'income') cumulativeBalance += amt;
-        else if (t.type === 'expense') cumulativeBalance -= amt;
-      }
-      
-      const dateObj = new Date(t.transaction_date);
-      const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const monthStr = dateObj.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-      
-      // We push the final balance of each day
-      // Overwrite previous balance for same day to get end-of-day balance
-      const last = balanceHistory[balanceHistory.length - 1];
-      if (last && last.date === dateStr) {
-        last.balance = cumulativeBalance;
-      } else {
-        balanceHistory.push({ date: dateStr, balance: cumulativeBalance });
-      }
-
-      // Line Chart: Inflow vs Outflow (Daily)
-      if (!parsed.isTransfer) {
-        const yyyy = dateObj.getFullYear();
-        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const txMonthStr = `${yyyy}-${mm}`;
-        
-        if (monthFilter === 'all' || monthFilter === txMonthStr) {
-          if (!cashflowByDay[dateStr]) cashflowByDay[dateStr] = { date: dateStr, income: 0, expense: 0 };
-          if (t.type === 'income') cashflowByDay[dateStr].income += amt;
-          else if (t.type === 'expense') cashflowByDay[dateStr].expense += amt;
-        }
-      }
-    });
-
-    return { 
-      filteredSaldo: saldo, 
-      filteredIncome: inc, 
-      filteredExpenses: exp, 
-      topExpenses: sortedExpenses,
-      allExpenses: allExpenses, // For Donut Chart
-      balanceHistory: balanceHistory.slice(-30), // Last 30 days
-      cashflowHistory: monthFilter === 'all' ? Object.values(cashflowByDay).slice(-30) : Object.values(cashflowByDay) // Last 30 days or selected month
-    };
-  }, [allSummaryTx, accountFilter, accounts, monthFilter]);
-
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-  const filteredCategories = categories.filter(c => c.type === formType);
-
-  const filteredTransactions = transactions.filter(tx => {
-    if (accountFilter === 'all') return true;
-    const parsed = parseAccountFromDesc(tx.description || '');
-    return matchAccount(parsed.account, accountFilter, accounts) || matchAccount(parsed.targetAccount, accountFilter, accounts);
+  // 6-month cash flow
+  const months6 = Array.from({ length: 6 }, (_, i) => shiftMonth(month, i - 5));
+  const flow = months6.map((m) => {
+    const a = inMonth(m);
+    const i = sum(a, 'income'), e = sum(a, 'expense');
+    return { bulan: monthLabel(m), Pemasukan: i, Pengeluaran: e, Selisih: i - e };
   });
 
+  // categories
+  const group = (a: Tx[], type: 'income' | 'expense') => {
+    const m = new Map<string, number>();
+    a.filter((t) => t.type === type).forEach((t) => m.set(t.cat, (m.get(t.cat) ?? 0) + t.amount));
+    return Array.from(m.entries()).map(([name, value]) => ({ name, value })).sort((x, y) => y.value - x.value);
+  };
+  const expCats = group(cur, 'expense'), incCats = group(cur, 'income');
+  const prevExp = new Map(group(prev, 'expense').map((c) => [c.name, c.value]));
+
+  // insights
+  const today = new Date();
+  const isThisMonth = month === todayMonth();
+  const daysInMonth = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
+  const daysPassed = isThisMonth ? Math.max(1, today.getDate()) : daysInMonth;
+  const dailyAvg = expense / daysPassed;
+  const projected = isThisMonth ? dailyAvg * daysInMonth : expense;
+  const biggest = cur.filter((t) => t.type === 'expense').sort((a, b) => b.amount - a.amount)[0];
+  const profExp = cur.filter((t) => t.type === 'expense' && t.tag === 'professional').reduce((s, t) => s + t.amount, 0);
+
+  const insights: string[] = [];
+  if (income === 0 && expense === 0) insights.push('Belum ada transaksi di bulan ini.');
+  else {
+    if (savingRate != null) insights.push(savingRate >= 20 ? `Hebat: kamu menabung ${savingRate.toFixed(0)}% dari pemasukan bulan ini.` : savingRate >= 0 ? `Kamu menabung ${savingRate.toFixed(0)}% dari pemasukan. Patokan sehat adalah 20% atau lebih.` : `Pengeluaran lebih besar ${rp(-net)} dari pemasukan bulan ini.`);
+    if (expCats[0]) insights.push(`Pengeluaran terbesar: ${expCats[0].name} (${rp(expCats[0].value)}, ${((expCats[0].value / (expense || 1)) * 100).toFixed(0)}% dari total).`);
+    if (pExpense > 0) { const d = ((expense - pExpense) / pExpense) * 100; insights.push(`Pengeluaran ${d >= 0 ? 'naik' : 'turun'} ${Math.abs(d).toFixed(0)}% dibanding bulan lalu.`); }
+    if (isThisMonth && expense > 0) insights.push(`Rata-rata keluar ${rp(dailyAvg)} per hari. Kalau terus begini, total bulan ini sekitar ${rp(projected)}.`);
+    if (biggest) insights.push(`Satu pengeluaran terbesar: ${biggest.description.replace(/^\[.*?\]\s*/, '') || biggest.cat} (${rp(biggest.amount)}).`);
+  }
+
+  const totalCash = balances.reduce((s, b) => s + b.balance, 0);
+
   return (
-    <div className="p-4 space-y-4 animate-fade-in pb-28 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-2xl bg-blue-500/15 border border-blue-400/30 flex items-center justify-center text-blue-400 shadow-sm">
-            <Wallet size={18} />
-          </div>
-          <div>
-            <h1 className="text-lg font-extrabold text-white tracking-tight">Finance</h1>
-            <p className="text-[11px] text-slate-400 font-medium">Multi-account cashflow tracking</p>
-          </div>
+    <div className="space-y-4 pb-28 md:pb-8">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-extrabold text-white tracking-tight">Dashboard Keuangan</h1>
+          <p className="text-[11px] text-slate-400">Laporan keuangan pribadimu, tersusun otomatis dari Transaksi.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowStatementModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-bold text-slate-300 transition-all border border-white/10 active:scale-95"
-          >
-            <FileSpreadsheet size={14} className="text-emerald-400" />
-            <span>Import</span>
-          </button>
-          <Button onClick={openCreate} size="sm">
-            <Plus size={16} /> Add
-          </Button>
-        </div>
+        <input type="month" value={month} max={todayMonth()} onChange={(e) => e.target.value && setMonth(e.target.value)} className="h-9 rounded-xl bg-white/5 border border-white/10 px-2.5 text-xs text-white outline-none [color-scheme:dark]" />
       </div>
 
-      {/* Global Filters (Accounts & Month) */}
-      <div className="space-y-3 mb-4">
-        {/* Account / Wallet Selector Pills */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between px-1">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Accounts & Wallets</p>
-            <button
-              onClick={() => setShowAccountModal(true)}
-              className="flex items-center gap-1 text-[11px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              <Settings size={12} />
-              <span>Manage Accounts</span>
-            </button>
-          </div>
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar">
-            {accounts.map((acc) => (
-              <button
-                key={acc.id}
-                onClick={() => { setAccountFilter(acc.id); setPage(0); }}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
-                  accountFilter === acc.id
-                    ? 'bg-blue-600 text-white border-blue-400 shadow-md scale-[1.02]'
-                    : 'bg-white/[0.04] text-slate-400 border-white/10 hover:text-white hover:bg-white/[0.08]'
-                }`}
-              >
-                <span>{acc.icon}</span>
-                <span>{acc.label}</span>
-              </button>
+      {loading ? <p className="text-xs text-slate-500">Memuat...</p> : (
+        <>
+          {/* KPI */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {[
+              { label: 'Pemasukan', value: rp(income), delta: pIncome ? ((income - pIncome) / pIncome) * 100 : null, good: true, cls: 'text-emerald-300' },
+              { label: 'Pengeluaran', value: rp(expense), delta: pExpense ? ((expense - pExpense) / pExpense) * 100 : null, good: false, cls: 'text-red-300' },
+              { label: 'Selisih (sisa)', value: rp(net), delta: null, good: true, cls: net >= 0 ? 'text-cyan-200' : 'text-red-300' },
+              { label: 'Tingkat tabungan', value: savingRate == null ? '-' : `${savingRate.toFixed(0)}%`, delta: null, good: true, cls: savingRate != null && savingRate >= 20 ? 'text-emerald-300' : 'text-amber-200' },
+            ].map((k) => (
+              <div key={k.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500">{k.label}</p>
+                <p className={`text-base font-extrabold tabular-nums ${k.cls}`}>{k.value}</p>
+                {k.delta != null && (
+                  <p className={`text-[10px] ${(k.delta >= 0) === k.good ? 'text-emerald-400' : 'text-red-400'}`}>{k.delta >= 0 ? '▲' : '▼'} {Math.abs(k.delta).toFixed(0)}% vs bulan lalu</p>
+                )}
+              </div>
             ))}
           </div>
-        </div>
 
-        {/* Clean Dropdown Filters Bar (No overflow on mobile) */}
-        <div className="grid grid-cols-3 gap-2 p-2 rounded-2xl bg-white/[0.03] border border-white/10">
-          <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Month</label>
-            <input
-              type="month"
-              value={monthFilter === 'all' ? '' : monthFilter}
-              onChange={(e) => { setMonthFilter(e.target.value || 'all'); setPage(0); }}
-              className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
-            />
-          </div>
+          {/* Insights */}
+          <Card title="Ringkasan untukmu">
+            <ul className="space-y-1.5">
+              {insights.map((t, i) => <li key={i} className="text-xs text-slate-200 leading-relaxed flex gap-2"><span className="text-cyan-300">•</span>{t}</li>)}
+            </ul>
+          </Card>
 
-          <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Type</label>
-            <select
-              value={typeFilter}
-              onChange={(e) => { setTypeFilter(e.target.value as any); setPage(0); }}
-              className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
-              disabled={activeTab === 'dashboard'}
-            >
-              <option value="all">All Types</option>
-              <option value="income">Income Only (+)</option>
-              <option value="expense">Expenses Only (-)</option>
-              <option value="transfer">Transfers Only (🔄)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tag</label>
-            <select
-              value={tagFilter}
-              onChange={(e) => { setTagFilter(e.target.value as any); setPage(0); }}
-              className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
-              disabled={activeTab === 'dashboard'}
-            >
-              <option value="all">All Tags</option>
-              <option value="personal">Personal</option>
-              <option value="professional">Professional</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex bg-white/[0.04] p-1 rounded-xl border border-white/10 mb-2">
-        <button
-          onClick={() => setActiveTab('transactions')}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === 'transactions'
-              ? 'bg-blue-600/30 text-blue-300 shadow-sm border border-blue-400/30'
-              : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
-          }`}
-        >
-          Transactions
-        </button>
-        <button
-          onClick={() => setActiveTab('dashboard')}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === 'dashboard'
-              ? 'bg-blue-600/30 text-blue-300 shadow-sm border border-blue-400/30'
-              : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
-          }`}
-        >
-          Dashboard
-        </button>
-      </div>
-
-      {/* Dashboard Tab Content */}
-      {activeTab === 'dashboard' && (
-        <div className="space-y-4 lg:space-y-6">
-          <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-4 lg:space-y-0">
-            {/* Hero Financial Balance Card */}
-            <div className="p-4 rounded-3xl bg-gradient-to-b from-blue-900/20 to-slate-900/40 border border-white/10 shadow-xl space-y-3.5 flex flex-col justify-between overflow-hidden relative">
-        <div className="flex items-center justify-between z-10 relative">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            {accountFilter === 'all' ? 'Total Saldo' : `Saldo — ${accountFilter}`}
-          </span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-medium">
-            {accountFilter === 'all' ? 'All Banks' : accountFilter}
-          </span>
-        </div>
-        <div className="flex items-baseline justify-between z-10 relative">
-          <h2 className={`text-2xl sm:text-3xl font-extrabold font-mono tracking-tight ${filteredSaldo >= 0 ? 'text-white' : 'text-red-400'}`}>
-            {formatCurrency(filteredSaldo)}
-          </h2>
-        </div>
-
-        {/* Cashflow Trend Area Chart */}
-        <div className="h-32 -mx-4 -mb-4 mt-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={balanceHistory} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <Tooltip 
-                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
-                itemStyle={{ color: '#fff', fontWeight: 'bold' }}
-                formatter={(val: any) => [`Rp ${Number(val).toLocaleString('id-ID')}`, 'Balance']}
-                labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="balance" 
-                stroke="#3b82f6" 
-                strokeWidth={3}
-                fillOpacity={1} 
-                fill="url(#colorBalance)" 
-                animationDuration={1500}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Income / Expense Split Divider */}
-        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
-          <div className="flex items-center gap-2.5 p-2 rounded-2xl bg-emerald-500/[0.06] border border-emerald-500/20">
-            <div className="w-7 h-7 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <TrendingUp size={14} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Money In</p>
-              <p className="text-xs font-bold font-mono tracking-tight text-emerald-400 truncate">{formatCurrency(filteredIncome)}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 p-2 rounded-2xl bg-red-500/[0.06] border border-red-500/20">
-            <div className="w-7 h-7 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400">
-              <TrendingDown size={14} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Money Out</p>
-              <p className="text-xs font-bold font-mono tracking-tight text-red-400 truncate">{formatCurrency(filteredExpenses)}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-          {/* Top Expenses Donut Chart */}
-          <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/10 flex flex-col min-h-[300px]">
-             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Expense Structure</h3>
-             {allExpenses.length > 0 ? (
-               <div className="flex-1 flex items-center justify-center relative min-h-[220px]">
-                 <ResponsiveContainer width="100%" height="100%">
-                   <RadarChart cx="50%" cy="50%" outerRadius="70%" data={allExpenses}>
-                     <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                     <PolarAngleAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} />
-                     <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
-                     <Radar name="Expenses" dataKey="total" stroke="#0ea5e9" fill="#0ea5e9" fillOpacity={0.4} animationDuration={1500} />
-                     <Tooltip 
-                       contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
-                       formatter={(val: any) => [`Rp ${Number(val).toLocaleString('id-ID')}`, 'Total']}
-                     />
-                   </RadarChart>
-                 </ResponsiveContainer>
-               </div>
-             ) : (
-               <div className="flex-1 flex items-center justify-center">
-                 <p className="text-xs text-slate-500 italic">No expenses to chart.</p>
-               </div>
-             )}
-          </div>
-        </div>
-
-        {/* Inflow vs Outflow Line Chart */}
-        <div className="p-4 rounded-3xl bg-white/[0.03] border border-white/10 h-64 flex flex-col">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Cashflow In/Out</h3>
-            <div className="flex-1 -ml-4">
+          {/* Cash flow */}
+          <Card title="Arus kas 6 bulan" hint="Hijau = uang masuk, merah = uang keluar, garis biru = sisa. Garis biru di atas nol artinya kamu berhasil menabung.">
+            <div style={{ height: 240 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={cashflowHistory} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} dy={10} />
-                  <Tooltip 
-                    cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }}
-                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
-                    formatter={(val: any) => [`Rp ${Number(val).toLocaleString('id-ID')}`]}
-                  />
-                  <Line type="monotone" dataKey="income" name="Inflow" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 0 }} activeDot={{ r: 6 }} animationDuration={1500} />
-                  <Line type="monotone" dataKey="expense" name="Outflow" stroke="#ef4444" strokeWidth={3} dot={{ r: 4, fill: '#ef4444', strokeWidth: 0 }} activeDot={{ r: 6 }} animationDuration={1500} />
-                </LineChart>
+                <ComposedChart data={flow} margin={{ top: 10, right: 8, left: -10, bottom: 0 }}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+                  <XAxis dataKey="bulan" {...axis} /><YAxis {...axis} tickFormatter={rpShort} />
+                  <Tooltip {...tip} formatter={(v) => rp(Number(v))} />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
+                  <Bar dataKey="Pemasukan" fill="#34d399" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Pengeluaran" fill="#f87171" radius={[4, 4, 0, 0]} />
+                  <Line type="monotone" dataKey="Selisih" stroke="#38bdf8" strokeWidth={2} dot={{ r: 3 }} />
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
-        </div>
+          </Card>
 
-          {/* Recent 5 Transactions */}
-          <div className="space-y-2 lg:col-span-2">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1 pt-1">Recent Activity</h3>
-            <div className="space-y-2">
-              {allSummaryTx.slice(0, 5).map(tx => {
-                const parsed = parseAccountFromDesc(tx.description || '');
-                return (
-                  <div key={tx.id || Math.random()} className="p-3 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 bg-white/5"
-                      >
-                        {parsed.isTransfer ? '🔄' : (tx.finance_categories?.icon || (tx.type === 'income' ? '💰' : '💸'))}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-white truncate">
-                          {parsed.cleanDesc || (parsed.isTransfer ? 'Transfer Antar Bank' : tx.finance_categories?.name || (tx.type === 'income' ? 'Income' : 'Expense'))}
-                        </p>
-                        <p className="text-[10px] text-slate-400 truncate mt-0.5">{parsed.isTransfer ? `${parsed.account} → ${parsed.targetAccount}` : parsed.account}</p>
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0 text-right">
-                      <p className={`text-xs font-bold font-mono ${tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-              {allSummaryTx.length === 0 && (
-                <p className="text-xs text-slate-500 italic px-1">No recent activity.</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Transactions Tab Content */}
-      {activeTab === 'transactions' && (
-        <div className="space-y-4">
-          {/* Transaction List */}
-      {loading ? (
-        <SkeletonList count={5} />
-      ) : filteredTransactions.length === 0 ? (
-        <EmptyState
-          icon={Wallet}
-          title="No transactions found"
-          description="Try selecting a different account or add a transaction."
-          actionLabel="Add Transaction"
-          onAction={openCreate}
-        />
-      ) : (
-        <div className="space-y-4">
-          {(() => {
-            const groups: Record<string, typeof filteredTransactions> = {};
-            filteredTransactions.forEach(tx => {
-              const date = tx.transaction_date;
-              if (!groups[date]) groups[date] = [];
-              groups[date].push(tx);
-            });
-
-            return Object.entries(groups).map(([date, txs]) => {
-              const isExpanded = expandedDates[date];
-              const dateObj = new Date(date);
-              const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-              
-              let dailyTotal = 0;
-              txs.forEach(tx => {
-                const parsed = parseAccountFromDesc(tx.description || '');
-                const amt = Number(tx.amount) || 0;
-                if (parsed.isTransfer) {
-                  if (accountFilter !== 'all') {
-                    if (matchAccount(parsed.targetAccount, accountFilter, accounts)) dailyTotal += amt;
-                    if (matchAccount(parsed.account, accountFilter, accounts)) dailyTotal -= amt;
-                  }
-                } else {
-                  if (tx.type === 'income') dailyTotal += amt;
-                  else dailyTotal -= amt;
-                }
-              });
-
-              return (
-                <div key={date} className="space-y-2">
-                  <div 
-                    className="flex items-center justify-between cursor-pointer py-1 px-1 text-slate-300 hover:text-white transition-colors"
-                    onClick={() => toggleDate(date)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-extrabold uppercase tracking-widest">{dateStr}</span>
-                      <span className="px-2 py-0.5 rounded-full bg-white/10 text-[10px] font-bold">{txs.length} tx</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`text-xs font-bold ${dailyTotal > 0 ? 'text-emerald-400' : dailyTotal < 0 ? 'text-red-400' : 'text-slate-400'}`}>
-                        {dailyTotal > 0 ? '+' : ''}{dailyTotal !== 0 ? formatCurrency(Math.abs(dailyTotal)) : ''}
-                      </span>
-                      <svg
-                        className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  {isExpanded && (
-                    <div className="space-y-2">
-                      {txs.map((tx) => {
-                        const parsed = parseAccountFromDesc(tx.description || '');
+          {/* Expense categories */}
+          <Card title="Uangmu dipakai untuk apa?" hint="Pengeluaran bulan ini per kategori. Perhatikan kategori yang naik jauh dari bulan lalu.">
+            {expCats.length === 0 ? <p className="text-xs text-slate-500">Belum ada pengeluaran.</p> : (
+              <>
+                <div style={{ height: 210 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={expCats.slice(0, 8)} dataKey="value" nameKey="name" innerRadius={50} outerRadius={85} paddingAngle={2}>
+                        {expCats.slice(0, 8).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip {...tip} formatter={(v) => rp(Number(v))} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="overflow-x-auto mt-1">
+                  <table className="w-full text-xs">
+                    <thead><tr className="text-[10px] uppercase text-slate-500 border-b border-white/10"><th className="text-left py-1.5">Kategori</th><th className="text-right">Jumlah</th><th className="text-right">Porsi</th><th className="text-right">Vs bulan lalu</th></tr></thead>
+                    <tbody>
+                      {expCats.map((c, i) => {
+                        const p = prevExp.get(c.name) ?? 0;
+                        const d = p ? ((c.value - p) / p) * 100 : null;
                         return (
-                          <div
-                            key={tx.id}
-                            onClick={() => openEdit(tx)}
-                            className="group p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-white/20 transition-all cursor-pointer flex items-center justify-between gap-3"
-                          >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div
-                                className="w-10 h-10 rounded-2xl flex items-center justify-center text-lg flex-shrink-0 border border-white/10 shadow-inner"
-                                style={{ backgroundColor: parsed.isTransfer ? '#06b6d418' : `${tx.finance_categories?.color || '#3b82f6'}18` }}
-                              >
-                                {parsed.isTransfer ? '🔄' : (tx.finance_categories?.icon || (tx.type === 'income' ? '💰' : '💸'))}
-                              </div>
-
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold text-white truncate group-hover:text-blue-300 transition-colors">
-                                  {parsed.cleanDesc || (parsed.isTransfer ? 'Transfer Antar Bank' : tx.finance_categories?.name || (tx.type === 'income' ? 'Income' : 'Expense'))}
-                                </p>
-                                <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-400 flex-wrap">
-                                  {parsed.isTransfer ? (
-                                    <span className="font-semibold text-cyan-300 bg-cyan-500/15 px-2 py-0.5 rounded-md border border-cyan-500/30">
-                                      {parsed.account} → {parsed.targetAccount || 'Bank Lain'}
-                                    </span>
-                                  ) : (
-                                    <span className="font-semibold text-slate-300">{parsed.account}</span>
-                                  )}
-                                  {!parsed.isTransfer && (
-                                    <>
-                                      <span>•</span>
-                                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                        tx.tag === 'professional' ? 'bg-cyan-500/15 text-cyan-300' : 'bg-slate-500/15 text-slate-300'
-                                      }`}>
-                                        {tx.tag === 'professional' ? 'Pro' : 'Personal'}
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2.5 flex-shrink-0">
-                              <p className={`text-xs sm:text-sm font-extrabold font-mono tracking-tight ${
-                                parsed.isTransfer
-                                  ? (accountFilter !== 'all' && matchAccount(parsed.targetAccount, accountFilter, accounts) ? 'text-emerald-400' : accountFilter !== 'all' && matchAccount(parsed.account, accountFilter, accounts) ? 'text-red-400' : 'text-cyan-400')
-                                  : tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'
-                              }`}>
-                                {parsed.isTransfer
-                                  ? (accountFilter !== 'all' && matchAccount(parsed.targetAccount, accountFilter, accounts) ? '+' : accountFilter !== 'all' && matchAccount(parsed.account, accountFilter, accounts) ? '-' : '🔄 ')
-                                  : (tx.type === 'income' ? '+' : '-')}{formatCurrency(tx.amount)}
-                              </p>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); deleteTx(tx.id); }}
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/15 transition-colors opacity-80 group-hover:opacity-100"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </div>
+                          <tr key={c.name} className="border-b border-white/5 last:border-0">
+                            <td className="py-2 font-bold text-white"><span className="inline-block w-2 h-2 rounded-full mr-2" style={{ background: COLORS[i % COLORS.length] }} />{c.name}</td>
+                            <td className="text-right tabular-nums text-slate-200">{rp(c.value)}</td>
+                            <td className="text-right tabular-nums text-slate-300">{((c.value / expense) * 100).toFixed(0)}%</td>
+                            <td className={`text-right tabular-nums ${d == null ? 'text-slate-500' : d > 20 ? 'text-red-400' : d < -10 ? 'text-emerald-400' : 'text-slate-300'}`}>{d == null ? 'baru' : `${d >= 0 ? '+' : ''}${d.toFixed(0)}%`}</td>
+                          </tr>
                         );
                       })}
-                    </div>
-                  )}
+                    </tbody>
+                  </table>
                 </div>
-              );
-            });
-          })()}
-        </div>
+              </>
+            )}
+          </Card>
+
+          {/* Income statement */}
+          <Card title="Laporan laba rugi pribadi" hint="Seperti rapor keuangan: pemasukan dikurangi pengeluaran = sisa uangmu bulan ini.">
+            <table className="w-full text-xs">
+              <tbody>
+                <tr><td colSpan={2} className="pt-1 pb-1 text-[10px] uppercase tracking-wider text-emerald-300 font-bold">Pemasukan</td></tr>
+                {incCats.map((c) => <tr key={c.name}><td className="py-1 pl-3 text-slate-300">{c.name}</td><td className="text-right tabular-nums text-slate-100">{rp(c.value)}</td></tr>)}
+                <tr className="border-t border-white/10"><td className="py-1.5 font-bold text-white">Total pemasukan</td><td className="text-right font-bold tabular-nums text-emerald-300">{rp(income)}</td></tr>
+                <tr><td colSpan={2} className="pt-3 pb-1 text-[10px] uppercase tracking-wider text-red-300 font-bold">Pengeluaran</td></tr>
+                {expCats.map((c) => <tr key={c.name}><td className="py-1 pl-3 text-slate-300">{c.name}</td><td className="text-right tabular-nums text-slate-100">{rp(c.value)}</td></tr>)}
+                <tr className="border-t border-white/10"><td className="py-1.5 font-bold text-white">Total pengeluaran</td><td className="text-right font-bold tabular-nums text-red-300">{rp(expense)}</td></tr>
+                <tr className="border-t-2 border-white/20"><td className="py-2 font-extrabold text-white">Sisa uang bulan ini</td><td className={`text-right font-extrabold tabular-nums ${net >= 0 ? 'text-cyan-200' : 'text-red-300'}`}>{rp(net)}</td></tr>
+                {profExp > 0 && <tr><td className="py-1 text-[11px] text-slate-400">Di antaranya pengeluaran bisnis</td><td className="text-right text-[11px] tabular-nums text-slate-400">{rp(profExp)}</td></tr>}
+              </tbody>
+            </table>
+          </Card>
+
+          {/* Balances */}
+          <Card title="Posisi uang di rekening" hint="Saldo terakhir yang tertulis di buku bank yang kamu upload.">
+            {balances.length === 0 ? <p className="text-xs text-slate-500">Upload buku bank agar saldo tiap rekening muncul di sini.</p> : (
+              <table className="w-full text-xs">
+                <tbody>
+                  {balances.map((b) => (
+                    <tr key={b.account} className="border-b border-white/5">
+                      <td className="py-2 font-bold text-white">{b.account}<span className="block text-[10px] font-normal text-slate-500">per {b.date}</span></td>
+                      <td className="text-right tabular-nums text-slate-100">{rp(b.balance)}</td>
+                    </tr>
+                  ))}
+                  <tr><td className="py-2 font-extrabold text-white">Total</td><td className="text-right font-extrabold tabular-nums text-cyan-200">{rp(totalCash)}</td></tr>
+                </tbody>
+              </table>
+            )}
+          </Card>
+        </>
       )}
-
-          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
-        </div>
-      )}
-
-      {/* ── ADD / EDIT TRANSACTION MODAL ────────────────────────────────────── */}
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title={editingTx ? 'Edit Transaction' : 'New Transaction'}
-      >
-        <div className="space-y-4">
-          {/* Smart Receipt Photo Scanner Bar */}
-          <div className="p-3 rounded-2xl bg-gradient-to-r from-blue-900/30 to-cyan-900/30 border border-blue-400/30 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Camera size={18} className="text-blue-400" />
-              <div>
-                <p className="text-xs font-bold text-white">Snap & Auto-Fill Receipt</p>
-                <p className="text-[10px] text-slate-300">Scan photo with OCR Vision AI</p>
-              </div>
-            </div>
-            <div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleScanReceipt}
-                className="hidden"
-              />
-              <button
-                type="button"
-                disabled={scanningReceipt}
-                onClick={() => fileInputRef.current?.click()}
-                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow flex items-center gap-1.5"
-              >
-                {scanningReceipt ? (
-                  <>
-                    <Sparkles size={13} className="animate-spin" /> Scanning...
-                  </>
-                ) : (
-                  <>
-                    <Camera size={13} /> Upload Receipt
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {ocrStatus && (
-            <div className="p-2.5 rounded-xl bg-blue-500/15 border border-blue-400/30 text-xs font-semibold text-blue-200">
-              {ocrStatus}
-            </div>
-          )}
-
-          {/* Type Toggle comes FIRST */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Type</label>
-            <div className="flex rounded-xl overflow-hidden border border-white/15">
-              <button
-                type="button"
-                onClick={() => handleTypeSwitch('income')}
-                className={`flex-1 py-2.5 text-xs sm:text-sm font-bold transition-all ${
-                  formType === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-900 text-slate-400'
-                }`}
-              >
-                Income
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTypeSwitch('expense')}
-                className={`flex-1 py-2.5 text-xs sm:text-sm font-bold transition-all ${
-                  formType === 'expense' ? 'bg-red-500/20 text-red-400' : 'bg-slate-900 text-slate-400'
-                }`}
-              >
-                Expense
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTypeSwitch('transfer')}
-                className={`flex-1 py-2.5 text-xs sm:text-sm font-bold transition-all ${
-                  formType === 'transfer' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-900 text-slate-400'
-                }`}
-              >
-                🔄 Transfer Bank
-              </button>
-            </div>
-          </div>
-
-          {/* Account / Bank Selector or Transfer Flow Selector */}
-          {formType === 'transfer' ? (
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-950/40 to-slate-900/90 border border-cyan-500/30 space-y-3 shadow-inner">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <span>🔄</span> Transfer Antar Rekening
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const prevSrc = formAccount;
-                    setFormAccount(formTransferTo);
-                    setFormTransferTo(prevSrc);
-                  }}
-                  className="px-2.5 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/40 text-[11px] font-bold flex items-center gap-1 transition-all"
-                  title="Swap Source and Destination"
-                >
-                  <span>↔ Swap</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Source Account */}
-                <div className="p-2.5 rounded-xl bg-slate-900/90 border border-red-500/30 space-y-1.5">
-                  <label className="block text-[10px] font-extrabold text-red-400 uppercase tracking-wide">
-                    Dari Rekening (Source - Keluar)
-                  </label>
-                  <select
-                    value={formAccount}
-                    onChange={(e) => {
-                      const newSrc = e.target.value;
-                      setFormAccount(newSrc);
-                      if (newSrc === formTransferTo) {
-                        const validAccs = accounts.filter(a => a.id !== 'all' && a.id !== newSrc);
-                        if (validAccs[0]) setFormTransferTo(validAccs[0].id);
-                      }
-                    }}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-red-400 font-sans"
-                  >
-                    {accounts.filter(a => a.id !== 'all').map(a => (
-                      <option key={a.id} value={a.id}>{a.icon} {a.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Destination Account */}
-                <div className="p-2.5 rounded-xl bg-slate-900/90 border border-emerald-500/30 space-y-1.5">
-                  <label className="block text-[10px] font-extrabold text-emerald-400 uppercase tracking-wide">
-                    Ke Rekening (Destination - Masuk)
-                  </label>
-                  <select
-                    value={formTransferTo}
-                    onChange={(e) => setFormTransferTo(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-emerald-400 font-sans"
-                  >
-                    {accounts.filter(a => a.id !== 'all' && a.id !== formAccount).map(a => (
-                      <option key={a.id} value={a.id}>{a.icon} {a.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Account / Wallet</label>
-              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-                {accounts.filter(a => a.id !== 'all').map((acc) => (
-                  <button
-                    key={acc.id}
-                    type="button"
-                    onClick={() => setFormAccount(acc.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border whitespace-nowrap ${
-                      formAccount === acc.id
-                        ? 'bg-blue-600/30 text-blue-300 border-blue-400 shadow-sm'
-                        : 'bg-slate-900 text-slate-400 border-white/10 hover:text-white'
-                    }`}
-                  >
-                    {acc.icon} {acc.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <CurrencyInput
-            id="tx-amount"
-            label="Amount (Rp)"
-            placeholder="0"
-            value={formAmount}
-            onChange={(e) => setFormAmount(e.target.value)}
-            onValueChange={(val) => setFormAmount(val)}
-          />
-
-          {formType !== 'transfer' && (
-            <>
-              {/* Tag Toggle */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Tag</label>
-                <div className="flex rounded-xl overflow-hidden border border-white/15">
-                  <button
-                    type="button"
-                    onClick={() => setFormTag('personal')}
-                    className={`flex-1 py-2.5 text-sm font-bold transition-all ${
-                      formTag === 'personal' ? 'bg-blue-600/20 text-blue-400' : 'bg-slate-900 text-slate-400'
-                    }`}
-                  >
-                    Personal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormTag('professional')}
-                    className={`flex-1 py-2.5 text-sm font-bold transition-all ${
-                      formTag === 'professional' ? 'bg-blue-600/20 text-blue-400' : 'bg-slate-900 text-slate-400'
-                    }`}
-                  >
-                    Professional
-                  </button>
-                </div>
-              </div>
-
-              {/* Quick Category Grid */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Quick Category</label>
-                <div className={`grid gap-1.5 ${formType === 'income' ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 sm:grid-cols-4'}`}>
-                  {(formType === 'income'
-                    ? ['Salary', 'Project', 'Transfer from other', 'Others']
-                    : ['Makan', 'Transport', 'Entertainment', 'Work', 'Hobby', 'Personal', 'Other']
-                  )
-                    .map(name => filteredCategories.find(c => c.name.toLowerCase() === name.toLowerCase()))
-                    .filter(Boolean)
-                    .map((c) => {
-                      const cat = c!;
-                      const isSelected = formCategoryId === cat.id;
-                      return (
-                        <button
-                          key={cat.id}
-                          type="button"
-                          onClick={() => {
-                            setFormCategoryId(cat.id);
-                            if (cat.tag) setFormTag(cat.tag);
-                          }}
-                          className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border ${
-                            isSelected
-                              ? 'bg-blue-600/30 border-blue-400 text-white shadow-md scale-[1.02]'
-                              : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08]'
-                          }`}
-                        >
-                          <span className="text-base leading-none">{cat.icon || '🏷️'}</span>
-                          <span className="text-[11px] font-bold truncate w-full text-center leading-tight">{cat.name}</span>
-                        </button>
-                      );
-                    })}
-                </div>
-              </div>
-
-              <Select
-                id="tx-category"
-                label="Category"
-                options={[
-                  { value: '', label: 'Select category...' },
-                  ...filteredCategories.map(c => ({ value: c.id, label: `${c.icon ? c.icon + ' ' : ''}${c.name}` })),
-                ]}
-                value={formCategoryId}
-                onChange={(e) => {
-                  const cid = e.target.value;
-                  setFormCategoryId(cid);
-                  const cat = categories.find(c => c.id === cid);
-                  if (cat?.tag) setFormTag(cat.tag);
-                }}
-              />
-            </>
-          )}
-
-          <Input
-            id="tx-desc"
-            label="Description"
-            placeholder="What was this for?"
-            value={formDescription}
-            onChange={(e) => setFormDescription(e.target.value)}
-            icon={<Edit3 size={16} />}
-          />
-
-          <Input
-            id="tx-date"
-            type="date"
-            label="Date"
-            value={formDate}
-            onChange={(e) => setFormDate(e.target.value)}
-            icon={<Calendar size={16} />}
-          />
-
-          <div className="flex gap-3 pt-2">
-            <Button variant="secondary" fullWidth onClick={() => setShowModal(false)}>
-              Cancel
-            </Button>
-            <Button fullWidth isLoading={saving} onClick={handleSave} disabled={!formAmount || parseFloat(formAmount) <= 0}>
-              {editingTx ? 'Update Transaction' : 'Save Transaction'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* ── E-STATEMENT SMART IMPORT MODAL ──────────────────────────────────── */}
-      <Modal
-        isOpen={showStatementModal}
-        onClose={() => setShowStatementModal(false)}
-        title="Import Monthly E-Statement"
-      >
-        <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10">
-            <p className="text-xs font-semibold text-slate-300">Select Target Account</p>
-            <div className="flex gap-1.5 overflow-x-auto pt-2 pb-1 no-scrollbar">
-              {accounts.filter(a => a.id !== 'all').map((acc) => (
-                <button
-                  key={`st-${acc.id}`}
-                  type="button"
-                  onClick={() => setStatementAccount(acc.id)}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all border whitespace-nowrap ${
-                    statementAccount === acc.id
-                      ? 'bg-emerald-500/30 text-emerald-300 border-emerald-400'
-                      : 'bg-slate-900 text-slate-400 border-white/10'
-                  }`}
-                >
-                  {acc.icon} {acc.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative p-4 rounded-2xl border border-dashed border-white/20 bg-white/[0.02] text-center space-y-2 hover:bg-white/[0.04] transition-colors cursor-pointer">
-            <input 
-              type="file" 
-              accept=".csv"
-              onChange={handleCsvUpload}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
-            <UploadCloud size={28} className="text-emerald-400 mx-auto" />
-            <p className="text-sm font-bold text-white">Upload Bank CSV Statement</p>
-            <p className="text-xs text-slate-400">Supported: blu by BCA CSV</p>
-          </div>
-
-          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-            {statementRows.length === 0 ? (
-              <p className="text-xs text-center text-slate-500 py-4">No CSV uploaded yet.</p>
-            ) : statementRows.map((row, idx) => (
-              <div key={idx} className="p-2.5 rounded-xl bg-slate-900/80 border border-white/10 flex items-center justify-between text-xs">
-                <div className="min-w-0 pr-2">
-                  <p className="font-bold text-white truncate">{row.desc}</p>
-                  <p className="text-[10px] text-slate-400">
-                    {row.date} • Tag: {row.tag} • Cat: {row.catName}
-                  </p>
-                </div>
-                <span className={`font-mono font-bold ${row.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {row.type === 'income' ? '+' : '-'}{formatCurrency(row.amount)}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" onClick={() => setShowStatementModal(false)}>
-              Cancel
-            </Button>
-            <Button
-              isLoading={importingStatement}
-              onClick={handleImportStatement}
-              disabled={statementRows.length === 0}
-            >
-              Import {statementRows.length} Transactions to {statementAccount}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* ── MANAGE ACCOUNTS / WALLETS MODAL ────────────────────────────────────── */}
-      <Modal
-        isOpen={showAccountModal}
-        onClose={() => setShowAccountModal(false)}
-        title="Manage Bank Accounts & Wallets"
-      >
-        <div className="space-y-4">
-          <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
-            <p className="text-xs font-bold text-white uppercase tracking-wider">Add New Account / Wallet</p>
-            
-            {/* Quick Icon Selector Presets */}
-            <div>
-              <p className="text-[11px] font-semibold text-slate-400 mb-1.5">Pick Icon & Category:</p>
-              <div className="grid grid-cols-4 gap-1.5">
-                {ACCOUNT_ICON_PRESETS.map((preset) => (
-                  <button
-                    key={preset.icon + preset.label}
-                    type="button"
-                    onClick={() => {
-                      setNewAccountIcon(preset.icon);
-                      if (!newAccountName.trim()) setNewAccountName(preset.defaultName);
-                    }}
-                    className={`p-2 rounded-xl border text-left transition-all flex flex-col gap-0.5 ${
-                      newAccountIcon === preset.icon
-                        ? 'bg-cyan-500/20 border-cyan-400 text-white shadow-md'
-                        : 'bg-slate-900/80 border-white/10 text-slate-300 hover:border-white/20'
-                    }`}
-                  >
-                    <span className="text-base">{preset.icon}</span>
-                    <span className="text-[10px] font-bold truncate leading-tight">{preset.label.split(' ')[0]}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-1">
-              <input
-                type="text"
-                placeholder="Icon"
-                value={newAccountIcon}
-                onChange={(e) => setNewAccountIcon(e.target.value)}
-                className="w-14 px-2 py-2 rounded-xl bg-slate-900 border border-white/15 text-center text-sm font-bold text-white focus:outline-none focus:border-cyan-400"
-              />
-              <input
-                type="text"
-                placeholder="Account Name (e.g. Blu by BCA, Bank Jago, Gopay...)"
-                value={newAccountName}
-                onChange={(e) => setNewAccountName(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400"
-              />
-              <Button size="sm" onClick={handleAddAccount} disabled={!newAccountName.trim()}>
-                Add
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Existing Accounts</p>
-            {accounts.filter(a => a.id !== 'all').map((acc) => (
-              <div key={acc.id} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 font-bold text-white">
-                  <span>{acc.icon}</span>
-                  <span>{acc.label}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteAccount(acc.id)}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/15 transition-colors"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-end pt-2">
-            <Button variant="secondary" onClick={() => setShowAccountModal(false)}>
-              Close
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
