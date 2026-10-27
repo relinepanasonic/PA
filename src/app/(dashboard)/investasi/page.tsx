@@ -24,6 +24,7 @@ import CurrencyInput from '@/components/ui/CurrencyInput';
 import Badge from '@/components/ui/Badge';
 import { PortfolioStock } from '@/lib/types/database';
 import { LQ45StockItem } from '@/app/api/stocks/lq45/route';
+import TradeHistory from '@/components/investasi/TradeHistory';
 import TheoryView, { THEORIES, type TheoryId } from '@/components/investasi/TheoryView';
 
 interface HistoryPoint {
@@ -922,6 +923,7 @@ function PortfolioView() {
           </div>
         </form>
       </Modal>
+      <TradeHistory />
     </div>
   );
 }

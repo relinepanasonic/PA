@@ -193,6 +193,70 @@ export const TOOL_DEFS: Record<string, ToolDef> = {
     description: "The user's Blu accounts and saving pockets (Tabungan): ending balance per pocket for the latest month and the month before, with total. Use it for questions about savings.",
     input_schema: noArgs,
   },
+  buy_stock: {
+    name: 'buy_stock',
+    description: 'Record a stock BUY in the Investasi portfolio. 1 lot = 100 shares. price is the price per share in rupiah.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        ticker: { type: 'string', description: 'IDX code, e.g. BBCA' },
+        lots: { type: 'number' },
+        price: { type: 'number', description: 'rupiah per share' },
+        date: { type: 'string', description: 'YYYY-MM-DD, optional (default today)' },
+        fee: { type: 'number', description: 'broker fee in rupiah, optional' },
+      },
+      required: ['ticker', 'lots', 'price'],
+    },
+  },
+  sell_stock: {
+    name: 'sell_stock',
+    description: 'Record a stock SELL. It reduces the holding (oldest lots first) and reports the realized profit or loss. 1 lot = 100 shares.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        ticker: { type: 'string' },
+        lots: { type: 'number' },
+        price: { type: 'number', description: 'rupiah per share' },
+        date: { type: 'string', description: 'YYYY-MM-DD, optional' },
+        fee: { type: 'number', description: 'broker fee and tax in rupiah, optional' },
+      },
+      required: ['ticker', 'lots', 'price'],
+    },
+  },
+  list_trades: {
+    name: 'list_trades',
+    description: 'Recent stock buys and sells with the total realized profit or loss.',
+    input_schema: noArgs,
+  },
+  add_transfer: {
+    name: 'add_transfer',
+    description: 'Record money moved between the user\'s OWN accounts (for example BCA Utama to Blu by BCA). It is not income or spending.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        from: { type: 'string', description: 'account the money left' },
+        to: { type: 'string', description: 'account the money arrived in' },
+        amount: { type: 'number' },
+        description: { type: 'string', description: 'optional note' },
+        date: { type: 'string', description: 'YYYY-MM-DD, optional' },
+      },
+      required: ['from', 'to', 'amount'],
+    },
+  },
+  set_debt: {
+    name: 'set_debt',
+    description: 'Set what the user still owes on a credit card, PayLater (e.g. Kredivo) or loan. Creates it if it does not exist yet. Shown on the Finance dashboard as credit.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        balance: { type: 'number', description: 'rupiah still owed' },
+        kind: { type: 'string', enum: ['credit_card', 'paylater', 'loan'] },
+        credit_limit: { type: 'number' },
+      },
+      required: ['name', 'balance'],
+    },
+  },
   finance_summary: { name: 'finance_summary', description: 'Total income and expenses between two dates (inclusive).', input_schema: range },
 };
 
@@ -365,6 +429,71 @@ export async function runTool(name: string, input: any, supabase: Supa, userId: 
         return { month: per.slice(0, 7), total: rows.reduce((t: number, r: any) => t + r.ending, 0), rows };
       };
       return { latest: view(periods[0]), previous: periods[1] ? view(periods[1]) : null, note: 'moneyIn/moneyOut of a pocket are mostly moves to and from bluAccount, not real income or spending.' };
+    }
+    case 'buy_stock': {
+      const ticker = toJK(String(input.ticker));
+      const lots = Math.floor(Number(input.lots)), price = Number(input.price);
+      if (!(lots > 0) || !(price > 0)) return { error: 'lots and price must be positive numbers' };
+      const { error } = await supabase.from('portfolio_stocks').insert({ user_id: userId, ticker, buy_price: price, lots });
+      if (error) return { error: error.message };
+      const tr = await supabase.from('stock_trades').insert({
+        user_id: userId, trade_date: /^\d{4}-\d{2}-\d{2}$/.test(String(input.date)) ? input.date : wibDate(), ticker: ticker.replace('.JK', ''),
+        side: 'buy', price, lots, fee: Number(input.fee) || 0,
+      });
+      return { ok: true, bought: `${lots} lot ${ticker.replace('.JK', '')} at ${price}`, totalRp: lots * 100 * price, ...(tr.error ? { note: 'Added to the portfolio, but the trade history is not saved yet: run 10_stock_trades.sql in Supabase.' } : {}) };
+    }
+    case 'sell_stock': {
+      const ticker = toJK(String(input.ticker));
+      const lots = Math.floor(Number(input.lots)), price = Number(input.price), fee = Number(input.fee) || 0;
+      if (!(lots > 0) || !(price > 0)) return { error: 'lots and price must be positive numbers' };
+      const { data: rows } = await supabase.from('portfolio_stocks').select('id,lots,buy_price').eq('user_id', userId).eq('ticker', ticker).order('created_at');
+      const held = (rows ?? []).reduce((s: number, r: any) => s + Number(r.lots), 0);
+      if (held < lots) return { error: `Nico only holds ${held} lot of ${ticker.replace('.JK', '')}` };
+      let left = lots, realized = 0;
+      for (const r of (rows ?? []) as any[]) {
+        if (left <= 0) break;
+        const take = Math.min(Number(r.lots), left);
+        realized += (price - Number(r.buy_price)) * take * 100;
+        if (take === Number(r.lots)) await supabase.from('portfolio_stocks').delete().eq('id', r.id);
+        else await supabase.from('portfolio_stocks').update({ lots: Number(r.lots) - take }).eq('id', r.id);
+        left -= take;
+      }
+      realized -= fee;
+      const tr = await supabase.from('stock_trades').insert({
+        user_id: userId, trade_date: /^\d{4}-\d{2}-\d{2}$/.test(String(input.date)) ? input.date : wibDate(), ticker: ticker.replace('.JK', ''),
+        side: 'sell', price, lots, fee, realized_pl: Math.round(realized),
+      });
+      return { ok: true, sold: `${lots} lot ${ticker.replace('.JK', '')} at ${price}`, proceedsRp: lots * 100 * price, realizedProfitOrLossRp: Math.round(realized), remainingLots: held - lots, ...(tr.error ? { note: 'Portfolio updated, but the trade history is not saved yet: run 10_stock_trades.sql in Supabase.' } : {}) };
+    }
+    case 'list_trades': {
+      const { data, error } = await supabase.from('stock_trades').select('trade_date,ticker,side,price,lots,fee,realized_pl').eq('user_id', userId).order('trade_date', { ascending: false }).order('created_at', { ascending: false }).limit(20);
+      if (error) return { error: 'Trade history is not set up yet: run 10_stock_trades.sql in Supabase.' };
+      return { trades: data ?? [], totalRealizedRp: (data ?? []).reduce((s: number, t: any) => s + Number(t.realized_pl ?? 0), 0) };
+    }
+    case 'add_transfer': {
+      const amount = Number(input.amount);
+      if (!Number.isFinite(amount) || amount <= 0) return { error: 'amount must be a positive number' };
+      const { data: cats } = await supabase.from('finance_categories').select('id,name,type').eq('user_id', userId);
+      const cat = (cats ?? []).find((c: any) => ['transfer banks', 'transfer from other'].includes(String(c.name).toLowerCase()));
+      const note = String(input.description || 'Transfer antar rekening').replace(/___TRANSFER___/g, '').slice(0, 120);
+      const { data, error } = await supabase.from('finance_transactions').insert({
+        user_id: userId, type: 'expense', amount, tag: 'personal', category_id: cat?.id ?? null,
+        description: `[${String(input.from).slice(0, 40)} → ${String(input.to).slice(0, 40)}] ${note}___TRANSFER___`,
+        transaction_date: /^\d{4}-\d{2}-\d{2}$/.test(String(input.date)) ? input.date : wibDate(),
+      }).select('id,amount,transaction_date').single();
+      return error ? { error: error.message } : { saved: data };
+    }
+    case 'set_debt': {
+      const name = String(input.name).trim().slice(0, 60);
+      const balance = Math.max(0, Number(input.balance) || 0);
+      const { data: existing } = await supabase.from('finance_debts').select('id').eq('user_id', userId).ilike('name', name).limit(1);
+      if (existing?.length) {
+        const { error } = await supabase.from('finance_debts').update({ balance, ...(input.credit_limit ? { credit_limit: Number(input.credit_limit) } : {}), updated_at: new Date().toISOString() }).eq('id', existing[0].id);
+        return error ? { error: error.message } : { ok: true, updated: name, balance };
+      }
+      const kind = ['credit_card', 'paylater', 'loan'].includes(input.kind) ? input.kind : (/kredivo|akulaku|paylater|atome/i.test(name) ? 'paylater' : /kartu|card|cc/i.test(name) ? 'credit_card' : 'loan');
+      const { error } = await supabase.from('finance_debts').insert({ user_id: userId, name, kind, balance, credit_limit: input.credit_limit ? Number(input.credit_limit) : null });
+      return error ? { error: error.message + ' (run 09_debts.sql in Supabase if you have not)' } : { ok: true, created: name, kind, balance };
     }
     case 'finance_summary': {
       const { data } = await supabase.from('finance_transactions').select('amount,type')
