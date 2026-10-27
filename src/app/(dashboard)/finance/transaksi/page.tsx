@@ -5,6 +5,7 @@ import type { FinanceTransaction, FinanceCategory, FinanceType, FinanceTag } fro
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line } from 'recharts';
 import { BookOpen, Plus, Wallet, TrendingUp, TrendingDown, DollarSign, Tag, Trash2, Edit3, Calendar, Camera, UploadCloud, CheckCircle2, FileSpreadsheet, Sparkles, Building2, Settings } from 'lucide-react';
 import Link from 'next/link';
+import { fetchAll } from '@/lib/supabase/fetchAll';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import CurrencyInput from '@/components/ui/CurrencyInput';
@@ -291,10 +292,12 @@ export default function FinancePage() {
   const fetchSummary = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data: allTx } = await supabase
+    const allTx = await fetchAll<any>((a, b) => supabase
       .from('finance_transactions')
       .select('amount, type, description, transaction_date, finance_categories(name, color, icon)')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .order('id')
+      .range(a, b));
 
     setAllSummaryTx(allTx || []);
   }, []);

@@ -125,7 +125,7 @@ export default function AiOfficePage() {
   const busy = goals.some((g) => OPEN.includes(g.status));
 
   return (
-    <div className="p-4 pb-28 md:pb-8 max-w-3xl mx-auto animate-fade-in">
+    <div className="p-4 pb-28 md:pb-8 animate-fade-in">
       <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-cyan-300 mb-3 hover:underline">
         <ArrowLeft size={14} /> Jax
       </Link>

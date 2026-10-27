@@ -46,10 +46,10 @@ export const TEAM_PROFILES: TeamProfile[] = [
     name: 'Menteri Keuangan',
     mission: 'Your finance minister: reviews income, spending and budget.',
     enabled: true,
-    tools: ['finance_summary'],
+    tools: ['finance_summary', 'savings_summary'],
     roster: [
       { name: 'Kemal', kind: 'planner', title: 'Menteri Keuangan (lead)', job_desk: 'You are the finance minister. You split the brief into at most 3 subtasks, then check the numbers and write the final report with clear advice.' },
-      { name: 'Dewi', kind: 'worker', title: 'AI Finance analyst', job_desk: 'You are Dewi, the finance analyst. Use finance_summary for each period you need (this month, last month) and compare them. Quote real numbers in rupiah only from the tool results; never estimate.' },
+      { name: 'Dewi', kind: 'worker', title: 'AI Finance analyst', job_desk: 'You are Dewi, the finance analyst. Use finance_summary for each period you need (this month, last month) and compare them, and savings_summary for the savings pockets. Quote real numbers in rupiah only from the tool results; never estimate.' },
     ],
     plannerGuide: 'Typical briefs: how is my money this month, where am I overspending, how much can I save. Dewi does all number work.',
   },

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, CheckCircle2, EyeOff, Loader2, Plus, RotateCcw, UploadCloud } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { fetchAll } from '@/lib/supabase/fetchAll';
+import { classifyTransfer, guessCategory, transferDescription, TRANSFER_MARK } from '@/lib/transfers';
 import type { ParsedLine } from '@/app/api/buku-bank/parse/route';
 
 interface BankLine {
@@ -45,6 +46,41 @@ async function imageToJpeg(file: File): Promise<string> {
   c.height = Math.round(bmp.height * scale);
   c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height);
   return c.toDataURL('image/jpeg', 0.88).split(',')[1];
+}
+
+// Blu / bluAccount CSV: Tanggal, Keterangan, Nominal (signed), Tipe, Sisa Saldo. Parsed exactly, no AI needed.
+function splitCsvLine(line: string) {
+  const out: string[] = [];
+  let cur = '', q = false;
+  for (const ch of line) {
+    if (ch === '"') q = !q;
+    else if (ch === ',' && !q) { out.push(cur.trim()); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur.trim());
+  return out;
+}
+
+function parseBluCsv(text: string): { lines: ParsedLine[]; account: string } | null {
+  const rows = text.replace(/^\uFEFF/, '').split(/\r?\n/);
+  const head = rows.findIndex((r) => r.startsWith('Tanggal / Date'));
+  if (head < 0) return null;
+  const isBlu = /blu/i.test(rows.slice(0, head).join(' '));
+  const lines: ParsedLine[] = [];
+  for (const r of rows.slice(head + 1)) {
+    const p = splitCsvLine(r);
+    const m = p[0]?.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!m) continue;
+    const signed = parseFloat(p[2]);
+    if (!Number.isFinite(signed) || signed === 0) continue;
+    const direction: 'in' | 'out' = signed < 0 || /pengeluaran/i.test(p[3] || '') ? 'out' : 'in';
+    const bal = parseFloat(p[4]);
+    lines.push({
+      date: `${m[3]}-${m[2]}-${m[1]}`, description: (p[1] || '').slice(0, 200), amount: Math.abs(signed), direction,
+      balance: Number.isFinite(bal) ? bal : null, category: guessCategory(p[1] || '', direction),
+    });
+  }
+  return lines.length ? { lines, account: isBlu ? 'Blu by BCA' : '' } : null;
 }
 
 export default function BukuBankPage() {
@@ -116,23 +152,28 @@ export default function BukuBankPage() {
   }, [syncFromTransaksi, load]);
 
   // ── upload ────────────────────────────────────────────────────────────
-  const parseFile = async (file: File): Promise<ParsedLine[]> => {
+  const parseFile = async (file: File): Promise<{ lines: ParsedLine[]; account?: string }> => {
     const post = async (body: object) => {
       const res = await fetch('/api/buku-bank/parse', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || `Could not read ${file.name}`);
       return json.lines as ParsedLine[];
     };
+    const post2 = async (body: object) => ({ lines: await post(body) });
     const yearHint = String(new Date().getFullYear());
     const name = file.name.toLowerCase();
 
     if (file.type === 'application/pdf' || name.endsWith('.pdf')) {
       if (file.size > 4_200_000) throw new Error(`${file.name} is over 4 MB. Split it into months and upload again.`);
-      return post({ kind: 'pdf', data: await fileToBase64(file), yearHint });
+      return post2({ kind: 'pdf', data: await fileToBase64(file), yearHint });
     }
-    if (file.type.startsWith('image/')) return post({ kind: 'image', data: await imageToJpeg(file), mediaType: 'image/jpeg', yearHint });
+    if (file.type.startsWith('image/')) return post2({ kind: 'image', data: await imageToJpeg(file), mediaType: 'image/jpeg', yearHint });
 
-    const rows = (await file.text()).split(/\r?\n/).filter((l) => l.trim());
+    const rawText = await file.text();
+    const blu = parseBluCsv(rawText);
+    if (blu) return { lines: blu.lines, account: blu.account || undefined };
+
+    const rows = rawText.split(/\r?\n/).filter((l) => l.trim());
     const header = rows.slice(0, 4).join('\n');
     const out: ParsedLine[] = [];
     for (let i = 0; i < rows.length; i += 120) {
@@ -140,7 +181,7 @@ export default function BukuBankPage() {
       const chunk = rows.slice(i, i + 120).join('\n');
       out.push(...(await post({ kind: 'text', data: i === 0 ? chunk : `${header}\n...\n${chunk}`, yearHint })));
     }
-    return out;
+    return { lines: out };
   };
 
   const autoMatch = async (fresh: BankLine[]) => {
@@ -192,6 +233,25 @@ export default function BukuBankPage() {
     const { data: cats } = await supabase.from('finance_categories').select('id,name,type,tag');
     const catList = (cats ?? []) as any[];
 
+    // Blu pocket moves and transfers to your own other bank are NOT income or spending: store them as transfers.
+    const transferCat0 = catList.find((c) => c.name.toLowerCase() === 'transfer from other');
+    const selfLines = todo.map((l) => ({ l, info: classifyTransfer(l.description) })).filter((x): x is { l: BankLine; info: NonNullable<ReturnType<typeof classifyTransfer>> } => !!x.info);
+    let selfDone = 0;
+    for (let k = 0; k < selfLines.length; k += 100) {
+      const chunk = selfLines.slice(k, k + 100);
+      const made = await supabase.from('finance_transactions').insert(chunk.map(({ l, info }) => ({
+        user_id: user.id, type: l.direction === 'in' ? 'income' : 'expense', amount: l.amount, tag: 'personal', category_id: transferCat0?.id ?? null,
+        description: transferDescription(l.account, info, l.direction, l.description), transaction_date: l.tx_date,
+      }))).select('id');
+      if (!made.data || made.data.length !== chunk.length) continue;
+      for (let j = 0; j < chunk.length; j += 20) {
+        await Promise.all(chunk.slice(j, j + 20).map(({ l }, n) => supabase.from('bank_statement_lines').update({ status: 'matched', tx_id: made.data![j + n].id }).eq('id', l.id)));
+      }
+      selfDone += made.data.length;
+    }
+    const selfIds = new Set(selfLines.map((x) => x.l.id));
+    todo = todo.filter((l) => !selfIds.has(l.id));
+
     const HINT = /trsf|transfer|\btf\b|pindah|bi-?fast|top ?-?up|topup|ovo|gopay|dana|linkaja|shopeepay/i;
     const transferCat = catList.find((c) => c.name.toLowerCase() === 'transfer from other');
     const usedIn = new Set<string>();
@@ -231,7 +291,40 @@ export default function BukuBankPage() {
       }
       added += made.length;
     }
-    return { added, transfers };
+    return { added, transfers: transfers + selfDone };
+  };
+
+  // One-time tidy: old transactions (e.g. the Jan-Sep CSV import) that are really pocket moves or transfers to your own bank.
+  const [tidying, setTidying] = useState(false);
+  const tidyOldTransfers = async () => {
+    setTidying(true);
+    setMessage(null);
+    try {
+      const all = await fetchAll<any>((a, b) => supabase.from('finance_transactions').select('id,type,amount,description,transaction_date').order('id').range(a, b));
+      const found = all.map((t) => {
+        const d = String(t.description || '');
+        if (d.includes(TRANSFER_MARK)) return null;
+        const m = d.match(/^\[([^\]→]+?)\]\s*(.*)$/);
+        if (!m) return null;
+        const info = classifyTransfer(m[2]);
+        return info ? { t, account: m[1].trim(), rest: m[2], info } : null;
+      }).filter((x): x is { t: any; account: string; rest: string; info: NonNullable<ReturnType<typeof classifyTransfer>> } => !!x);
+      if (!found.length) { setMessage({ ok: true, text: 'Nothing to tidy: no old transaction looks like a transfer between your own accounts.' }); setTidying(false); return; }
+      const total = found.reduce((s, x) => s + Number(x.t.amount), 0);
+      if (!confirm(`${found.length} older transactions (total ${rp(total)}) are moves between your own Blu pockets or your own banks. Mark them as transfers so they stop counting as income and spending?`)) { setTidying(false); return; }
+      const { data: cats } = await supabase.from('finance_categories').select('id,name');
+      const tcat = (cats ?? []).find((c: any) => c.name.toLowerCase() === 'transfer from other');
+      for (let i = 0; i < found.length; i += 20) {
+        await Promise.all(found.slice(i, i + 20).map(({ t, account: acc, rest, info }) =>
+          supabase.from('finance_transactions').update({
+            description: transferDescription(acc, info, t.type === 'income' ? 'in' : 'out', rest), category_id: tcat?.id ?? null,
+          }).eq('id', t.id)));
+      }
+      setMessage({ ok: true, text: `${found.length} transactions are now marked as transfers (${rp(total)}). Your Dashboard no longer counts them as income or spending.` });
+    } catch (e: any) {
+      setMessage({ ok: false, text: e?.message || 'Could not tidy.' });
+    }
+    setTidying(false);
   };
 
   const handleFiles = async (files: FileList | null) => {
@@ -243,14 +336,16 @@ export default function BukuBankPage() {
       if (!user) throw new Error('Please log in again.');
       for (const file of Array.from(files)) {
         setProgress(`Reading ${file.name}...`);
-        const parsed = await parseFile(file);
+        const res = await parseFile(file);
+        const parsed = res.lines;
+        const acc = res.account ?? account;
         const seen = new Map<string, number>();
         const rows = parsed.map((p) => {
-          const base = `${account}|${p.date}|${p.direction}|${Math.round(p.amount)}|${p.balance != null ? Math.round(p.balance) : norm(p.description).slice(0, 60)}`;
+          const base = `${acc}|${p.date}|${p.direction}|${Math.round(p.amount)}|${p.balance != null ? Math.round(p.balance) : norm(p.description).slice(0, 60)}`;
           const n = (seen.get(base) ?? 0) + 1;
           seen.set(base, n);
           return {
-            user_id: user.id, account, tx_date: p.date, description: p.description, amount: p.amount, direction: p.direction,
+            user_id: user.id, account: acc, tx_date: p.date, description: p.description, amount: p.amount, direction: p.direction,
             balance: p.balance, category: p.category, source_file: file.name, fingerprint: `${base}#${n}`,
           };
         });
@@ -326,15 +421,16 @@ export default function BukuBankPage() {
   };
 
   return (
-    <div className="p-4 pb-28 md:pb-8 max-w-3xl mx-auto animate-fade-in">
+    <div className="pb-28 md:pb-8 animate-fade-in">
       <div className="flex items-center gap-2.5 mb-1">
         <div className="w-9 h-9 rounded-2xl bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-emerald-300"><BookOpen size={18} /></div>
         <h1 className="text-lg font-extrabold text-white tracking-tight">Buku Bank</h1>
       </div>
       <p className="text-xs text-slate-400 mb-4">Upload your bank statements once (PDF, CSV or a picture). Jax reads every line and puts it into Transaksi automatically, so nothing is entered twice.</p>
 
+      <div className="grid md:grid-cols-2 gap-4 mb-4">
       {/* Upload */}
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 mb-4">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3.5">
         <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Statement is from account</label>
         <select
           value={account}
@@ -354,10 +450,12 @@ export default function BukuBankPage() {
           {progress ?? 'Upload statement files'}
         </button>
         <p className="text-[10px] text-slate-500 mt-2">PDF up to 4 MB each (split big ones by month), CSV, or screenshots. Pick several files at once. Uploading the same statement twice is safe.</p>
+        <button type="button" onClick={tidyOldTransfers} disabled={tidying} className="mt-2 w-full h-9 rounded-xl border border-white/10 bg-white/5 text-slate-300 text-[11px] font-bold uppercase tracking-widest disabled:opacity-60">{tidying ? 'Checking...' : 'Tidy old transfers (pockets, own banks)'}</button>
         {message && <p className={`mt-2 text-xs ${message.ok ? 'text-emerald-300' : 'text-red-400'}`}>{message.text}</p>}
       </div>
 
       {/* Filters + totals */}
+      <div>
       <div className="flex gap-2 mb-3">
         <select value={month} onChange={(e) => setMonth(e.target.value)} className="flex-1 h-9 rounded-xl bg-white/5 border border-white/10 px-2 text-xs text-white outline-none">
           <option value="all" className="bg-slate-900">All months</option>
@@ -372,6 +470,8 @@ export default function BukuBankPage() {
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5"><p className="text-[9px] uppercase text-slate-500">Money in</p><p className="text-xs font-bold text-emerald-300">{rp(totalIn)}</p></div>
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5"><p className="text-[9px] uppercase text-slate-500">Money out</p><p className="text-xs font-bold text-red-300">{rp(totalOut)}</p></div>
         <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-2.5"><p className="text-[9px] uppercase text-amber-300/80">Missing spending</p><p className="text-xs font-bold text-amber-200">{rp(missingOut)}</p></div>
+      </div>
+      </div>
       </div>
 
       {/* Tabs */}

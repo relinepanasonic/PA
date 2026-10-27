@@ -188,6 +188,11 @@ export const TOOL_DEFS: Record<string, ToolDef> = {
     description: 'Delete one transaction by id (use to undo a wrong entry the user asked to remove).',
     input_schema: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
   },
+  savings_summary: {
+    name: 'savings_summary',
+    description: "The user's Blu accounts and saving pockets (Tabungan): ending balance per pocket for the latest month and the month before, with total. Use it for questions about savings.",
+    input_schema: noArgs,
+  },
   finance_summary: { name: 'finance_summary', description: 'Total income and expenses between two dates (inclusive).', input_schema: range },
 };
 
@@ -345,6 +350,21 @@ export async function runTool(name: string, input: any, supabase: Supa, userId: 
     case 'delete_transaction': {
       const { error } = await supabase.from('finance_transactions').delete().eq('id', input.id).eq('user_id', userId);
       return error ? { error: error.message } : { ok: true };
+    }
+    case 'savings_summary': {
+      const { data: pk } = await supabase.from('savings_pockets').select('id,name,kind,target_amount').eq('user_id', userId);
+      const { data: sn } = await supabase.from('savings_snapshots').select('pocket_id,period,income,expense,ending').eq('user_id', userId).order('period', { ascending: false }).limit(200);
+      const periods = Array.from(new Set((sn ?? []).map((s: any) => s.period as string))).slice(0, 2);
+      if (!periods.length) return { error: 'No savings report uploaded yet. Ask Nico to upload the Blu portfolio PDF on Finance > Tabungan.' };
+      const name = new Map((pk ?? []).map((p: any) => [p.id, p]));
+      const view = (per: string) => {
+        const rows = (sn ?? []).filter((s: any) => s.period === per).map((s: any) => ({
+          pocket: name.get(s.pocket_id)?.name, kind: name.get(s.pocket_id)?.kind, ending: Number(s.ending),
+          moneyIn: Number(s.income), moneyOut: Number(s.expense), target: name.get(s.pocket_id)?.target_amount ?? null,
+        }));
+        return { month: per.slice(0, 7), total: rows.reduce((t: number, r: any) => t + r.ending, 0), rows };
+      };
+      return { latest: view(periods[0]), previous: periods[1] ? view(periods[1]) : null, note: 'moneyIn/moneyOut of a pocket are mostly moves to and from bluAccount, not real income or spending.' };
     }
     case 'finance_summary': {
       const { data } = await supabase.from('finance_transactions').select('amount,type')

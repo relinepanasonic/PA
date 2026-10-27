@@ -27,7 +27,7 @@ const TOOLS = [
       required: ['team', 'brief'],
     },
   },
-  ...toolsFor(['list_todos', 'add_todo', 'complete_todo', 'list_schedule', 'add_schedule', 'calendar_list', 'finance_summary', 'finance_categories', 'add_transaction', 'list_transactions', 'delete_transaction']),
+  ...toolsFor(['list_todos', 'add_todo', 'complete_todo', 'list_schedule', 'add_schedule', 'calendar_list', 'finance_summary', 'savings_summary', 'finance_categories', 'add_transaction', 'list_transactions', 'delete_transaction']),
 ];
 
 
