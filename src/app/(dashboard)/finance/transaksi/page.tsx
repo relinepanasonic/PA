@@ -514,6 +514,16 @@ export default function FinancePage() {
     fetchSummary();
   };
 
+  // PC only: change Personal/Work or the category right in the list
+  const quickUpdate = async (tx: FinanceTransaction, patch: { tag?: FinanceTag; category_id?: string | null }) => {
+    const cat = patch.category_id !== undefined ? categories.find((c) => c.id === patch.category_id) : undefined;
+    setTransactions((prev) => prev.map((t) => (t.id === tx.id
+      ? { ...t, ...patch, ...(patch.category_id !== undefined ? { finance_categories: cat ?? null } : {}) } as FinanceTransaction
+      : t)));
+    await supabase.from('finance_transactions').update(patch).eq('id', tx.id);
+    fetchSummary();
+  };
+
   const deleteTx = async (id: string) => {
     await supabase.from('finance_transactions').delete().eq('id', id);
     fetchTransactions();
@@ -1143,7 +1153,7 @@ export default function FinancePage() {
                                       <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                                         tx.tag === 'professional' ? 'bg-cyan-500/15 text-cyan-300' : 'bg-slate-500/15 text-slate-300'
                                       }`}>
-                                        {tx.tag === 'professional' ? 'Pro' : 'Personal'}
+                                        {tx.tag === 'professional' ? 'Work' : 'Personal'}
                                       </span>
                                     </>
                                   )}
@@ -1152,6 +1162,29 @@ export default function FinancePage() {
                             </div>
 
                             <div className="flex items-center gap-2.5 flex-shrink-0">
+                              {!parsed.isTransfer && (
+                                <div className="hidden md:flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                  <div className="inline-flex rounded-lg border border-white/10 overflow-hidden text-[10px] font-bold">
+                                    {(['personal', 'professional'] as const).map((tg) => (
+                                      <button
+                                        key={tg}
+                                        onClick={() => tx.tag !== tg && quickUpdate(tx, { tag: tg })}
+                                        className={`px-2.5 py-1 transition-colors ${tx.tag === tg ? (tg === 'professional' ? 'bg-cyan-500/30 text-cyan-200' : 'bg-slate-500/40 text-white') : 'bg-white/[0.03] text-slate-500 hover:text-slate-300'}`}
+                                      >
+                                        {tg === 'professional' ? 'Work' : 'Personal'}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  <select
+                                    value={tx.category_id ?? ''}
+                                    onChange={(e) => quickUpdate(tx, { category_id: e.target.value || null })}
+                                    className="w-36 h-7 rounded-lg bg-white/[0.05] border border-white/10 px-2 text-[11px] text-slate-200 outline-none focus:border-blue-400/50"
+                                  >
+                                    <option value="" className="bg-slate-900">No category</option>
+                                    {categories.filter((c) => c.type === tx.type).map((c) => <option key={c.id} value={c.id} className="bg-slate-900">{c.name}</option>)}
+                                  </select>
+                                </div>
+                              )}
                               <p className={`text-xs sm:text-sm font-extrabold font-mono tracking-tight ${
                                 parsed.isTransfer
                                   ? (accountFilter !== 'all' && matchAccount(parsed.targetAccount, accountFilter, accounts) ? 'text-emerald-400' : accountFilter !== 'all' && matchAccount(parsed.account, accountFilter, accounts) ? 'text-red-400' : 'text-cyan-400')

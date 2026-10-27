@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, CheckCircle2, EyeOff, Loader2, Plus, RotateCcw, UploadCloud } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { fetchAll } from '@/lib/supabase/fetchAll';
 import type { ParsedLine } from '@/app/api/buku-bank/parse/route';
 
 interface BankLine {
@@ -22,6 +23,8 @@ interface BankLine {
 const DEFAULT_ACCOUNTS = ['Blu by BCA', 'BCA Utama', 'Mandiri Bisnis', 'Jenius Digital', 'Kartu Kredit', 'Dompet Cash', 'E-Money / Gopay'];
 const rp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const dayMs = 86400000;
+const SYNTH = 'Dari Transaksi'; // marks lines created from existing transactions, not from a statement file
+const BANK_EXCLUDE = ['Dompet Cash'];
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
 
@@ -69,11 +72,48 @@ export default function BukuBankPage() {
   }, []);
 
   const load = useCallback(async () => {
-    const { data } = await supabase.from('bank_statement_lines').select('*').order('tx_date', { ascending: false }).limit(2000);
-    setLines(((data ?? []) as BankLine[]).map((l) => (l.status === 'matched' && !l.tx_id ? { ...l, status: 'unmatched' as const } : l)));
+    const data = await fetchAll<BankLine>((a, b) => supabase.from('bank_statement_lines').select('*').order('tx_date', { ascending: false }).order('id').range(a, b));
+    setLines(data.map((l) => (l.status === 'matched' && !l.tx_id ? { ...l, status: 'unmatched' as const } : l)));
     setLoading(false);
   }, [supabase]);
   useEffect(() => { load(); }, [load]);
+
+  // Connects Transaksi -> Buku Bank: every bank transaction you entered or imported earlier (for example the old CSV import)
+  // gets a line here, linked to itself. When the real statement is uploaded later, those lines merge with it instead of doubling up.
+  const syncFromTransaksi = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return 0;
+    const [txs, linked] = await Promise.all([
+      fetchAll<any>((a, b) => supabase.from('finance_transactions').select('id,type,amount,description,transaction_date').order('transaction_date').order('id').range(a, b)),
+      fetchAll<any>((a, b) => supabase.from('bank_statement_lines').select('id,tx_id').not('tx_id', 'is', null).order('id').range(a, b)),
+    ]);
+    const have = new Set(linked.map((r) => r.tx_id as string));
+    const rows = txs
+      .filter((t) => !have.has(t.id) && !String(t.description).includes('___TRANSFER___'))
+      .map((t) => {
+        const m = String(t.description || '').match(/^\[([^\]→]+?)\]\s*(.*)$/);
+        return m && !BANK_EXCLUDE.includes(m[1].trim()) ? { t, account: m[1].trim(), desc: m[2] } : null;
+      })
+      .filter((x): x is { t: any; account: string; desc: string } => !!x)
+      .map(({ t, account, desc }) => ({
+        user_id: user.id, account, tx_date: t.transaction_date, description: desc.slice(0, 200), amount: Number(t.amount),
+        direction: t.type === 'income' ? 'in' : 'out', balance: null, category: null, source_file: SYNTH, fingerprint: `tx:${t.id}`,
+        status: 'matched', tx_id: t.id,
+      }));
+    let n = 0;
+    for (let i = 0; i < rows.length; i += 200) {
+      const { data } = await supabase.from('bank_statement_lines').upsert(rows.slice(i, i + 200), { onConflict: 'user_id,fingerprint', ignoreDuplicates: true }).select('id');
+      n += data?.length ?? 0;
+    }
+    return n;
+  }, [supabase]);
+
+  useEffect(() => {
+    syncFromTransaksi().then((n) => {
+      if (n > 0) setMessage({ ok: true, text: `${n} transactions you already had in Transaksi were added to Buku Bank.` });
+      load();
+    });
+  }, [syncFromTransaksi, load]);
 
   // ── upload ────────────────────────────────────────────────────────────
   const parseFile = async (file: File): Promise<ParsedLine[]> => {
@@ -108,22 +148,28 @@ export default function BukuBankPage() {
     const dates = fresh.map((l) => new Date(l.tx_date).getTime());
     const from = new Date(Math.min(...dates) - 4 * dayMs).toISOString().slice(0, 10);
     const to = new Date(Math.max(...dates) + 4 * dayMs).toISOString().slice(0, 10);
-    const [{ data: txs }, { data: linked }] = await Promise.all([
-      supabase.from('finance_transactions').select('id,type,amount,transaction_date').gte('transaction_date', from).lte('transaction_date', to).limit(3000),
-      supabase.from('bank_statement_lines').select('tx_id').not('tx_id', 'is', null),
+    const [txs, linked] = await Promise.all([
+      fetchAll<any>((a, b) => supabase.from('finance_transactions').select('id,type,amount,description,transaction_date').gte('transaction_date', from).lte('transaction_date', to).order('id').range(a, b)),
+      fetchAll<any>((a, b) => supabase.from('bank_statement_lines').select('id,tx_id,source_file').not('tx_id', 'is', null).order('id').range(a, b)),
     ]);
-    const used = new Set((linked ?? []).map((r: any) => r.tx_id as string));
+    // transactions already claimed by a REAL statement line are taken; ones only claimed by a synthetic line can be merged
+    const used = new Set(linked.filter((r) => r.source_file !== SYNTH).map((r) => r.tx_id as string));
+    const synthOf = new Map(linked.filter((r) => r.source_file === SYNTH).map((r) => [r.tx_id as string, r.id as string]));
     let matched = 0;
     for (const l of [...fresh].sort((a, b) => a.tx_date.localeCompare(b.tx_date))) {
       const want = l.direction === 'in' ? 'income' : 'expense';
       let best: { id: string; gap: number } | null = null;
-      for (const t of (txs ?? []) as any[]) {
+      for (const t of txs) {
         if (used.has(t.id) || t.type !== want || Math.round(Number(t.amount)) !== Math.round(Number(l.amount))) continue;
+        const prefix = String(t.description || '').match(/^\[([^\]→]+?)\]/)?.[1]?.trim();
+        if (prefix && prefix !== l.account && !BANK_EXCLUDE.includes(prefix)) continue; // recorded under another account
         const gap = Math.abs(new Date(t.transaction_date).getTime() - new Date(l.tx_date).getTime()) / dayMs;
         if (gap <= 3 && (!best || gap < best.gap)) best = { id: t.id, gap };
       }
       if (best) {
         used.add(best.id);
+        const synth = synthOf.get(best.id);
+        if (synth) { await supabase.from('bank_statement_lines').delete().eq('id', synth); synthOf.delete(best.id); }
         await supabase.from('bank_statement_lines').update({ status: 'matched', tx_id: best.id }).eq('id', l.id);
         matched++;
       }
@@ -141,8 +187,7 @@ export default function BukuBankPage() {
   const autoImport = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { added: 0, transfers: 0 };
-    const { data: pend } = await supabase.from('bank_statement_lines').select('*').eq('status', 'unmatched').order('tx_date').limit(3000);
-    let todo = (pend ?? []) as BankLine[];
+    let todo = await fetchAll<BankLine>((a, b) => supabase.from('bank_statement_lines').select('*').eq('status', 'unmatched').order('tx_date').order('id').range(a, b));
     if (!todo.length) return { added: 0, transfers: 0 };
     const { data: cats } = await supabase.from('finance_categories').select('id,name,type,tag');
     const catList = (cats ?? []) as any[];

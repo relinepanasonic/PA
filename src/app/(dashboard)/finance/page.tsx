@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Bar, CartesianGrid, Cell, ComposedChart, Legend, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { createClient } from '@/lib/supabase/client';
+import { fetchAll } from '@/lib/supabase/fetchAll';
 
 interface Tx {
   amount: number;
@@ -49,13 +50,13 @@ export default function FinanceDashboardPage() {
   useEffect(() => {
     (async () => {
       const from = `${shiftMonth(todayMonth(), -12)}-01`;
-      const [{ data: t }, { data: b }] = await Promise.all([
-        supabase.from('finance_transactions').select('amount,type,tag,description,transaction_date,finance_categories(name)')
-          .gte('transaction_date', from).order('transaction_date', { ascending: false }).limit(6000),
+      const [t, b] = await Promise.all([
+        fetchAll<any>((x, y) => supabase.from('finance_transactions').select('amount,type,tag,description,transaction_date,finance_categories(name)')
+          .gte('transaction_date', from).order('transaction_date', { ascending: false }).order('id').range(x, y)),
         supabase.from('bank_statement_lines').select('account,balance,tx_date').not('balance', 'is', null)
-          .order('tx_date', { ascending: false }).order('created_at', { ascending: false }).limit(1500),
+          .order('tx_date', { ascending: false }).order('created_at', { ascending: false }).limit(400).then((r) => r.data),
       ]);
-      setTxs(((t ?? []) as any[]).map((r) => ({
+      setTxs((t as any[]).map((r) => ({
         amount: Number(r.amount), type: r.type, tag: r.tag, description: r.description ?? '', transaction_date: r.transaction_date,
         cat: (Array.isArray(r.finance_categories) ? r.finance_categories[0]?.name : r.finance_categories?.name) || 'Lainnya',
       })));
