@@ -73,6 +73,32 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  try {
+    const body = await request.json();
+    const lots = Number(body.lots);
+    const buyPrice = Number(body.buy_price);
+    if (!body.id || !(lots > 0) || !(buyPrice > 0)) {
+      return NextResponse.json({ error: 'Lots and buy price must be greater than 0' }, { status: 400 });
+    }
+    const { data, error } = await supabase
+      .from('portfolio_stocks')
+      .update({ lots, buy_price: buyPrice })
+      .eq('id', body.id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ item: data });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Invalid payload' }, { status: 400 });
+  }
+}
+
 export async function DELETE(request: Request) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();

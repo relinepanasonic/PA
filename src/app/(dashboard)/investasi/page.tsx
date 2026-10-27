@@ -6,6 +6,7 @@ import {
   TrendingDown,
   Plus,
   Trash2,
+  Pencil,
   LineChart,
   RefreshCw,
   ExternalLink,
@@ -100,6 +101,9 @@ function PortfolioView() {
   const [formTicker, setFormTicker] = useState('');
   const [formBuyPrice, setFormBuyPrice] = useState('');
   const [formLots, setFormLots] = useState('1');
+  const [editItem, setEditItem] = useState<{ id: string; ticker: string; lots: string; price: string } | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -255,6 +259,22 @@ function PortfolioView() {
     }
   };
 
+  // Correct a holding: change lots and average buy price
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editItem) return;
+    const lots = Math.floor(Number(editItem.lots.replace(',', '.')));
+    const price = Number(editItem.price.replace(/\./g, '').replace(',', '.'));
+    if (!(lots > 0) || !(price > 0)) { setEditError('Lot dan harga harus lebih dari 0'); return; }
+    setEditSaving(true);
+    setEditError('');
+    const res = await fetch('/api/investasi/portfolio', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editItem.id, lots, buy_price: price }) });
+    setEditSaving(false);
+    if (!res.ok) { setEditError((await res.json().catch(() => ({}))).error || 'Gagal menyimpan'); return; }
+    setEditItem(null);
+    await fetchPageData();
+  };
+
   // Build live quote map for portfolio lookup
   const liveQuoteMap: Record<string, LQ45StockItem> = {};
   lq45Stocks.forEach((item) => {
@@ -333,8 +353,8 @@ function PortfolioView() {
             >
               {totalPnL >= 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
               <div>
-                <p className="text-xs font-black">
-                  {totalPnL >= 0 ? '+' : ''}Rp {Math.round(totalPnL).toLocaleString('id-ID')}
+                <p className="text-xs font-black whitespace-nowrap">
+                  {totalPnL >= 0 ? '+' : '-'}Rp {Math.abs(Math.round(totalPnL)).toLocaleString('id-ID')}
                 </p>
                 <p className="text-[10px] opacity-85">
                   ({totalPnL >= 0 ? '+' : ''}
@@ -573,7 +593,7 @@ function PortfolioView() {
                       }
                     }
                   }}
-                  className="p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 flex flex-wrap items-center justify-between gap-3 transition-all cursor-pointer group"
+                  className="p-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 grid grid-cols-[1fr_auto] gap-x-3 gap-y-2.5 items-center md:flex md:flex-wrap md:justify-between transition-all cursor-pointer group"
                 >
                   {/* Left: Icon Ticker + Emiten Info */}
                   <div className="flex items-center gap-3.5">
@@ -594,7 +614,7 @@ function PortfolioView() {
                   </div>
 
                   {/* Middle: Total Value */}
-                  <div className="text-right">
+                  <div className="text-right whitespace-nowrap">
                     <p className="text-sm font-bold text-white">
                       Rp {Math.round(totalVal).toLocaleString('id-ID')}
                     </p>
@@ -604,22 +624,34 @@ function PortfolioView() {
                   </div>
 
                   {/* Right: Real-time PnL & Delete */}
-                  <div className="flex items-center gap-3">
+                  <div className="col-span-2 flex items-center gap-2 md:gap-3">
                     <div
-                      className={`px-3 py-1.5 rounded-xl border text-right ${
+                      className={`flex-1 md:flex-none flex md:block items-center justify-between gap-3 whitespace-nowrap px-3 py-1.5 rounded-xl border md:text-right ${
                         isProfit
                           ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                           : 'bg-red-500/10 border-red-500/30 text-red-400'
                       }`}
                     >
                       <p className="text-xs font-black">
-                        {isProfit ? '+' : ''}Rp {Math.round(pnl).toLocaleString('id-ID')}
+                        {isProfit ? '+' : '-'}Rp {Math.abs(Math.round(pnl)).toLocaleString('id-ID')}
                       </p>
                       <p className="text-[10px] font-semibold opacity-90">
                         {isProfit ? '+' : ''}
                         {pnlPercent.toFixed(2)}%
                       </p>
                     </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditError('');
+                        setEditItem({ id: item.id, ticker: item.ticker.replace('.JK', ''), lots: String(item.lots), price: String(item.buy_price).replace('.', ',') });
+                      }}
+                      className="p-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 opacity-80 hover:opacity-100 transition-all"
+                      title="Ubah lot dan harga rata-rata"
+                    >
+                      <Pencil size={15} />
+                    </button>
 
                     <button
                       onClick={(e) => {
@@ -923,6 +955,26 @@ function PortfolioView() {
           </div>
         </form>
       </Modal>
+      <Modal isOpen={!!editItem} onClose={() => setEditItem(null)} title={`Ubah ${editItem?.ticker ?? ''}`}>
+        <form onSubmit={handleSaveEdit} className="space-y-4">
+          <p className="text-xs text-slate-400">Koreksi jumlah lot dan harga rata-rata belimu. 1 lot = 100 lembar. Tidak dicatat sebagai jual beli.</p>
+          <div>
+            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Jumlah lot</label>
+            <input value={editItem?.lots ?? ''} onChange={(e) => setEditItem((p) => (p ? { ...p, lots: e.target.value } : p))} inputMode="numeric" className="w-full h-11 rounded-xl bg-white/5 border border-white/10 px-3 text-sm text-white outline-none focus:border-blue-400/60" />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Harga rata-rata per lembar (Rp)</label>
+            <input value={editItem?.price ?? ''} onChange={(e) => setEditItem((p) => (p ? { ...p, price: e.target.value } : p))} inputMode="decimal" placeholder="6760,48" className="w-full h-11 rounded-xl bg-white/5 border border-white/10 px-3 text-sm text-white outline-none focus:border-blue-400/60" />
+            <p className="text-[10px] text-slate-500 mt-1">Pakai koma untuk desimal, contoh 6760,48</p>
+          </div>
+          {editError && <p className="text-xs text-red-400">{editError}</p>}
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setEditItem(null)} className="px-4 py-2 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">Batal</button>
+            <button type="submit" disabled={editSaving} className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-semibold disabled:opacity-50">{editSaving ? 'Menyimpan...' : 'Simpan'}</button>
+          </div>
+        </form>
+      </Modal>
+
       <TradeHistory />
     </div>
   );
