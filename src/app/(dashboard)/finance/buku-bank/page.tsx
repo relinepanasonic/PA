@@ -1,8 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, BookOpen, CheckCircle2, EyeOff, Loader2, Plus, RotateCcw, UploadCloud } from 'lucide-react';
+import { BookOpen, CheckCircle2, EyeOff, Loader2, Plus, RotateCcw, UploadCloud } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { ParsedLine } from '@/app/api/buku-bank/parse/route';
 
@@ -71,7 +70,7 @@ export default function BukuBankPage() {
 
   const load = useCallback(async () => {
     const { data } = await supabase.from('bank_statement_lines').select('*').order('tx_date', { ascending: false }).limit(2000);
-    setLines((data ?? []) as BankLine[]);
+    setLines(((data ?? []) as BankLine[]).map((l) => (l.status === 'matched' && !l.tx_id ? { ...l, status: 'unmatched' as const } : l)));
     setLoading(false);
   }, [supabase]);
   useEffect(() => { load(); }, [load]);
@@ -132,6 +131,64 @@ export default function BukuBankPage() {
     return matched;
   };
 
+  const pickCategory = (cats: any[], l: { direction: string; category: string | null }) => {
+    const type = l.direction === 'in' ? 'income' : 'expense';
+    const ofType = cats.filter((c) => c.type === type);
+    return ofType.find((c) => l.category && c.name.toLowerCase() === l.category.toLowerCase()) ?? ofType.find((c) => c.name.toLowerCase().includes('other'));
+  };
+
+  // Everything not yet in Transaksi goes in: transfers between your own accounts become ONE transfer, the rest normal entries.
+  const autoImport = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { added: 0, transfers: 0 };
+    const { data: pend } = await supabase.from('bank_statement_lines').select('*').eq('status', 'unmatched').order('tx_date').limit(3000);
+    let todo = (pend ?? []) as BankLine[];
+    if (!todo.length) return { added: 0, transfers: 0 };
+    const { data: cats } = await supabase.from('finance_categories').select('id,name,type,tag');
+    const catList = (cats ?? []) as any[];
+
+    const HINT = /trsf|transfer|\btf\b|pindah|bi-?fast|top ?-?up|topup|ovo|gopay|dana|linkaja|shopeepay/i;
+    const transferCat = catList.find((c) => c.name.toLowerCase() === 'transfer from other');
+    const usedIn = new Set<string>();
+    const done = new Set<string>();
+    let transfers = 0;
+    for (const o of todo.filter((l) => l.direction === 'out')) {
+      const i = todo.find((x) => x.direction === 'in' && !usedIn.has(x.id) && x.account !== o.account && Math.round(x.amount) === Math.round(o.amount)
+        && Math.abs(new Date(x.tx_date).getTime() - new Date(o.tx_date).getTime()) <= 2 * dayMs && (HINT.test(o.description) || HINT.test(x.description)));
+      if (!i) continue;
+      const { data: tx } = await supabase.from('finance_transactions').insert({
+        user_id: user.id, type: 'expense', amount: o.amount, tag: 'personal', category_id: transferCat?.id ?? null,
+        description: `[${o.account} → ${i.account}] Transfer antar rekening___TRANSFER___`, transaction_date: o.tx_date,
+      }).select('id').single();
+      if (!tx) continue;
+      usedIn.add(i.id);
+      await supabase.from('bank_statement_lines').update({ status: 'matched', tx_id: tx.id }).in('id', [o.id, i.id]);
+      done.add(o.id); done.add(i.id); transfers++;
+    }
+    todo = todo.filter((l) => !done.has(l.id));
+
+    let added = 0;
+    for (let k = 0; k < todo.length; k += 100) {
+      const chunk = todo.slice(k, k + 100);
+      setProgress(`Adding to Transaksi (${Math.min(k + 100, todo.length)}/${todo.length})...`);
+      const rows = chunk.map((l) => {
+        const cat = pickCategory(catList, l);
+        return {
+          user_id: user.id, type: l.direction === 'in' ? 'income' : 'expense', amount: l.amount, tag: cat?.tag ?? 'personal',
+          category_id: cat?.id ?? null, description: `[${l.account}] ${l.description}`.slice(0, 250), transaction_date: l.tx_date,
+        };
+      });
+      const { data: made } = await supabase.from('finance_transactions').insert(rows).select('id');
+      if (!made || made.length !== chunk.length) continue;
+      for (let j = 0; j < chunk.length; j += 20) {
+        await Promise.all(chunk.slice(j, j + 20).map((l, n) =>
+          supabase.from('bank_statement_lines').update({ status: 'matched', tx_id: made[j + n].id }).eq('id', l.id)));
+      }
+      added += made.length;
+    }
+    return { added, transfers };
+  };
+
   const handleFiles = async (files: FileList | null) => {
     if (!files?.length) return;
     setMessage(null);
@@ -162,7 +219,12 @@ export default function BukuBankPage() {
           matched += await autoMatch((inserted ?? []) as BankLine[]);
         }
       }
-      setMessage({ ok: true, text: `${added} new lines saved, ${matched} already in Finance, ${skipped} duplicates skipped. ${added - matched} still missing from Finance.` });
+      setProgress('Putting new lines into Transaksi...');
+      const imp = await autoImport();
+      setMessage({
+        ok: true,
+        text: `${added} new lines saved. ${imp.added} added to Transaksi, ${matched} were already there, ${imp.transfers} transfers between your accounts joined into one, ${skipped} duplicates skipped.`,
+      });
     } catch (e: any) {
       setMessage({ ok: false, text: e?.message || 'Upload failed.' });
     }
@@ -220,14 +282,11 @@ export default function BukuBankPage() {
 
   return (
     <div className="p-4 pb-28 md:pb-8 max-w-3xl mx-auto animate-fade-in">
-      <Link href="/finance" className="inline-flex items-center gap-1.5 text-xs text-cyan-300 mb-3 hover:underline">
-        <ArrowLeft size={14} /> Finance
-      </Link>
       <div className="flex items-center gap-2.5 mb-1">
         <div className="w-9 h-9 rounded-2xl bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-emerald-300"><BookOpen size={18} /></div>
         <h1 className="text-lg font-extrabold text-white tracking-tight">Buku Bank</h1>
       </div>
-      <p className="text-xs text-slate-400 mb-4">Upload your bank statements (PDF, CSV or a picture). Jax reads every line and shows what is missing from Finance.</p>
+      <p className="text-xs text-slate-400 mb-4">Upload your bank statements once (PDF, CSV or a picture). Jax reads every line and puts it into Transaksi automatically, so nothing is entered twice.</p>
 
       {/* Upload */}
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 mb-4">
