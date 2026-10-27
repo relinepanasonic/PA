@@ -858,7 +858,7 @@ export default function FinancePage() {
               value={typeFilter}
               onChange={(e) => { setTypeFilter(e.target.value as any); setPage(0); }}
               className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
-              disabled={activeTab === 'dashboard'}
+              disabled={false}
             >
               <option value="all">All Types</option>
               <option value="income">Income Only (+)</option>
@@ -873,7 +873,7 @@ export default function FinancePage() {
               value={tagFilter}
               onChange={(e) => { setTagFilter(e.target.value as any); setPage(0); }}
               className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold text-white focus:outline-none focus:border-blue-400"
-              disabled={activeTab === 'dashboard'}
+              disabled={false}
             >
               <option value="all">All Tags</option>
               <option value="personal">Personal</option>
@@ -881,30 +881,6 @@ export default function FinancePage() {
             </select>
           </div>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex bg-white/[0.04] p-1 rounded-xl border border-white/10 mb-2">
-        <button
-          onClick={() => setActiveTab('transactions')}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === 'transactions'
-              ? 'bg-blue-600/30 text-blue-300 shadow-sm border border-blue-400/30'
-              : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
-          }`}
-        >
-          Transactions
-        </button>
-        <button
-          onClick={() => setActiveTab('dashboard')}
-          className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === 'dashboard'
-              ? 'bg-blue-600/30 text-blue-300 shadow-sm border border-blue-400/30'
-              : 'text-slate-400 hover:text-white hover:bg-white/[0.02]'
-          }`}
-        >
-          Dashboard
-        </button>
       </div>
 
       {/* Dashboard Tab Content */}
