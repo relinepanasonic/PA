@@ -44,14 +44,21 @@ export async function POST(request: Request) {
   const text = String(body.message ?? '').trim();
   const mediaUrl = String(body.url ?? '');
   const ext = String(body.extension ?? '').toLowerCase();
-  const waId = String(body.inboxid ?? body.id ?? '') || null;
+  const rawId = String(body.inboxid ?? body.id ?? '').trim();
+  const waId = rawId && rawId !== '0' && rawId !== 'undefined' && rawId !== 'null' ? rawId : null;
 
   // Only Nico's own numbers may command Jax; groups and strangers are ignored silently.
-  if (!sender || body.member || !isAllowedSender(sender) || (!text && !mediaUrl)) return NextResponse.json({ ok: true });
+  if (!sender || body.member || !isAllowedSender(sender) || (!text && !mediaUrl)) {
+    console.log('WhatsApp ignored: not an allowed sender or empty', { sender, member: !!body.member, hasText: !!text });
+    return NextResponse.json({ ok: true });
+  }
 
   // ...and even then only when the message starts with "Hi Jax" (a photo needs it in its caption). Everything else is ignored.
   const trigger = text.match(TRIGGER);
-  if (!trigger) return NextResponse.json({ ok: true });
+  if (!trigger) {
+    console.log('WhatsApp ignored: message does not start with Hi Jax');
+    return NextResponse.json({ ok: true });
+  }
   const command = text.slice(trigger[0].length).trim();
 
   // Answer Fonnte at once, do the (slow) AI work afterwards.
@@ -86,8 +93,9 @@ async function handle(m: { sender: string; text: string; mediaUrl: string; ext: 
 
   // Ignore a message Fonnte delivers twice.
   if (m.waId) {
-    const { data: dup } = await db.from('wa_messages').select('id').eq('user_id', userId).eq('wa_id', m.waId).limit(1);
-    if (dup?.length) return;
+    const { data: dup } = await db.from('wa_messages').select('id').eq('user_id', userId).eq('wa_id', m.waId)
+      .gte('created_at', new Date(Date.now() - 120_000).toISOString()).limit(1);
+    if (dup?.length) { console.log('WhatsApp ignored: duplicate delivery', m.waId); return; }
   }
 
   // Simple guard against runaway cost.
