@@ -120,13 +120,8 @@ async function handle(m: { sender: string; text: string; mediaUrl: string; ext: 
   }
   const userText = m.text || 'Catat transaksi dari gambar ini.';
 
-  // Short memory: the last messages of the last 12 hours.
-  const { data: hist } = await db.from('wa_messages').select('role,content').eq('user_id', userId)
-    .gte('created_at', new Date(Date.now() - 12 * 3600_000).toISOString()).order('created_at', { ascending: false }).limit(6);
-  // The conversation sent to the AI must start with a user message.
-  const past = ((hist ?? []) as JaxMessage[]).reverse();
-  while (past.length && past[0].role !== 'user') past.shift();
-  const messages: JaxMessage[] = [...past, { role: 'user', content: userText }];
+  // Every "Hi Jax" message is its own self-contained command, so the AI sees ONLY this message (no earlier chat mixed in).
+  const messages: JaxMessage[] = [{ role: 'user', content: userText }];
 
   const r = await runJax({ db, userId, messages, image, channel: 'whatsapp' });
   if (!r.ok) {
