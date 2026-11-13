@@ -2,7 +2,9 @@
 import { createGoal, ensureTeams, runGoal, TEAM_PROFILES } from '@/lib/ai/office-engine';
 import { runTool as libRunTool, toolsFor, type Supa } from '@/lib/ai/tools';
 
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
+// The chat bot (app chat and WhatsApp) runs on the cheap fast model. The agent teams keep the stronger model (ANTHROPIC_MODEL).
+// Override with JAX_CHAT_MODEL, e.g. claude-sonnet-5-5 if you ever want smarter chat.
+const MODEL = process.env.JAX_CHAT_MODEL || 'claude-haiku-5-5';
 const enabledTeams = TEAM_PROFILES.filter((t) => t.enabled);
 
 const TOOLS = [
@@ -97,7 +99,14 @@ export async function runJax(opts: {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({ model: MODEL, max_tokens: 1024, system, tools: TOOLS, messages: convo }),
+        // Tools and system prompt are the same on every call, so mark them cacheable: repeated questions then read them at a fraction of the price.
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 800,
+          system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+          tools: TOOLS.map((t, i) => (i === TOOLS.length - 1 ? { ...t, cache_control: { type: 'ephemeral' } } : t)),
+          messages: convo,
+        }),
       });
       if (!res.ok) {
         const bodyText = await res.text();

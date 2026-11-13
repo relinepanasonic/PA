@@ -114,7 +114,7 @@ async function handle(m: { sender: string; text: string; mediaUrl: string; ext: 
 
   // Short memory: the last messages of the last 12 hours.
   const { data: hist } = await db.from('wa_messages').select('role,content').eq('user_id', userId)
-    .gte('created_at', new Date(Date.now() - 12 * 3600_000).toISOString()).order('created_at', { ascending: false }).limit(10);
+    .gte('created_at', new Date(Date.now() - 12 * 3600_000).toISOString()).order('created_at', { ascending: false }).limit(6);
   // The conversation sent to the AI must start with a user message.
   const past = ((hist ?? []) as JaxMessage[]).reverse();
   while (past.length && past[0].role !== 'user') past.shift();
