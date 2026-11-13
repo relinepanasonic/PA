@@ -115,10 +115,18 @@ async function handle(m: { sender: string; text: string; mediaUrl: string; ext: 
   // Short memory: the last messages of the last 12 hours.
   const { data: hist } = await db.from('wa_messages').select('role,content').eq('user_id', userId)
     .gte('created_at', new Date(Date.now() - 12 * 3600_000).toISOString()).order('created_at', { ascending: false }).limit(10);
-  const messages: JaxMessage[] = [...((hist ?? []) as JaxMessage[]).reverse(), { role: 'user', content: userText }];
+  // The conversation sent to the AI must start with a user message.
+  const past = ((hist ?? []) as JaxMessage[]).reverse();
+  while (past.length && past[0].role !== 'user') past.shift();
+  const messages: JaxMessage[] = [...past, { role: 'user', content: userText }];
 
   const r = await runJax({ db, userId, messages, image, channel: 'whatsapp' });
-  const reply = r.ok ? r.reply || 'Selesai.' : r.status === 501 ? 'Jax belum aktif: ANTHROPIC_API_KEY belum diisi di Vercel.' : 'Maaf, Jax sedang bermasalah. Coba lagi sebentar.';
+  if (!r.ok) {
+    // Only Nico can reach this code, so the technical reason is safe to show; failed turns are not remembered.
+    await sendWhatsApp(m.sender, r.status === 501 ? 'Jax belum aktif: ANTHROPIC_API_KEY belum diisi di Vercel.' : `Maaf, Jax sedang bermasalah. Coba lagi sebentar.\n\n(${r.detail || r.error})`);
+    return;
+  }
+  const reply = r.reply || 'Selesai.';
 
   await db.from('wa_messages').insert([
     { user_id: userId, wa_id: m.waId, role: 'user', content: image ? `[foto] ${userText}` : userText },

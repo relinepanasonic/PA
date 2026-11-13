@@ -75,7 +75,7 @@ export async function runJax(opts: {
   messages: JaxMessage[];
   image?: JaxImage | null;
   channel?: Channel;
-}): Promise<{ ok: true; reply: string } | { ok: false; status: number; error: string }> {
+}): Promise<{ ok: true; reply: string } | { ok: false; status: number; error: string; detail?: string }> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return { ok: false, status: 501, error: 'agent-disabled' };
 
@@ -100,8 +100,9 @@ export async function runJax(opts: {
         body: JSON.stringify({ model: MODEL, max_tokens: 1024, system, tools: TOOLS, messages: convo }),
       });
       if (!res.ok) {
-        console.error('Anthropic error', res.status, await res.text());
-        return { ok: false, status: 502, error: 'agent-failed' };
+        const bodyText = await res.text();
+        console.error('Anthropic error', res.status, bodyText);
+        return { ok: false, status: 502, error: 'agent-failed', detail: `Anthropic ${res.status}: ${bodyText.replace(/\s+/g, ' ').slice(0, 220)}` };
       }
       const data = await res.json();
       convo.push({ role: 'assistant', content: data.content });
@@ -120,6 +121,6 @@ export async function runJax(opts: {
     return { ok: true, reply: 'Maaf, permintaannya terlalu rumit. Coba lagi dengan lebih singkat.' };
   } catch (err) {
     console.error('Agent error', err);
-    return { ok: false, status: 500, error: 'agent-failed' };
+    return { ok: false, status: 500, error: 'agent-failed', detail: `Error: ${String((err as Error)?.message || err).slice(0, 220)}` };
   }
 }
