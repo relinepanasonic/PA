@@ -8,17 +8,20 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
+// Jax only listens to messages that START with this greeting (any capitals): hi jax, hai jax, halo jax, hallo jax, hello jax, hey jax.
+const TRIGGER = /^\s*(?:hi|hai|hay|halo|hallo|hello|hey)[\s,.!:;-]*jax\b[\s,.!:;-]*/i;
+
 const HELP =
   '*Jax di WhatsApp*\n' +
-  'Contoh yang bisa kamu kirim:\n' +
-  '- Jadwalkan meeting besok jam 10 dengan Pak Budi\n' +
-  '- Harga BBCA sekarang?\n' +
-  '- Berita saham hari ini\n' +
-  '- Catat makan siang 35 ribu (atau kirim foto struk)\n' +
-  '- Beli BBCA 5 lot di 9.000\n' +
-  '- Tugas apa yang belum selesai?\n' +
-  '- Berapa pengeluaran bulan ini?\n' +
-  'Ketik *reset* untuk memulai percakapan baru.';
+  'Mulai pesan dengan *Hi Jax*, lalu perintahmu. Contoh:\n' +
+  '- Hi Jax, jadwalkan meeting besok jam 10 dengan Pak Budi\n' +
+  '- Hi Jax, harga BBCA sekarang?\n' +
+  '- Hi Jax, berita saham hari ini\n' +
+  '- Hi Jax, catat makan siang 35 ribu (foto struk: tulis Hi Jax di keterangan foto)\n' +
+  '- Hi Jax, beli BBCA 5 lot di 9.000\n' +
+  '- Hi Jax, tugas apa yang belum selesai?\n' +
+  '- Hi Jax, berapa pengeluaran bulan ini?\n' +
+  'Ketik *Hi Jax reset* untuk memulai percakapan baru.';
 
 // Fonnte posts every incoming WhatsApp message here. Set the device webhook to
 //   https://<your-domain>/api/whatsapp/webhook?key=<WHATSAPP_WEBHOOK_SECRET>
@@ -43,11 +46,16 @@ export async function POST(request: Request) {
   const ext = String(body.extension ?? '').toLowerCase();
   const waId = String(body.inboxid ?? body.id ?? '') || null;
 
-  // Only Nico's own number may command Jax; groups and strangers are ignored silently.
+  // Only Nico's own numbers may command Jax; groups and strangers are ignored silently.
   if (!sender || body.member || !isAllowedSender(sender) || (!text && !mediaUrl)) return NextResponse.json({ ok: true });
 
+  // ...and even then only when the message starts with "Hi Jax" (a photo needs it in its caption). Everything else is ignored.
+  const trigger = text.match(TRIGGER);
+  if (!trigger) return NextResponse.json({ ok: true });
+  const command = text.slice(trigger[0].length).trim();
+
   // Answer Fonnte at once, do the (slow) AI work afterwards.
-  after(() => handle({ sender, text, mediaUrl, ext, waId }).catch((e) => console.error('WhatsApp handler failed', e)));
+  after(() => handle({ sender, text: command, mediaUrl, ext, waId }).catch((e) => console.error('WhatsApp handler failed', e)));
   return NextResponse.json({ ok: true });
 }
 
@@ -64,7 +72,11 @@ async function handle(m: { sender: string; text: string; mediaUrl: string; ext: 
   }
   if (!userId) { await sendWhatsApp(m.sender, 'Jax belum menemukan akunmu di aplikasi.'); return; }
 
-  const lower = m.text.toLowerCase();
+  const lower = m.text.toLowerCase().trim();
+  if (!m.text && !m.mediaUrl) {
+    await sendWhatsApp(m.sender, 'Hai Nico, Jax di sini. Mau dibantu apa? Tulis perintahmu setelah *Hi Jax*, atau ketik *Hi Jax bantuan*.');
+    return;
+  }
   if (['reset', '/reset', 'mulai baru'].includes(lower)) {
     await db.from('wa_messages').delete().eq('user_id', userId);
     await sendWhatsApp(m.sender, 'Oke, percakapan dimulai dari awal. Mau dibantu apa?');
