@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createGoal, ensureTeams, runGoal } from '@/lib/ai/office-engine';
 import { wibDate } from '@/lib/health';
 import type { Supa } from '@/lib/ai/tools';
+import { notifyOwner } from '@/lib/whatsapp';
 
 export async function runDailyTeamBrief(
   request: Request,
@@ -39,6 +40,8 @@ export async function runDailyTeamBrief(
     if ('error' in g) { results[u.id] = String(g.error); continue; }
     const r = await runGoal(db, u.id, g.id as string, 50_000);
     results[u.id] = r.done ? (r.error ? `failed: ${r.error}` : 'done') : 'still running';
+    // also text the report to Nico's WhatsApp when it is set up
+    if (r.done && r.report) await notifyOwner(`*${opts.prefix}*\n\n${r.report}`);
   }
   return NextResponse.json({ date: today, results });
 }

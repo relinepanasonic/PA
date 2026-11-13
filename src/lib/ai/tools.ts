@@ -108,6 +108,11 @@ export const TOOL_DEFS: Record<string, ToolDef> = {
       required: ['description'],
     },
   },
+  stock_price: {
+    name: 'stock_price',
+    description: 'Current price of one or more IDX stocks (e.g. BBCA, TLKM): last price, change today in rupiah and percent, previous close, 52-week high and low, and the time of the quote. Data can be delayed a few minutes. Use it for "harga X sekarang".',
+    input_schema: { type: 'object', properties: { tickers: { type: 'array', items: { type: 'string' }, maxItems: 6 } }, required: ['tickers'] },
+  },
   market_overview: {
     name: 'market_overview',
     description: 'IHSG (Jakarta Composite) and USD/IDR: price, change today and over one month.',
@@ -347,6 +352,18 @@ export async function runTool(name: string, input: any, supabase: Supa, userId: 
         protein_g: Number.isFinite(Number(input.protein_g)) && input.protein_g != null ? Number(input.protein_g) : null,
       }).select('id,eaten_at,meal_type,description,calories').single();
       return error ? { error: error.message } : data;
+    }
+    case 'stock_price': {
+      const list = (Array.isArray(input.tickers) ? input.tickers : []).slice(0, 6) as string[];
+      const charts = await Promise.all(list.map((t) => fetchChart(t, '5d')));
+      const stamp = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', dateStyle: 'medium', timeStyle: 'short' }).format(new Date());
+      return charts.map((c, i) => c
+        ? {
+            ticker: c.ticker.replace('.JK', ''), name: c.name, price: Math.round(c.price), previousClose: Math.round(c.prevClose),
+            changeRp: Math.round(c.price - c.prevClose), changePct: c.prevClose ? Math.round((c.price / c.prevClose - 1) * 10000) / 100 : null,
+            high52w: c.high52w, low52w: c.low52w, fetchedAtWIB: stamp,
+          }
+        : { ticker: list[i], error: 'no data' });
     }
     case 'market_overview':
       return marketOverview();

@@ -1,0 +1,121 @@
+import { NextResponse, after } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { runJax, type JaxMessage } from '@/lib/ai/jax';
+import { isAllowedSender, sendWhatsApp } from '@/lib/whatsapp';
+import type { Supa } from '@/lib/ai/tools';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300;
+
+const HELP =
+  '*Jax di WhatsApp*\n' +
+  'Contoh yang bisa kamu kirim:\n' +
+  '- Jadwalkan meeting besok jam 10 dengan Pak Budi\n' +
+  '- Harga BBCA sekarang?\n' +
+  '- Berita saham hari ini\n' +
+  '- Catat makan siang 35 ribu (atau kirim foto struk)\n' +
+  '- Beli BBCA 5 lot di 9.000\n' +
+  '- Tugas apa yang belum selesai?\n' +
+  '- Berapa pengeluaran bulan ini?\n' +
+  'Ketik *reset* untuk memulai percakapan baru.';
+
+// Fonnte posts every incoming WhatsApp message here. Set the device webhook to
+//   https://<your-domain>/api/whatsapp/webhook?key=<WHATSAPP_WEBHOOK_SECRET>
+export async function POST(request: Request) {
+  const secret = process.env.WHATSAPP_WEBHOOK_SECRET;
+  if (!secret || new URL(request.url).searchParams.get('key') !== secret) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Fonnte sends JSON; accept form data too.
+  let body: Record<string, any> = {};
+  try {
+    const ct = request.headers.get('content-type') || '';
+    body = ct.includes('application/json') ? await request.json() : Object.fromEntries((await request.formData()).entries());
+  } catch {
+    return NextResponse.json({ ok: true });
+  }
+
+  const sender = String(body.sender ?? '');
+  const text = String(body.message ?? '').trim();
+  const mediaUrl = String(body.url ?? '');
+  const ext = String(body.extension ?? '').toLowerCase();
+  const waId = String(body.inboxid ?? body.id ?? '') || null;
+
+  // Only Nico's own number may command Jax; groups and strangers are ignored silently.
+  if (!sender || body.member || !isAllowedSender(sender) || (!text && !mediaUrl)) return NextResponse.json({ ok: true });
+
+  // Answer Fonnte at once, do the (slow) AI work afterwards.
+  after(() => handle({ sender, text, mediaUrl, ext, waId }).catch((e) => console.error('WhatsApp handler failed', e)));
+  return NextResponse.json({ ok: true });
+}
+
+async function handle(m: { sender: string; text: string; mediaUrl: string; ext: string; waId: string | null }) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) { await sendWhatsApp(m.sender, 'Jax belum siap: SUPABASE_SERVICE_ROLE_KEY belum diisi di Vercel.'); return; }
+  const db = createClient(url, key, { auth: { persistSession: false } }) as unknown as Supa;
+
+  // The one owner account of this app.
+  let userId = process.env.WHATSAPP_USER_ID || '';
+  if (!userId) {
+    const { data } = await db.from('profiles').select('id').order('created_at').limit(1);
+    userId = data?.[0]?.id || '';
+  }
+  if (!userId) { await sendWhatsApp(m.sender, 'Jax belum menemukan akunmu di aplikasi.'); return; }
+
+  const lower = m.text.toLowerCase();
+  if (['reset', '/reset', 'mulai baru'].includes(lower)) {
+    await db.from('wa_messages').delete().eq('user_id', userId);
+    await sendWhatsApp(m.sender, 'Oke, percakapan dimulai dari awal. Mau dibantu apa?');
+    return;
+  }
+  if (['bantuan', 'help', 'menu', '/help'].includes(lower)) { await sendWhatsApp(m.sender, HELP); return; }
+
+  // Ignore a message Fonnte delivers twice.
+  if (m.waId) {
+    const { data: dup } = await db.from('wa_messages').select('id').eq('user_id', userId).eq('wa_id', m.waId).limit(1);
+    if (dup?.length) return;
+  }
+
+  // Simple guard against runaway cost.
+  const since = new Date(Date.now() - 3600_000).toISOString();
+  const { count } = await db.from('wa_messages').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('role', 'user').gte('created_at', since);
+  if ((count ?? 0) >= 60) { await sendWhatsApp(m.sender, 'Terlalu banyak pesan dalam satu jam. Coba lagi sebentar lagi ya.'); return; }
+
+  // A picture (receipt, transfer screenshot) is read by Jax; voice notes are not supported yet.
+  let image: { data: string; mediaType: string } | null = null;
+  if (m.mediaUrl) {
+    if (['jpg', 'jpeg', 'png', 'webp'].includes(m.ext)) {
+      try {
+        const r = await fetch(m.mediaUrl);
+        const buf = Buffer.from(await r.arrayBuffer());
+        if (r.ok && buf.length < 4_000_000) image = { data: buf.toString('base64'), mediaType: m.ext === 'png' ? 'image/png' : m.ext === 'webp' ? 'image/webp' : 'image/jpeg' };
+      } catch { /* fall through */ }
+      if (!image) { await sendWhatsApp(m.sender, 'Fotonya tidak bisa dibuka atau terlalu besar. Coba kirim lagi.'); return; }
+    } else if (!m.text) {
+      await sendWhatsApp(m.sender, 'Maaf, Jax belum bisa membaca pesan suara atau file ini. Kirim teks atau foto ya.');
+      return;
+    }
+  }
+  const userText = m.text || 'Catat transaksi dari gambar ini.';
+
+  // Short memory: the last messages of the last 12 hours.
+  const { data: hist } = await db.from('wa_messages').select('role,content').eq('user_id', userId)
+    .gte('created_at', new Date(Date.now() - 12 * 3600_000).toISOString()).order('created_at', { ascending: false }).limit(10);
+  const messages: JaxMessage[] = [...((hist ?? []) as JaxMessage[]).reverse(), { role: 'user', content: userText }];
+
+  const r = await runJax({ db, userId, messages, image, channel: 'whatsapp' });
+  const reply = r.ok ? r.reply || 'Selesai.' : r.status === 501 ? 'Jax belum aktif: ANTHROPIC_API_KEY belum diisi di Vercel.' : 'Maaf, Jax sedang bermasalah. Coba lagi sebentar.';
+
+  await db.from('wa_messages').insert([
+    { user_id: userId, wa_id: m.waId, role: 'user', content: image ? `[foto] ${userText}` : userText },
+    { user_id: userId, role: 'assistant', content: reply },
+  ]);
+  await sendWhatsApp(m.sender, reply);
+}
+
+// Opening the URL in a browser is a handy "is it alive" check.
+export async function GET() {
+  return NextResponse.json({ ok: true, service: 'Jax WhatsApp webhook' });
+}
