@@ -44,9 +44,11 @@ export async function sendWhatsApp(target: string, message: string): Promise<boo
   return ok;
 }
 
-/** Push a message to the owner (first allowed number), e.g. the morning reports. Silent when WhatsApp is not set up. */
+/** Push a message to the owner, e.g. the morning reports: WHATSAPP_NOTIFY_NUMBERS if set, else the first allowed number. Silent when WhatsApp is not set up. */
 export async function notifyOwner(message: string): Promise<boolean> {
-  const to = allowedNumbers()[0];
-  if (!to || !process.env.FONNTE_TOKEN) return false;
-  return sendWhatsApp(to, message);
+  const custom = (process.env.WHATSAPP_NOTIFY_NUMBERS || '').split(',').map(normalizeNumber).filter(Boolean);
+  const to = custom.length ? custom : allowedNumbers().slice(0, 1);
+  if (!to.length || !process.env.FONNTE_TOKEN) return false;
+  const results = await Promise.all(to.map((n) => sendWhatsApp(n, message)));
+  return results.every(Boolean);
 }
