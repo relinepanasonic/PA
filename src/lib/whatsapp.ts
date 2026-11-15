@@ -25,9 +25,9 @@ export async function sendWhatsApp(target: string, message: string): Promise<boo
   if (!token) { console.error('FONNTE_TOKEN is not set'); lastError = 'FONNTE_TOKEN is not set in Vercel'; return false; }
   const parts: string[] = [];
   for (let rest = message.trim(); rest.length; ) {
-    if (rest.length <= 3500) { parts.push(rest); break; }
-    let cut = rest.lastIndexOf('\n', 3500);
-    if (cut < 1500) cut = 3500;
+    if (rest.length <= 800) { parts.push(rest); break; }
+    let cut = rest.lastIndexOf('\n', 800);
+    if (cut < 300) cut = 800;
     parts.push(rest.slice(0, cut).trim());
     rest = rest.slice(cut).trim();
   }
@@ -40,6 +40,7 @@ export async function sendWhatsApp(target: string, message: string): Promise<boo
         body: JSON.stringify({ target: normalizeNumber(target), message: part, countryCode: '62' }),
       });
       const json = await res.json().catch(() => ({}));
+      await new Promise((r) => setTimeout(r, 1200)); // keep the parts in order
       if (!json.status) {
         console.error('Fonnte send failed', json);
         lastError = String(json.reason || json.detail || JSON.stringify(json)).slice(0, 220);
@@ -51,6 +52,16 @@ export async function sendWhatsApp(target: string, message: string): Promise<boo
       ok = false;
     }
   }
+  return ok;
+}
+
+/** Send several short messages one after another (each is its own WhatsApp message). */
+export async function notifyOwnerParts(parts: string[]): Promise<boolean> {
+  const custom = (process.env.WHATSAPP_NOTIFY_NUMBERS || '').split(',').map(normalizeNumber).filter(Boolean);
+  const to = custom.length ? custom : allowedNumbers().slice(0, 1);
+  if (!to.length || !process.env.FONNTE_TOKEN) return false;
+  let ok = true;
+  for (const n of to) for (const p of parts) if (!(await sendWhatsApp(n, p))) ok = false;
   return ok;
 }
 

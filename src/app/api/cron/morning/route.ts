@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { runDailyTeamBrief } from '@/lib/ai/daily';
 import { buildMorningBrief } from '@/lib/morning-brief';
-import { notifyOwner } from '@/lib/whatsapp';
+import { notifyOwnerParts } from '@/lib/whatsapp';
 import { wibDate } from '@/lib/health';
 import type { Supa } from '@/lib/ai/tools';
 
@@ -47,8 +47,8 @@ export async function GET(request: Request) {
       const { data: done } = await db.from('wa_messages').select('id').eq('user_id', userId).eq('content', marker).limit(1);
       if (done?.length && !force) out.brief = 'already sent today';
       else {
-        const text = await buildMorningBrief(db, userId);
-        const sent = await notifyOwner(text);
+        const parts = await buildMorningBrief(db, userId);
+        const sent = await notifyOwnerParts(parts);
         if (sent && !done?.length) await db.from('wa_messages').insert({ user_id: userId, role: 'assistant', content: marker });
         out.brief = sent ? 'sent' : 'send failed (check FONNTE_TOKEN and the numbers)';
       }
