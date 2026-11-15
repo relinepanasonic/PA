@@ -39,6 +39,17 @@ export default function AiOfficePage() {
   const running = useRef(false);
   const [selectedRobot, setSelectedRobot] = useState<string | null>(null);
   const [gcalMsg, setGcalMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [briefBusy, setBriefBusy] = useState(false);
+  const [briefMsg, setBriefMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const sendBriefNow = async () => {
+    setBriefBusy(true);
+    setBriefMsg(null);
+    const res = await fetch('/api/whatsapp/brief', { method: 'POST' });
+    const json = await res.json().catch(() => ({}));
+    setBriefBusy(false);
+    setBriefMsg(res.ok ? { ok: true, text: 'Morning brief sent. Check your WhatsApp.' } : { ok: false, text: json.error || 'Could not send the brief.' });
+  };
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
@@ -146,6 +157,18 @@ export default function AiOfficePage() {
       </a>
       {gcalMsg && (
         <p className={`mb-3 text-xs ${gcalMsg.ok ? 'text-emerald-300' : 'text-red-400'}`}>{gcalMsg.text}</p>
+      )}
+
+      <button
+        type="button"
+        onClick={sendBriefNow}
+        disabled={briefBusy}
+        className="inline-flex items-center gap-1.5 mb-3 ml-2 px-3 py-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 text-emerald-200 text-[10px] font-mono uppercase tracking-widest disabled:opacity-60"
+      >
+        {briefBusy ? 'Sending...' : 'Send morning brief to WhatsApp now'}
+      </button>
+      {briefMsg && (
+        <p className={`mb-3 text-xs ${briefMsg.ok ? 'text-emerald-300' : 'text-red-400'}`}>{briefMsg.text}</p>
       )}
 
       {/* 3D office */}
