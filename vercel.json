@@ -1,6 +1,5 @@
 {
   "crons": [
-    { "path": "/api/cron/health-daily", "schedule": "0 1 * * *" },
-    { "path": "/api/cron/stocks-daily", "schedule": "0 1 * * 1-5" }
+    { "path": "/api/cron/morning", "schedule": "0 1 * * *" }
   ]
 }
