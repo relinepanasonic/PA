@@ -14,10 +14,15 @@ export const allowedNumbers = () =>
 
 export const isAllowedSender = (sender: string) => allowedNumbers().includes(normalizeNumber(sender));
 
+let lastError = '';
+/** Why the last send failed (Fonnte's own reason), for error messages shown to the owner. */
+export const lastSendError = () => lastError;
+
 /** Sends a text (split into parts if very long). Returns true when Fonnte accepted it. */
 export async function sendWhatsApp(target: string, message: string): Promise<boolean> {
   const token = process.env.FONNTE_TOKEN;
-  if (!token) { console.error('FONNTE_TOKEN is not set'); return false; }
+  lastError = '';
+  if (!token) { console.error('FONNTE_TOKEN is not set'); lastError = 'FONNTE_TOKEN is not set in Vercel'; return false; }
   const parts: string[] = [];
   for (let rest = message.trim(); rest.length; ) {
     if (rest.length <= 3500) { parts.push(rest); break; }
@@ -35,9 +40,14 @@ export async function sendWhatsApp(target: string, message: string): Promise<boo
         body: JSON.stringify({ target: normalizeNumber(target), message: part, countryCode: '62' }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!json.status) { console.error('Fonnte send failed', json); ok = false; }
+      if (!json.status) {
+        console.error('Fonnte send failed', json);
+        lastError = String(json.reason || json.detail || JSON.stringify(json)).slice(0, 220);
+        ok = false;
+      }
     } catch (e) {
       console.error('Fonnte send error', e);
+      lastError = `network error: ${String((e as Error)?.message || e).slice(0, 120)}`;
       ok = false;
     }
   }

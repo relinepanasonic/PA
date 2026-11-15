@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { buildMorningBrief } from '@/lib/morning-brief';
-import { allowedNumbers, notifyOwner } from '@/lib/whatsapp';
+import { allowedNumbers, lastSendError, notifyOwner } from '@/lib/whatsapp';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -17,7 +17,7 @@ export async function POST() {
   try {
     const text = await buildMorningBrief(supabase, user.id);
     const sent = await notifyOwner(text);
-    return sent ? NextResponse.json({ ok: true, preview: text }) : NextResponse.json({ error: 'Fonnte did not accept the message. Check that the Jax device is connected and the token is right.', preview: text }, { status: 502 });
+    return sent ? NextResponse.json({ ok: true, preview: text }) : NextResponse.json({ error: `Fonnte did not accept the message. Fonnte says: ${lastSendError() || 'no reason given'}`, preview: text }, { status: 502 });
   } catch (e) {
     console.error('Brief now failed', e);
     return NextResponse.json({ error: String((e as Error)?.message || e).slice(0, 200) }, { status: 500 });
