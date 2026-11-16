@@ -1,6 +1,6 @@
 // Tools Jax agents can call. Server-side only; every query is scoped to the signed-in user.
 import type { createServerSupabaseClient } from '@/lib/supabase/server';
-import { createCalendarEvent, listCalendarEvents } from '@/lib/google-calendar';
+import { createCalendarEvent, deleteCalendarEvent, getCalendarEvent, listCalendarEvents, updateCalendarEvent } from '@/lib/google-calendar';
 import { getHealthDay, wibDate } from '@/lib/health';
 import { fetchChart, fetchFundamentals, marketOverview, screenWatchlist, stockNews, technicals, toJK } from '@/lib/stocks';
 
@@ -277,6 +277,48 @@ export const TOOL_DEFS: Record<string, ToolDef> = {
       required: ['name', 'balance'],
     },
   },
+  find_events: {
+    name: 'find_events',
+    description:
+      "Find events in BOTH the app schedule and Google Calendar between two dates (inclusive), optionally filtered by words in the title. Returns each event once with its google_id and app_id (either can be null). " +
+      "ALWAYS call this first before changing or cancelling an event, then use the ids in update_event or delete_event.",
+    input_schema: {
+      type: 'object',
+      properties: { from: { type: 'string', description: 'YYYY-MM-DD' }, to: { type: 'string', description: 'YYYY-MM-DD' }, query: { type: 'string', description: 'optional words from the title' } },
+      required: ['from', 'to'],
+    },
+  },
+  update_event: {
+    name: 'update_event',
+    description:
+      'Change an existing event in Google Calendar and the app schedule together: new title, date, start time, end time or description. Give only what changes. ' +
+      'If only the date or start time changes, the event keeps its length. Times are WIB.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        google_id: { type: 'string' }, app_id: { type: 'string' },
+        title: { type: 'string' }, date: { type: 'string', description: 'new date YYYY-MM-DD' },
+        start_time: { type: 'string', description: 'HH:MM, 24h' }, end_time: { type: 'string', description: 'HH:MM, 24h' }, description: { type: 'string' },
+      },
+    },
+  },
+  delete_event: {
+    name: 'delete_event',
+    description: 'Delete (cancel) an event from Google Calendar and the app schedule, using the ids from find_events. Google keeps deleted events in its trash for 30 days.',
+    input_schema: { type: 'object', properties: { google_id: { type: 'string' }, app_id: { type: 'string' } } },
+  },
+  edit_transaction: {
+    name: 'edit_transaction',
+    description: 'Change an existing income or expense (find its id with list_transactions): amount, description, category, date, income/expense type or personal/professional tag. Give only what changes.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' }, amount: { type: 'number' }, description: { type: 'string' }, category: { type: 'string' },
+        date: { type: 'string', description: 'YYYY-MM-DD' }, type: { type: 'string', enum: ['income', 'expense'] }, tag: { type: 'string', enum: ['personal', 'professional'] },
+      },
+      required: ['id'],
+    },
+  },
   finance_summary: { name: 'finance_summary', description: 'Total income and expenses between two dates (inclusive).', input_schema: range },
 };
 
@@ -419,7 +461,15 @@ export async function runTool(name: string, input: any, supabase: Supa, userId: 
       const amount = Number(input.amount);
       if (!Number.isFinite(amount) || amount <= 0) return { error: 'amount must be a positive number' };
       const type = input.type === 'income' ? 'income' : 'expense';
-      const { data: cats } = await supabase.from('finance_categories').select('id,name,type,tag').eq('user_id', userId).eq('type', type);
+      let { data: cats } = await supabase.from('finance_categories').select('id,name,type,tag').eq('user_id', userId).eq('type', type);
+      if (!cats?.length) {
+        // first use from WhatsApp, before the Transaksi page ever created the default categories
+        const defaults = type === 'income'
+          ? [['Salary', 'personal'], ['Project', 'professional'], ['Loan', 'personal'], ['Transfer Banks', 'personal'], ['Others', 'personal']]
+          : [['Makan', 'personal'], ['Transport', 'personal'], ['Entertainment', 'personal'], ['Work', 'professional'], ['Gadget', 'personal'], ['Personal', 'personal'], ['Loan', 'personal'], ['Transfer Banks', 'personal'], ['Other', 'personal']];
+        await supabase.from('finance_categories').insert(defaults.map(([name, tag]) => ({ user_id: userId, name, type, tag, color: '#64748b', icon: 'tag' })));
+        cats = (await supabase.from('finance_categories').select('id,name,type,tag').eq('user_id', userId).eq('type', type)).data;
+      }
       const want = String(input.category || '').toLowerCase().trim();
       const cat = (cats ?? []).find((c: any) => c.name.toLowerCase() === want)
         ?? (want ? (cats ?? []).find((c: any) => c.name.toLowerCase().includes(want) || want.includes(c.name.toLowerCase())) : undefined)
@@ -541,6 +591,94 @@ export async function runTool(name: string, input: any, supabase: Supa, userId: 
       const { error } = await supabase.from('finance_debts').insert({ user_id: userId, name, kind, balance, credit_limit: input.credit_limit ? Number(input.credit_limit) : null });
       return error ? { error: error.message + ' (run 09_debts.sql in Supabase if you have not)' } : { ok: true, created: name, kind, balance };
     }
+    case 'find_events': {
+      const from = `${input.from}T00:00:00+07:00`, to = `${input.to}T23:59:59+07:00`;
+      const [g, app] = await Promise.all([
+        listCalendarEvents(supabase, userId, from, to),
+        supabase.from('work_activities').select('id,title,scheduled_at,deadline').eq('user_id', userId).gte('scheduled_at', from).lte('scheduled_at', to).order('scheduled_at').limit(100),
+      ]);
+      const googleOk = !('error' in (g as any));
+      const appRows = (app.data ?? []) as any[];
+      const slot = (iso: string | null) => (iso && iso.length > 10 ? `${wibParts(iso).date} ${wibParts(iso).time}` : iso || '');
+      const usedApp = new Set<string>();
+      const rows: { title: string; start: string | null; end: string | null; google_id: string | null; app_id: string | null }[] = [];
+      if (googleOk) {
+        for (const e of g as any[]) {
+          const match = appRows.find((a) => !usedApp.has(a.id) && String(a.title).trim().toLowerCase() === e.title.trim().toLowerCase() && slot(a.scheduled_at) === slot(e.start));
+          if (match) usedApp.add(match.id);
+          rows.push({ title: e.title, start: e.start, end: e.end, google_id: e.id, app_id: match?.id ?? null });
+        }
+      }
+      for (const a of appRows) if (!usedApp.has(a.id)) rows.push({ title: a.title, start: a.scheduled_at, end: a.deadline, google_id: null, app_id: a.id });
+      const q = String(input.query || '').toLowerCase().trim();
+      const out = (q ? rows.filter((r) => r.title.toLowerCase().includes(q)) : rows).sort((a, b) => String(a.start).localeCompare(String(b.start))).slice(0, 30);
+      return { events: out, ...(googleOk ? {} : { note: 'Google Calendar is not connected, so only the app schedule was searched.' }) };
+    }
+    case 'update_event': {
+      const gid = input.google_id || null, aid = input.app_id || null;
+      if (!gid && !aid) return { error: 'google_id or app_id is required: call find_events first' };
+      let origStart: string | null = null, origEnd: string | null = null;
+      if (gid) { const ev = await getCalendarEvent(supabase, userId, gid); if (!('error' in ev)) { origStart = ev.start; origEnd = ev.end; } }
+      if (!origStart && aid) {
+        const { data } = await supabase.from('work_activities').select('scheduled_at,deadline').eq('id', aid).eq('user_id', userId).single();
+        origStart = data?.scheduled_at ?? null; origEnd = data?.deadline ?? null;
+      }
+      const o = origStart && origStart.length > 10 ? wibParts(origStart) : { date: wibDate(), time: '09:00' };
+      const durMs = origStart && origEnd ? Math.max(15 * 60000, new Date(origEnd).getTime() - new Date(origStart).getTime()) : 3600000;
+      const okDate = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+      const okTime = (v: unknown) => typeof v === 'string' && /^\d{1,2}:\d{2}$/.test(v);
+      const pad = (t: string) => (t.length === 4 ? `0${t}` : t);
+      let startISO: string | undefined, endISO: string | undefined;
+      if (okDate(input.date) || okTime(input.start_time)) {
+        const d = okDate(input.date) ? input.date : o.date, t = okTime(input.start_time) ? pad(input.start_time) : o.time;
+        startISO = `${d}T${t}:00+07:00`;
+        endISO = okTime(input.end_time) ? `${d}T${pad(input.end_time)}:00+07:00` : new Date(new Date(startISO).getTime() + durMs).toISOString();
+      } else if (okTime(input.end_time)) endISO = `${o.date}T${pad(input.end_time)}:00+07:00`;
+      const result: Record<string, unknown> = {};
+      if (gid) result.google = await updateCalendarEvent(supabase, userId, gid, { title: input.title, startISO, endISO, description: input.description });
+      if (aid) {
+        const patch: Record<string, unknown> = {};
+        if (input.title) patch.title = String(input.title).slice(0, 200);
+        if (startISO) patch.scheduled_at = startISO;
+        if (endISO) patch.deadline = endISO;
+        const { error } = Object.keys(patch).length ? await supabase.from('work_activities').update(patch).eq('id', aid).eq('user_id', userId) : { error: null };
+        result.app = error ? { error: error.message } : { ok: true };
+      }
+      return result;
+    }
+    case 'delete_event': {
+      if (!input.google_id && !input.app_id) return { error: 'google_id or app_id is required: call find_events first' };
+      const result: Record<string, unknown> = {};
+      if (input.google_id) result.google = await deleteCalendarEvent(supabase, userId, input.google_id);
+      if (input.app_id) {
+        const { error } = await supabase.from('work_activities').delete().eq('id', input.app_id).eq('user_id', userId);
+        result.app = error ? { error: error.message } : { ok: true };
+      }
+      return result;
+    }
+    case 'edit_transaction': {
+      const { data: cur } = await supabase.from('finance_transactions').select('type,description').eq('id', input.id).eq('user_id', userId).single();
+      if (!cur) return { error: 'transaction not found' };
+      const patch: Record<string, unknown> = {};
+      const type = input.type === 'income' || input.type === 'expense' ? input.type : cur.type;
+      if (input.type === 'income' || input.type === 'expense') patch.type = input.type;
+      if (input.tag === 'personal' || input.tag === 'professional') patch.tag = input.tag;
+      if (Number(input.amount) > 0) patch.amount = Number(input.amount);
+      if (typeof input.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input.date)) patch.transaction_date = input.date;
+      if (input.description) {
+        const prefix = String(cur.description || '').match(/^\[[^\]]*\]\s*/)?.[0] ?? '';
+        patch.description = `${prefix}${String(input.description).slice(0, 200)}`.slice(0, 250);
+      }
+      if (input.category) {
+        const { data: cats } = await supabase.from('finance_categories').select('id,name').eq('user_id', userId).eq('type', type);
+        const want = String(input.category).toLowerCase().trim();
+        const cat = (cats ?? []).find((c: any) => c.name.toLowerCase() === want) ?? (cats ?? []).find((c: any) => c.name.toLowerCase().includes(want) || want.includes(c.name.toLowerCase()));
+        if (cat) patch.category_id = cat.id; else return { error: `no ${type} category called "${input.category}"` };
+      }
+      if (!Object.keys(patch).length) return { error: 'nothing to change' };
+      const { data, error } = await supabase.from('finance_transactions').update(patch).eq('id', input.id).eq('user_id', userId).select('id,type,amount,description,transaction_date').single();
+      return error ? { error: error.message } : { updated: data };
+    }
     case 'finance_summary': {
       const { data } = await supabase.from('finance_transactions').select('amount,type')
         .eq('user_id', userId).gte('transaction_date', input.from).lte('transaction_date', input.to);
@@ -578,4 +716,11 @@ async function addScheduleEverywhere(input: any, supabase: Supa, userId: string)
     description: input.description ? String(input.description).slice(0, 1000) : undefined,
   });
   return { app, google: 'error' in google ? { skipped: google.error } : google };
+}
+
+/** Date and time of an ISO moment as seen in Jakarta. */
+function wibParts(iso: string) {
+  const f = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date(iso));
+  const g = (t: string) => f.find((p) => p.type === t)?.value ?? '';
+  return { date: `${g('year')}-${g('month')}-${g('day')}`, time: `${g('hour') === '24' ? '00' : g('hour')}:${g('minute')}` };
 }

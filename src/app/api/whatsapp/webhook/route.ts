@@ -15,9 +15,11 @@ const HELP =
   '*Jax di WhatsApp*\n' +
   'Mulai pesan dengan *Hi Jax*, lalu perintahmu. Contoh:\n' +
   '- Hi Jax, jadwalkan meeting besok jam 10 dengan Pak Budi\n' +
+  '- Hi Jax, pindahkan meeting Fino jadi jam 14 / batalkan meeting Fino\n' +
   '- Hi Jax, harga BBCA sekarang?\n' +
   '- Hi Jax, berita saham hari ini\n' +
-  '- Hi Jax, catat makan siang 35 ribu (foto struk: tulis Hi Jax di keterangan foto)\n' +
+  '- Hi Jax, catat makan siang 35 ribu, gaji masuk 5 juta (foto struk: tulis Hi Jax di keterangan foto)\n' +
+  '- Hi Jax, ubah yang tadi jadi 40 ribu / hapus yang tadi\n' +
   '- Hi Jax, beli BBCA 5 lot di 9.000\n' +
   '- Hi Jax, tugas apa yang belum selesai?\n' +
   '- Hi Jax, berapa pengeluaran bulan ini?\n' +

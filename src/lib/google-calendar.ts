@@ -110,3 +110,8 @@ export async function deleteCalendarEvent(db: Supa, userId: string, id: string):
   const r = await call(db, userId, `/${encodeURIComponent(id)}`, { method: 'DELETE' });
   return r.error ? r : { ok: true };
 }
+
+export async function getCalendarEvent(db: Supa, userId: string, id: string): Promise<CalendarEvent | Failure> {
+  const r = await call(db, userId, `/${encodeURIComponent(id)}`);
+  return r.error ? r : toEvent(r);
+}

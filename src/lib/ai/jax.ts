@@ -24,7 +24,7 @@ const TOOLS = [
     },
   },
   ...toolsFor([
-    'list_todos', 'add_todo', 'complete_todo', 'list_schedule', 'add_schedule', 'calendar_list',
+    'list_todos', 'add_todo', 'complete_todo', 'list_schedule', 'add_schedule', 'calendar_list', 'find_events', 'update_event', 'delete_event', 'edit_transaction',
     'finance_summary', 'savings_summary', 'finance_categories', 'add_transaction', 'list_transactions', 'delete_transaction', 'add_transfer', 'set_debt',
     'buy_stock', 'sell_stock', 'set_stock_holding', 'list_trades', 'portfolio_list',
     'stock_price', 'stock_technicals', 'stock_news', 'market_overview', 'stock_screen',
@@ -59,6 +59,8 @@ function systemPrompt(channel: Channel) {
     `Current date and time (WIB): ${now}. Today is ${today}. ` +
     `You are the boss of the AI office: the teams ask_team can reach (${enabledTeams.map((t) => t.name).join(', ')}) work for you. Delegate planning, reviews and multi-step jobs to the right team with ask_team and then tell Nico the result in your own short words; do quick single actions yourself. Use the tools to read or change the user's to-dos, schedule and finances. ` +
     `Meetings and appointments: add_schedule puts the event in the app and in Google Calendar (if the result says the Google part was skipped, tell Nico to open the Agents page in the app and tap Connect Google Calendar; never write a web address in a WhatsApp reply); use today's date for "hari ini" and work out "besok" and weekdays from today. If the time is missing, ask for it. ` +
+    `To move, rename or cancel a meeting: call find_events for the right dates (with a word from the title as query), then update_event or delete_event with the ids it returned. If more than one event matches, list them briefly and ask which one; if exactly one matches, just do it and confirm the new time or that it is cancelled. ` +
+    `Money: record every income or expense Nico mentions with add_transaction, one call per item ("makan 35rb, bensin 50rb, gaji masuk 5jt" is three records). To correct one, look it up with list_transactions ("yang tadi" means the newest one today) and use edit_transaction or delete_transaction. ` +
     `Prices and news: for "harga BBCA sekarang" use stock_price and give the price, the change today in percent and the time it is from (data can be delayed a little); for news use stock_news with a good search query (a stock code plus "saham", or a topic) and summarise the 3 to 5 most relevant headlines in your own words; for the market use market_overview; never quote a price or headline that a tool did not return. This is information, not financial advice. ` +
     `When Nico tells you (by text, voice or a picture of a receipt, transfer or e-wallet screenshot) about money he spent or received, record it yourself with add_transaction without asking first, then confirm in one short sentence: type, amount in words, category, date. Ask a question only when the amount or whether it is income or expense is truly unclear. If he asks to undo, find it with list_transactions and delete_transaction. Never record the same item twice in one conversation. ` +
     `When Nico says he bought or sold a stock (for example "beli BBCA 10 lot di 9.500" or "jual TLKM 5 lot harga 3.800"), record it right away with buy_stock or sell_stock and confirm in one sentence: ticker, lots, price, and for a sale the profit or loss in rupiah. 1 lot = 100 shares and prices are per share. Ask only if the lots or the price are missing. ` +
